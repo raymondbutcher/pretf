@@ -32,26 +32,3 @@ def main(params):
             ],
         }
     })
-
-    yield tf('module.lambda', {
-        'source': 'github.com/claranet/terraform-aws-lambda?ref=v0.12.0',
-        'description': 'Test',
-        'function_name': name,
-        'handler': 'main.lambda_handler',
-        'runtime': 'python3.7',
-        'source_path': '../src/lambda',
-        'attach_policy': True,
-        'policy': policy.json,
-        'environment': {
-            'variables': {
-                'BUCKET': bucket.id,
-                'DATA': json.dumps(params.data),
-            },
-        },
-    })
-
-    # Create dynamic resources
-    for i in range(5):
-        yield tf(f'module.thing_{i}', {
-            'source': './modules/thing',
-        })

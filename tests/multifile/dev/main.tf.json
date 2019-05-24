@@ -30,38 +30,5 @@
         }
       }
     }
-  },
-  "module": {
-    "lambda": {
-      "source": "github.com/claranet/terraform-aws-lambda?ref=v0.12.0",
-      "description": "Test",
-      "function_name": "pretf-test-dev",
-      "handler": "main.lambda_handler",
-      "runtime": "python3.7",
-      "source_path": "../src/lambda",
-      "attach_policy": true,
-      "policy": "${data.aws_iam_policy_document.lambda.json}",
-      "environment": {
-        "variables": {
-          "BUCKET": "${aws_s3_bucket.test.id}",
-          "DATA": "[1, 2, 3]"
-        }
-      }
-    },
-    "thing_0": {
-      "source": "./modules/thing"
-    },
-    "thing_1": {
-      "source": "./modules/thing"
-    },
-    "thing_2": {
-      "source": "./modules/thing"
-    },
-    "thing_3": {
-      "source": "./modules/thing"
-    },
-    "thing_4": {
-      "source": "./modules/thing"
-    }
   }
 }
