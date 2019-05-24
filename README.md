@@ -15,7 +15,7 @@ Here is what happens when you run `pretf`:
 2. It imports `*.tf.py` files, runs the `main()` function, and writes the result to `*.tf.json`
 3. It runs `terraform` with any provided command line arguments
 
-This works as a transparent wrapper for Terraform. Your python code generates the Terraform configuration and then Terraform uses it.
+This works as a transparent wrapper for Terraform. The Python code generates Terraform configuration and then Terraform uses it to manage them.
 
 ## Examples
 
