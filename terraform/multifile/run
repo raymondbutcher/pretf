@@ -8,7 +8,7 @@ aws.export_credentials(
 )
 
 created_files = create_files(
-    '../src',
+    'src',
     envname='dev',
     envtype='nonprod',
     region='eu-west-1',
