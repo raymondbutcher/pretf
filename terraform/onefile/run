@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import json
-
 from pretf import create_file, register_file, remove_files, terraform, tf
 
 
