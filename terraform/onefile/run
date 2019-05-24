@@ -5,65 +5,35 @@ import json
 from pretf import create_file, register_file, remove_files, terraform, tf
 
 
-@register_file('main.tf.json')
-def main_resources(params):
+@register_file('iam.tf.json')
+def resources(params):
 
-    name = f'pretf-test-{params.envname}'
-
-    bucket = yield tf('resource.aws_s3_bucket.test', {
-        'bucket': name,
-        'acl': 'private',
-        'server_side_encryption_configuration': {
-            'rule': {
-                'apply_server_side_encryption_by_default': {
-                    'sse_algorithm': 'AES256',
-                },
-            },
-        },
+    yield tf('provider.aws', {
+        'region': params.aws_region,
     })
 
-    policy = yield tf('data.aws_iam_policy_document.lambda', {
-        'statement': {
-            'effect': 'Allow',
-            'actions': [
-                's3:ListBucket',
-                's3:PutObject',
+    group = yield tf('resource.aws_iam_group.admins', {
+        'name': 'admins',
+    })
+
+    for username in params.users:
+
+        user = yield tf(f'resource.aws_iam_user.{username}', {
+            'name': username,
+        })
+
+        yield tf(f'resource.aws_iam_user_group_membership.{username}', {
+            'user': user.name,
+            'groups': [
+                group.name,
             ],
-            'resources': [
-                bucket.arn,
-                f'{bucket.arn}/*',
-            ],
-        }
-    })
-
-    yield tf('module.lambda', {
-        'source': 'github.com/claranet/terraform-aws-lambda?ref=v0.12.0',
-        'description': 'Test',
-        'function_name': name,
-        'handler': 'main.lambda_handler',
-        'runtime': 'python3.7',
-        'source_path': '../src/lambda',
-        'attach_policy': True,
-        'policy': policy.json,
-        'environment': {
-            'variables': {
-                'BUCKET': bucket.id,
-                'DATA': json.dumps(params.data),
-            },
-        },
-    })
-
-    # Create dynamic resources
-    for i in range(5):
-        yield tf(f'module.thing_{i}', {
-            'source': './modules/thing',
         })
 
 
 created_files = create_file(
-    main_resources,
-    envname='onefile',
-    data=[5, 6, 7],
+    resources,
+    aws_region='eu-west-1',
+    users=['ray', 'violet'],
 )
 
 remove_files('*.tf.json', exclude=created_files)
