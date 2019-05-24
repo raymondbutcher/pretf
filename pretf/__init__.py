@@ -1,15 +1,13 @@
 import importlib
 import json
+import os
 import pkgutil
 import sys
 
 from argparse import Namespace
-
-from collections import defaultdict
-
 from deepmerge import merge_or_raise
-
 from functools import wraps
+from glob import glob
 
 
 __files__ = {}
@@ -31,78 +29,98 @@ class tf:
         return iter(result.items())
 
     def __getattr__(self, attr):
-        return '${' + self.__dict__['name'] + '.' + attr + '}'
+
+        parts = self.__dict__['name'].split('.')
+
+        if parts[0] == 'resource':
+            parts.pop(0)
+        elif parts[0] == 'variable':
+            parts[0] = 'var'
+
+        parts.append(attr)
+
+        return '${' + '.'.join(parts) + '}'
 
     def __str__(self):
         return self.__dict__['name']
 
 
-def register_file(name):
+def create_file(func, **params):
+
+    path = __files__[func]
+
+    contents = render_file(func, **params)
+
+    with open(path, 'w') as open_file:
+        json.dump(contents, open_file, indent=2)
+
+    print(f'{path} written')
+
+    return path
+
+
+def create_files(*paths, **params):
+    result = []
+    for path in paths:
+        sys.path.insert(0, path)
+        try:
+            modules = pkgutil.iter_modules(path=[path])
+            for module_finder, name, ispkg in modules:
+                module = importlib.import_module(name)
+                for name in dir(module):
+                    func = getattr(module, name)
+                    if callable(func):
+                        if func in __files__:
+                            result.append(create_file(func, **params))
+        finally:
+            sys.path.pop(0)
+    return result
+
+
+def register_file(path):
 
     def decorator(func):
 
         @wraps(func)
-        def wrapped(*args, **kwargs):
-            return func(*args, **kwargs)
+        def wrapped(params):
+            gen = func(params)
+            block = next(gen)
+            yield block
+            while True:
+                try:
+                    yield gen.send(block)
+                except StopIteration:
+                    break
 
-        __files__[wrapped] = name
+        __files__[wrapped] = path
 
         return wrapped
 
     return decorator
 
 
-def _find_files(paths):
-    for path in paths:
-        sys.path.insert(0, path)
-        try:
-            for module_finder, name, ispkg in pkgutil.iter_modules(path=[path]):
-                module = importlib.import_module(name)
-                for name in dir(module):
-                    func = getattr(module, name)
-                    if callable(func):
-                        file_name = __files__.get(func)
-                        if file_name:
-                            yield (file_name, path, func)
-        finally:
-            sys.path.pop(0)
+def remove_files(pattern, exclude=None):
+
+    old_paths = set(glob(pattern))
+
+    if isinstance(exclude, str):
+        exclude = [exclude]
+    
+    if exclude:
+        for path in exclude:
+            old_paths.discard(path)
+
+    for path in old_paths:
+        print(f'{path} removed')
+        os.remove(path)
 
 
-def _get_blocks(func, params):
-    gen = func(params)
-    block = next(gen)
-    yield block
-    while True:
-        try:
-            yield gen.send(block)
-        except StopIteration:
-            break
+def render_file(func, **params):
+    contents = {}
+    for block in func(Namespace(**params)):
+        contents = merge_or_raise.merge(
+            contents,
+            dict(iter(block)),
+        )
+    return contents
 
-
-def create_files(*paths, **params):
-    # convert params into a dictattr thing
-    # import python modules from paths
-    # find any functions that have been registered
-    # call functions and pass in params
-    # write files
-
-    files = defaultdict(dict)
-
-    params = Namespace(**params)
-
-    for file_name, source, func in _find_files(paths):
-        for block in _get_blocks(func, params):
-            print(f'{file_name}: {block}')
-            files[file_name] = merge_or_raise.merge(
-                files[file_name],
-                dict(iter(block)),
-            )
-
-    for file_name, data in files.items():
-        with open(file_name, 'w') as open_file:
-            json.dump(data, open_file, indent=2)
-        print(f'{file_name} written')
-
-
-def run_terraform():
-    pass
