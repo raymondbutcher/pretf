@@ -1,14 +1,1 @@
-{
-  "terraform": {
-    "backend": {
-      "s3": {
-        "region": "eu-west-1",
-        "bucket": "customer-tfstate-prod",
-        "dynamodb_table": "customer-tfstate-prod",
-        "encrypt": true,
-        "key": "terraform.tfstate"
-      }
-    },
-    "required_version": "0.12.0"
-  }
-}
+{}

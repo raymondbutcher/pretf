@@ -3,6 +3,8 @@ from pretf import aws, tf
 
 def main(params):
 
+    return # disabled until create_s3_backend() implemented
+
     backend_name = f'customer-tfstate-{params.envtype}'
 
     backend = aws.create_s3_backend(
