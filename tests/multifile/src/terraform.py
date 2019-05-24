@@ -1,7 +1,7 @@
-from pretf import aws, tf, register_file
+from pretf import aws, creates, tf
 
 
-@register_file('terraform.tf.json')
+@creates('terraform.tf.json')
 def terraform_block(params):
 
     backend_name = f'customer-tfstate-{params.envtype}'

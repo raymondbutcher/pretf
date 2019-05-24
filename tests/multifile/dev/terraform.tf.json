@@ -1,0 +1,12 @@
+{
+  "terraform": {
+    "backend.s3": {
+      "region": "TODO",
+      "bucket": "TODO",
+      "dynamodb_table": "TODO",
+      "encrypt": true,
+      "key": "terraform.tfstate"
+    },
+    "required_version": "0.11.11"
+  }
+}

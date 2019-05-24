@@ -1,4 +1,3 @@
 __pycache__
 .terraform
 *.egg-info
-terraform/**/*.json
