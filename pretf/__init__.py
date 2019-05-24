@@ -1,8 +1,7 @@
-__version__ = '0.0.1'
+__version__ = "0.0.1"
 
 
 class tf:
-
     def __init__(self, name, data):
         self.__name = name
         self.__data = data
@@ -10,7 +9,7 @@ class tf:
     def __iter__(self):
         result = {}
         here = result
-        for part in self.__name.split('.'):
+        for part in self.__name.split("."):
             here[part] = {}
             here = here[part]
         here.update(self.__data)
@@ -18,16 +17,16 @@ class tf:
 
     def __getattr__(self, attr):
 
-        parts = self.__name.split('.')
+        parts = self.__name.split(".")
 
-        if parts[0] == 'resource':
+        if parts[0] == "resource":
             parts.pop(0)
-        elif parts[0] == 'variable':
-            parts[0] = 'var'
+        elif parts[0] == "variable":
+            parts[0] = "var"
 
         parts.append(attr)
 
-        return '${' + '.'.join(parts) + '}'
+        return "${" + ".".join(parts) + "}"
 
     def __str__(self):
         return self.__name
