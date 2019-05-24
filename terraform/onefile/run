@@ -30,12 +30,12 @@ def resources(params):
         })
 
 
-created_files = create_file(
+created_file = create_file(
     resources,
     aws_region='eu-west-1',
     users=['ray', 'violet'],
 )
 
-remove_files('*.tf.json', exclude=created_files)
+remove_files('*.tf.json', exclude=created_file)
 
 terraform.execute()
