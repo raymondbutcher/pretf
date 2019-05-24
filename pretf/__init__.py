@@ -16,21 +16,21 @@ __files__ = {}
 class tf:
 
     def __init__(self, name, data):
-        self.__dict__['name'] = name
-        self.__dict__['data'] = data
+        self.__name = name
+        self.__data = data
 
     def __iter__(self):
         result = {}
         here = result
-        for part in self.__dict__['name'].split('.'):
+        for part in self.__name.split('.'):
             here[part] = {}
             here = here[part]
-        here.update(self.__dict__['data'])
+        here.update(self.__data)
         return iter(result.items())
 
     def __getattr__(self, attr):
 
-        parts = self.__dict__['name'].split('.')
+        parts = self.__name.split('.')
 
         if parts[0] == 'resource':
             parts.pop(0)
@@ -42,7 +42,7 @@ class tf:
         return '${' + '.'.join(parts) + '}'
 
     def __str__(self):
-        return self.__dict__['name']
+        return self.__name
 
 
 def create_file(func, **params):
@@ -88,7 +88,8 @@ def register_file(path):
             yield block
             while True:
                 try:
-                    yield gen.send(block)
+                    block = gen.send(block)
+                    yield block
                 except StopIteration:
                     break
 
