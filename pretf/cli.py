@@ -17,11 +17,11 @@ def _create(*paths, **kwargs):
         contents = _render(main, **kwargs)
 
         # Write JSON file.
-        output_name = f'{name}.tf.json'
-        with open(output_name, 'w') as open_file:
+        output_name = f"{name}.tf.json"
+        with open(output_name, "w") as open_file:
             json.dump(contents, open_file, indent=2)
 
-        log.ok(f'create: {output_name}')
+        log.ok(f"create: {output_name}")
         result.append(output_name)
 
     return result
@@ -45,11 +45,11 @@ def _load(paths):
         sys.path.insert(0, path)
         try:
             for name in os.listdir(path):
-                if name.endswith('.tf.py'):
+                if name.endswith(".tf.py"):
                     global_scope = {}
                     with open(os.path.join(path, name)) as open_file:
                         exec(open_file.read(), global_scope)
-                    yield (name[:-6], global_scope['main'])
+                    yield (name[:-6], global_scope["main"])
         finally:
             sys.path.pop(0)
     return []
@@ -69,17 +69,14 @@ def _remove(*patterns, exclude=None):
             old_paths.discard(path)
 
     for path in old_paths:
-        log.ok(f'remove: {path}')
+        log.ok(f"remove: {path}")
         os.remove(path)
 
 
 def _render(func, **kwargs):
     contents = {}
     for block in _blocks(func, **kwargs):
-        contents = merge_or_raise.merge(
-            contents,
-            dict(iter(block)),
-        )
+        contents = merge_or_raise.merge(contents, dict(iter(block)))
     return contents
 
 
@@ -88,29 +85,29 @@ def run():
     # Version command.
     args = sys.argv[1:]
     cmd = args[0] if args else None
-    if cmd in ('version', '-v', '-version', '--version'):
-        print(f'Pretf v{__version__}')
+    if cmd in ("version", "-v", "-version", "--version"):
+        print(f"Pretf v{__version__}")
         terraform.execute()
         return
 
     # Read configuration file.
-    with open('pretf.json') as open_file:
+    with open("pretf.json") as open_file:
         config = json.load(open_file)
 
     # Write files.
-    value = config.get('source')
+    value = config.get("source")
     if value:
         if isinstance(value, str):
             source_paths = [value]
         else:
             source_paths = value
     else:
-        source_paths = ['.']
-    params = config.get('params') or {}
+        source_paths = ["."]
+    params = config.get("params") or {}
     created = _create(*source_paths, **params)
 
     # Remove old files.
-    value = config.get('remove')
+    value = config.get("remove")
     if value:
         if isinstance(value, str):
             remove_paths = [value]
@@ -119,5 +116,5 @@ def run():
         _remove(*remove_paths, exclude=created)
 
     # Run Terraform.
-    log.ok('run: terraform')
+    log.ok("run: terraform")
     terraform.execute()

@@ -6,7 +6,7 @@ import sys
 def execute():
     child_pid = os.fork()
     if child_pid == 0:
-        os.execvpe('terraform', ['terraform'] + sys.argv[1:], os.environ)
+        os.execvpe("terraform", ["terraform"] + sys.argv[1:], os.environ)
     else:
         while True:
             try:
