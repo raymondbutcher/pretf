@@ -1,14 +1,7 @@
-#!/usr/bin/env python3
-
-from pretf import creates, remove, terraform, tf
+from pretf import tf
 
 
-@creates('iam.tf.json')
-def create_resources(params):
-
-    yield tf('provider.aws', {
-        'region': params.aws_region,
-    })
+def main(params):
 
     group = yield tf('resource.aws_iam_group.admins', {
         'name': 'admins',
@@ -26,13 +19,3 @@ def create_resources(params):
                 group.name,
             ],
         })
-
-
-created_file = create_resources(
-    aws_region='eu-west-1',
-    users=['ray', 'violet'],
-)
-
-remove('*.tf.json', exclude=created_file)
-
-terraform.execute()

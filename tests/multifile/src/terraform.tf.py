@@ -1,13 +1,12 @@
-from pretf import aws, creates, tf
+from pretf import aws, tf
 
 
-@creates('terraform.tf.json')
-def terraform_block(params):
+def main(params):
 
     backend_name = f'customer-tfstate-{params.envtype}'
 
     backend = aws.create_s3_backend(
-        region=params.region,
+        region=params.aws_region,
         bucket=backend_name,
         dynamodb_table=backend_name,
         encrypt=True,
@@ -21,5 +20,5 @@ def terraform_block(params):
             'encrypt': backend.encrypt,
             'key': 'terraform.tfstate',
         },
-        'required_version': '0.11.11',
+        'required_version': '0.12.0',
     })

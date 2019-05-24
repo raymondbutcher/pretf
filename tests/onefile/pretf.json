@@ -1,0 +1,9 @@
+{
+  "remove": "*.tf.json",
+  "params": {
+    "users": [
+      "ray",
+      "violet"
+    ]
+  }
+}

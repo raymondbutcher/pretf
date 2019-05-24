@@ -1,0 +1,14 @@
+{
+  "source": "../src",
+  "remove": "*.tf.json",
+  "params": {
+    "aws_region": "eu-west-1",
+    "envname": "prod",
+    "envtype": "prod",
+    "data": [
+      4,
+      5,
+      6
+    ]
+  }
+}
