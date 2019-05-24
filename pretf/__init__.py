@@ -45,21 +45,30 @@ class tf:
         return self.__name
 
 
-def create_file(func, **params):
+def _blocks(func, **kwargs):
+    params = Namespace(**kwargs)
+    gen = func(params)
+    block = next(gen)
+    yield block
+    while True:
+        try:
+            block = gen.send(block)
+            yield block
+        except StopIteration:
+            break
 
-    path = __files__[func]
 
-    contents = render_file(func, **params)
+def _render(func, **kwargs):
+    contents = {}
+    for block in _blocks(func, **kwargs):
+        contents = merge_or_raise.merge(
+            contents,
+            dict(iter(block)),
+        )
+    return contents
 
-    with open(path, 'w') as open_file:
-        json.dump(contents, open_file, indent=2)
 
-    print(f'{path} written')
-
-    return path
-
-
-def create_files(*paths, **params):
+def create(*paths, **kwargs):
     result = []
     for path in paths:
         sys.path.insert(0, path)
@@ -71,27 +80,23 @@ def create_files(*paths, **params):
                     func = getattr(module, name)
                     if callable(func):
                         if func in __files__:
-                            result.append(create_file(func, **params))
+                            result.append(func(**kwargs))
         finally:
             sys.path.pop(0)
     return result
 
 
-def register_file(path):
+def creates(path):
 
     def decorator(func):
 
         @wraps(func)
-        def wrapped(params):
-            gen = func(params)
-            block = next(gen)
-            yield block
-            while True:
-                try:
-                    block = gen.send(block)
-                    yield block
-                except StopIteration:
-                    break
+        def wrapped(**kwargs):
+            contents = _render(func, **kwargs)
+            with open(path, 'w') as open_file:
+                json.dump(contents, open_file, indent=2)
+            print(f'{path} written')
+            return path
 
         __files__[wrapped] = path
 
@@ -100,7 +105,7 @@ def register_file(path):
     return decorator
 
 
-def remove_files(pattern, exclude=None):
+def remove(pattern, exclude=None):
 
     old_paths = set(glob(pattern))
 
@@ -116,12 +121,4 @@ def remove_files(pattern, exclude=None):
         os.remove(path)
 
 
-def render_file(func, **params):
-    contents = {}
-    for block in func(Namespace(**params)):
-        contents = merge_or_raise.merge(
-            contents,
-            dict(iter(block)),
-        )
-    return contents
 

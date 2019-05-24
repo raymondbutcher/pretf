@@ -1,9 +1,9 @@
 import json
 
-from pretf import tf, register_file
+from pretf import creates, tf
 
 
-@register_file('main.tf.json')
+@creates('main.tf.json')
 def main_resources(params):
 
     name = f'pretf-test-{params.envname}'

@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+
+from pretf import aws, create, remove, terraform
+
+
+aws.export_credentials(
+    profile_name='customer-prod',
+)
+
+created = create(
+    '../src',
+    envname='prod',
+    envtype='prod',
+    region='eu-west-1',
+    data=[1, 2, 3],
+)
+
+remove('*.tf.json', exclude=created)
+
+terraform.execute()
