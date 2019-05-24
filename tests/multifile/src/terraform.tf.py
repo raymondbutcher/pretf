@@ -13,12 +13,14 @@ def main(params):
     )
 
     yield tf('terraform', {
-        'backend.s3': {
-            'region': backend.region,
-            'bucket': backend.bucket,
-            'dynamodb_table': backend.dynamodb_table,
-            'encrypt': backend.encrypt,
-            'key': 'terraform.tfstate',
+        'backend': {
+            's3': {
+                'region': backend.region,
+                'bucket': backend.bucket,
+                'dynamodb_table': backend.dynamodb_table,
+                'encrypt': backend.encrypt,
+                'key': 'terraform.tfstate',
+            },
         },
         'required_version': '0.12.0',
     })
