@@ -1,31 +1,53 @@
-{
-  "resource": {
-    "aws_iam_group": {
-      "admins": {
-        "name": "admins"
+[
+  {
+    "resource": {
+      "aws_iam_group": {
+        "admins": {
+          "name": "admins"
+        }
       }
-    },
-    "aws_iam_user": {
-      "ray": {
-        "name": "ray"
-      },
-      "violet": {
-        "name": "violet"
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user": {
+        "ray": {
+          "name": "ray"
+        }
       }
-    },
-    "aws_iam_user_group_membership": {
-      "ray": {
-        "user": "${aws_iam_user.ray.name}",
-        "groups": [
-          "${aws_iam_group.admins.name}"
-        ]
-      },
-      "violet": {
-        "user": "${aws_iam_user.violet.name}",
-        "groups": [
-          "${aws_iam_group.admins.name}"
-        ]
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user_group_membership": {
+        "ray": {
+          "user": "${aws_iam_user.ray.name}",
+          "groups": [
+            "${aws_iam_group.admins.name}"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user": {
+        "violet": {
+          "name": "violet"
+        }
+      }
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user_group_membership": {
+        "violet": {
+          "user": "${aws_iam_user.violet.name}",
+          "groups": [
+            "${aws_iam_group.admins.name}"
+          ]
+        }
       }
     }
   }
-}
+]

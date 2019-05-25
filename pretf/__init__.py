@@ -5,8 +5,6 @@ import shlex
 import sys
 from glob import glob
 
-from deepmerge import merge_or_raise
-
 from . import log
 
 __version__ = "0.0.1"
@@ -50,7 +48,7 @@ class tf:
 
 def _blocks(func, **kwargs):
     result = func(**kwargs)
-    if hasattr(result, '__next__') and hasattr(result, 'send'):
+    if hasattr(result, "__next__") and hasattr(result, "send"):
         block = next(result)
         yield block
         while True:
@@ -79,9 +77,13 @@ def _load(paths):
 
 
 def _render(func, **kwargs):
-    contents = {}
+    contents = []
     for block in _blocks(func, **kwargs):
-        contents = merge_or_raise.merge(contents, dict(iter(block)))
+        if isinstance(block, tf):
+            data = dict(iter(block))
+        else:
+            data = block
+        contents.append(data)
     return contents
 
 
