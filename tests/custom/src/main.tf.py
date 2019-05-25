@@ -1,7 +1,7 @@
 from pretf import tf
 
 
-def main(envname, **kwargs):
+def terraform(envname, **kwargs):
 
     name = f"pretf-test-{envname}"
 

@@ -1,7 +1,7 @@
 from pretf import tf
 
 
-def main():
+def terraform():
 
     group = yield tf("resource.aws_iam_group.admins", {"name": "admins"})
 
