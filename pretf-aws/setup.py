@@ -1,10 +1,8 @@
-
 from setuptools import setup
-
 
 setup(
     name="pretf-aws",
-    version='0.0.1',
+    version="0.0.1",
     author="Raymond Butcher",
     author_email="randomy@gmail.com",
     license="MIT License",
