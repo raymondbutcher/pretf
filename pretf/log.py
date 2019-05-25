@@ -7,9 +7,7 @@ def init(_cache=[]):
         _cache.append(True)
 
 
-def accept(question, *args, **kwargs):
-    if args or kwargs:
-        question = question.format(*args, **kwargs)
+def accept(question):
     question = "[pretf] " + question + " [yes/no]: "
     answer = ""
     while answer not in ("yes", "no"):
@@ -21,15 +19,11 @@ def accept(question, *args, **kwargs):
     return answer == "yes"
 
 
-def bad(message, *args, **kwargs):
+def bad(message):
     init()
-    if args or kwargs:
-        message = message.format(*args, **kwargs)
     print(colorama.Fore.RED + "[pretf] " + message + colorama.Style.RESET_ALL)
 
 
-def ok(message, *args, **kwargs):
+def ok(message):
     init()
-    if args or kwargs:
-        message = message.format(*args, **kwargs)
     print(colorama.Fore.CYAN + "[pretf] " + message + colorama.Style.RESET_ALL)
