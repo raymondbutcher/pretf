@@ -119,8 +119,16 @@ And then Terraform would manage those resources.
 
 ## Installation
 
+Install Pretf:
+
 ```
 pip install pretf
+```
+
+Optionally install AWS helpers:
+
+```
+pip install pretf-aws
 ```
 
 Requires:
