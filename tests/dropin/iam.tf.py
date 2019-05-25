@@ -3,24 +3,15 @@ from pretf import tf
 
 def main():
 
-    group = yield tf('resource.aws_iam_group.admins', {
-        'name': 'admins',
-    })
+    group = yield tf("resource.aws_iam_group.admins", {"name": "admins"})
 
-    user_names = [
-        'ray',
-        'violet',
-    ]
+    user_names = ["ray", "violet"]
 
     for name in user_names:
 
-        user = yield tf(f'resource.aws_iam_user.{name}', {
-            'name': name,
-        })
+        user = yield tf(f"resource.aws_iam_user.{name}", {"name": name})
 
-        yield tf(f'resource.aws_iam_user_group_membership.{name}', {
-            'user': user.name,
-            'groups': [
-                group.name,
-            ],
-        })
+        yield tf(
+            f"resource.aws_iam_user_group_membership.{name}",
+            {"user": user.name, "groups": [group.name]},
+        )

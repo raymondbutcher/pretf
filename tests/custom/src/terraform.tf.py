@@ -3,9 +3,9 @@ from pretf import aws, tf
 
 def main(aws_region, envtype, **kwargs):
 
-    return # disabled until create_s3_backend() implemented
+    return  # disabled until create_s3_backend() implemented
 
-    backend_name = f'customer-tfstate-{envtype}'
+    backend_name = f"customer-tfstate-{envtype}"
 
     backend = aws.create_s3_backend(
         region=aws_region,
@@ -14,15 +14,18 @@ def main(aws_region, envtype, **kwargs):
         encrypt=True,
     )
 
-    yield tf('terraform', {
-        'backend': {
-            's3': {
-                'region': backend.region,
-                'bucket': backend.bucket,
-                'dynamodb_table': backend.dynamodb_table,
-                'encrypt': backend.encrypt,
-                'key': 'terraform.tfstate',
+    yield tf(
+        "terraform",
+        {
+            "backend": {
+                "s3": {
+                    "region": backend.region,
+                    "bucket": backend.bucket,
+                    "dynamodb_table": backend.dynamodb_table,
+                    "encrypt": backend.encrypt,
+                    "key": "terraform.tfstate",
+                }
             },
+            "required_version": "0.12.0",
         },
-        'required_version': '0.12.0',
-    })
+    )
