@@ -1,6 +1,7 @@
 from pretf import tf
 from pretf_aws import get_frozen_credentials
 
+
 def terraform(aws_profile, aws_region, **kwargs):
     """
     This function would normally be a generator,

@@ -1,6 +1,5 @@
 import json
 import os
-from collections import namedtuple
 from functools import lru_cache
 from time import sleep
 
@@ -114,9 +113,9 @@ def _get_s3_backend_status(session, region, bucket, table):
         table_exists = True
 
     return {
-        'bucket_exists': bucket_exists,
-        'bucket_versioning_enabled': bucket_versioning_enabled,
-        'table_exists': table_exists,
+        "bucket_exists": bucket_exists,
+        "bucket_versioning_enabled": bucket_versioning_enabled,
+        "table_exists": table_exists,
     }
 
 
@@ -167,17 +166,17 @@ def s3_backend(session, bucket, key, table, region=None):
             bucket_arn = _get_s3_bucket_arn(region, account_id, bucket)
             table_arn = _get_dynamodb_table_arn(region, account_id, table)
 
-            if status['bucket_exists']:
+            if status["bucket_exists"]:
                 log.ok(f"backend: {bucket_arn} found")
             else:
                 log.bad(f"backend: {bucket_arn} not found")
 
-            if status['bucket_versioning_enabled']:
+            if status["bucket_versioning_enabled"]:
                 log.ok(f"backend: {bucket_arn} versioning enabled")
             else:
                 log.bad(f"backend: {bucket_arn} versioning disabled")
 
-            if status['table_exists']:
+            if status["table_exists"]:
                 log.ok(f"backend: {table_arn} found")
             else:
                 log.bad(f"backend: {table_arn} not found")
