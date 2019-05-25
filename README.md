@@ -17,14 +17,14 @@ Terraform is good at managing resources, and the configuration language HCL is s
 * Small codebase.
   * No concept of the hundreds or thousands of Terraform resources, instead there is a generic way to create JSON for them.
 * Easy to learn.
-  * Takes under 5 minutes to understand all of Pretf if you know Python.
+  * It should take under 5 minutes to fully understand Pretf if you know Python.
 
 ## Overview
 
 Here is what happens when you run `pretf`:
 
 1. It finds `*.tf.py` files in the current directory and creates `*.tf.json` files.
-1. It exeutes `terraform`, passing along any provided command line arguments.
+1. It executes `terraform`, passing along any provided command line arguments.
 
 For example, with `iam.tf.py`:
 
@@ -60,37 +60,59 @@ def terraform():
 It would generate `iam.tf.json`:
 
 ```json
-{
-  "resource": {
-    "aws_iam_group": {
-      "admins": {
-        "name": "admins"
+[
+  {
+    "resource": {
+      "aws_iam_group": {
+        "admins": {
+          "name": "admins"
+        }
       }
-    },
-    "aws_iam_user": {
-      "ray": {
-        "name": "ray"
-      },
-      "violet": {
-        "name": "violet"
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user": {
+        "ray": {
+          "name": "ray"
+        }
       }
-    },
-    "aws_iam_user_group_membership": {
-      "ray": {
-        "user": "${aws_iam_user.ray.name}",
-        "groups": [
-          "${aws_iam_group.admins.name}"
-        ]
-      },
-      "violet": {
-        "user": "${aws_iam_user.violet.name}",
-        "groups": [
-          "${aws_iam_group.admins.name}"
-        ]
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user_group_membership": {
+        "ray": {
+          "user": "${aws_iam_user.ray.name}",
+          "groups": [
+            "${aws_iam_group.admins.name}"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user": {
+        "violet": {
+          "name": "violet"
+        }
+      }
+    }
+  },
+  {
+    "resource": {
+      "aws_iam_user_group_membership": {
+        "violet": {
+          "user": "${aws_iam_user.violet.name}",
+          "groups": [
+            "${aws_iam_group.admins.name}"
+          ]
+        }
       }
     }
   }
-}
+]
 ```
 
 And then Terraform would manage those resources.
