@@ -1,25 +1,96 @@
 # Pretf
 
-Pretf is a tool for generating Terraform configuration with Python. This is Infrastructure as Code, not Infrastructure as Configuration Language!
+Pretf is a completely transparent, drop-in Terraform wrapper that generates Terraform configuration with Python. It requires no configuration and no changes to standard Terraform projects to start using it.
 
-Terraform is good at managing resources, and the configuration language HCL is quite nice, but it is very easy to run into limitations of that language. Luckily, Terraform also supports configuration as JSON files. Pretf allows you to write Python code, with for-loops and everything, that outputs simple JSON files for Terraform to use.
+Terraform is good at managing resources, and the configuration language HCL is quite nice, but HCL is very limited when compared to Python. Luckily, Terraform also supports configuration as JSON files. Pretf allows you to write Python code, with for-loops and everything, to output simple JSON files for Terraform.
 
 ## Overview
 
 Here is what happens when you run `pretf`:
 
-1. It loads `pretf.json` from the current directory, containing configuration such as:
-  * `source` - set this to load files from directories other than the current directory, otherwise the current directory is used
-  * `remove` - set this to clean up old files (e.g. delete previously generated `*.tf.json` files)
-  * `params` - set this to pass parameters into the Python functions
-2. It imports `*.tf.py` files, runs the `main()` function, and writes the result to `*.tf.json`
-3. It runs `terraform` with any provided command line arguments
+1. It finds `*.tf.py` files in the current directory and creates `*.tf.json` files.
+1. It exeutes `terraform`, passing along any provided command line arguments.
 
-This works as a transparent wrapper for Terraform. The Python code generates Terraform configuration and then Terraform uses it to manage them.
+For example, with `iam.tf.py`:
 
-## Examples
+```python
+from pretf import tf
 
-See the [tests](./tests) directory for examples. The generated `*.tf.json` files have been committed to this repository for testing and demonstration purposes. Projects using Pretf would likely add `*.tf.json` to `.gitignore`.
+
+def main():
+
+    group = yield tf('resource.aws_iam_group.admins', {
+        'name': 'admins',
+    })
+
+    user_names = [
+        'ray',
+        'violet',
+    ]
+
+    for name in user_names:
+
+        user = yield tf(f'resource.aws_iam_user.{name}', {
+            'name': name,
+        })
+
+        yield tf(f'resource.aws_iam_user_group_membership.{name}', {
+            'user': user.name,
+            'groups': [
+                group.name,
+            ],
+        })
+```
+
+It would generate `iam.tf.json`:
+
+```json
+{
+  "resource": {
+    "aws_iam_group": {
+      "admins": {
+        "name": "admins"
+      }
+    },
+    "aws_iam_user": {
+      "ray": {
+        "name": "ray"
+      },
+      "violet": {
+        "name": "violet"
+      }
+    },
+    "aws_iam_user_group_membership": {
+      "ray": {
+        "user": "${aws_iam_user.ray.name}",
+        "groups": [
+          "${aws_iam_group.admins.name}"
+        ]
+      },
+      "violet": {
+        "user": "${aws_iam_user.violet.name}",
+        "groups": [
+          "${aws_iam_group.admins.name}"
+        ]
+      }
+    }
+  }
+}
+```
+
+And then Terraform would manage those resources.
+
+## Configuration
+
+Configuration is completely optional.
+
+By default, Pretf will create `*.tf.json` files from `*.tf.py` files and then execute Terraform.
+
+Configuration can be used to:
+
+* Pass parameters into your Python functions.
+* Load Python files from outside of the current directory.
+* Clean up previously generated files.
 
 ## Project status
 
