@@ -17,8 +17,6 @@ setup(
         ),
     },
     install_requires=(
-        'boto-source-profile-mfa>=0.0.7',
         'colorama',
-        'deepmerge',
     ),
 )
