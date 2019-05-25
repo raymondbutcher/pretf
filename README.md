@@ -11,7 +11,7 @@ Terraform is good at managing resources, and the configuration language HCL is s
 * Drop into any standard Terraform project.
   * Configuration is optional.
   * No changes are required to standard Terraform projects.
-  * Standard Terraform usage.
+  * Standard Terraform command line usage.
 * Super flexible.
   * Change the entire workflow if you want.
 * Small codebase.
