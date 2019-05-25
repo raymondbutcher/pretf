@@ -13,7 +13,7 @@ setup(
     ),
     entry_points = {
         'console_scripts': (
-            'pretf=pretf.cli:run',
+            'pretf=pretf.cli:main',
         ),
     },
     install_requires=(

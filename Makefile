@@ -1,4 +1,5 @@
 .PHONY: neat
 neat:
-	black pretf
-	flake8 pretf --ignore E501
+	isort -rc pretf tests
+	black pretf tests
+	flake8 pretf tests --ignore E501
