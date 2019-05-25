@@ -1,3 +1,5 @@
 __pycache__
 .terraform
-*.egg-info
+/*.egg-info
+/build
+/dist
