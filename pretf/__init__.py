@@ -46,7 +46,7 @@ class tf:
         return self.__name
 
 
-def _blocks(func, **kwargs):
+def _get_terraform_blocks(func, **kwargs):
     result = func(**kwargs)
     if hasattr(result, "__next__") and hasattr(result, "send"):
         block = next(result)
@@ -61,7 +61,7 @@ def _blocks(func, **kwargs):
         yield from result
 
 
-def _load(paths):
+def _load_functions(paths):
     for path in paths:
         sys.path.insert(0, path)
         try:
@@ -70,15 +70,15 @@ def _load(paths):
                     global_scope = {}
                     with open(os.path.join(path, name)) as open_file:
                         exec(open_file.read(), global_scope)
-                    yield (name[:-6], global_scope["main"])
+                    yield (name[:-6], global_scope["terraform"])
         finally:
             sys.path.pop(0)
     return []
 
 
-def _render(func, **kwargs):
+def _render_function(func, **kwargs):
     contents = []
-    for block in _blocks(func, **kwargs):
+    for block in _get_terraform_blocks(func, **kwargs):
         if isinstance(block, tf):
             data = dict(iter(block))
         else:
@@ -89,10 +89,10 @@ def _render(func, **kwargs):
 
 def create(*paths, **kwargs):
     result = []
-    for name, main in _load(paths):
+    for name, func in _load_functions(paths):
 
         # Render the Terraform blocks.
-        contents = _render(main, **kwargs)
+        contents = _render_function(func, **kwargs)
 
         # Write JSON file.
         output_name = f"{name}.tf.json"
