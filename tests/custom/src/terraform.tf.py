@@ -1,14 +1,14 @@
 from pretf import aws, tf
 
 
-def main(params):
+def main(aws_region, envtype, **kwargs):
 
     return # disabled until create_s3_backend() implemented
 
-    backend_name = f'customer-tfstate-{params.envtype}'
+    backend_name = f'customer-tfstate-{envtype}'
 
     backend = aws.create_s3_backend(
-        region=params.aws_region,
+        region=aws_region,
         bucket=backend_name,
         dynamodb_table=backend_name,
         encrypt=True,

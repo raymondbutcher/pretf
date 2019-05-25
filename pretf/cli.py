@@ -2,7 +2,6 @@ import json
 import os
 import sys
 
-from argparse import Namespace
 from deepmerge import merge_or_raise
 from glob import glob
 
@@ -28,8 +27,7 @@ def _create(*paths, **kwargs):
 
 
 def _blocks(func, **kwargs):
-    params = Namespace(**kwargs)
-    gen = func(params)
+    gen = func(**kwargs)
     block = next(gen)
     yield block
     while True:
@@ -91,8 +89,11 @@ def run():
         return
 
     # Read configuration file.
-    with open("pretf.json") as open_file:
-        config = json.load(open_file)
+    try:
+        with open("pretf.json") as open_file:
+            config = json.load(open_file)
+    except FileNotFoundError:
+        config = {}
 
     # Write files.
     value = config.get("source")

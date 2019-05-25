@@ -3,9 +3,9 @@ import json
 from pretf import tf
 
 
-def main(params):
+def main(envname, **kwargs):
 
-    name = f'pretf-test-{params.envname}'
+    name = f'pretf-test-{envname}'
 
     bucket = yield tf('resource.aws_s3_bucket.test', {
         'bucket': name,
