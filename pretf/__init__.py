@@ -49,15 +49,18 @@ class tf:
 
 
 def _blocks(func, **kwargs):
-    gen = func(**kwargs)
-    block = next(gen)
-    yield block
-    while True:
-        try:
-            block = gen.send(block)
-            yield block
-        except StopIteration:
-            break
+    result = func(**kwargs)
+    if hasattr(result, '__next__') and hasattr(result, 'send'):
+        block = next(result)
+        yield block
+        while True:
+            try:
+                block = result.send(block)
+                yield block
+            except StopIteration:
+                break
+    else:
+        yield from result
 
 
 def _load(paths):
