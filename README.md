@@ -15,9 +15,9 @@ Terraform is good at managing resources, and the configuration language HCL is s
 * Super flexible.
   * Change the entire workflow if you want.
 * Small codebase.
-  * No concept of the hundreds or thousands of Terraform resources, just provide a generic way to create JSON for them.
+  * No concept of the hundreds or thousands of Terraform resources, instead there is a generic way to create JSON for them.
 * Easy to learn.
-  * Takes under 5 minutes to understand all of Pretf if you're familiar with Python.
+  * Takes under 5 minutes to understand all of Pretf if you know Python.
 
 ## Overview
 
@@ -106,12 +106,9 @@ Requires:
 * Python 3.6+
 * Terraform 0.12+
 
-
 ## Configuration
 
-Configuration is completely optional.
-
-By default, Pretf will create `*.tf.json` files from any `*.tf.py` files in the current directory and then execute Terraform.
+Configuration is completely optional. By default, Pretf will create `*.tf.json` files from any `*.tf.py` files found in the current directory and then execute Terraform.
 
 Configuration can be used to:
 
