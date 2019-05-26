@@ -68,10 +68,14 @@ def _load_functions(paths):
         try:
             for name in os.listdir(path):
                 if name.endswith(".tf.py"):
+                    # Import function using exec() because the "."
+                    # in the file name is not supported by Python.
                     global_scope = {}
                     with open(os.path.join(path, name)) as open_file:
                         exec(open_file.read(), global_scope)
-                    yield (name[:-6], global_scope["terraform"])
+                    func = global_scope["terraform"]
+                    output_name = name[:-2] + "json"
+                    yield (func, output_name)
         finally:
             sys.path.pop(0)
     return []
@@ -90,18 +94,17 @@ def _render_function(func, kwargs):
 
 def create(*_paths, **_kwargs):
     result = []
-    for name, func in _load_functions(_paths or ["."]):
+    for func, name in _load_functions(_paths or ["."]):
 
         # Render the Terraform blocks.
         contents = _render_function(func, _kwargs)
 
         # Write JSON file.
-        output_name = f"{name}.tf.json"
-        with open(output_name, "w") as open_file:
+        with open(name, "w") as open_file:
             json.dump(contents, open_file, indent=2)
 
-        log.ok(f"create: {output_name}")
-        result.append(output_name)
+        log.ok(f"create: {name}")
+        result.append(name)
 
     return result
 
