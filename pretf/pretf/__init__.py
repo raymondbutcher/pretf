@@ -1,3 +1,4 @@
+import contextlib
 import errno
 import json
 import os
@@ -63,9 +64,8 @@ def _get_terraform_blocks(func, kwargs):
 
 
 def _load_functions(paths):
-    for path in paths:
-        sys.path.insert(0, path)
-        try:
+    with imports(*paths):
+        for path in paths:
             for name in os.listdir(path):
                 if name.endswith(".tf.py"):
                     # Import function using exec() because the "."
@@ -76,9 +76,6 @@ def _load_functions(paths):
                     func = global_scope["terraform"]
                     output_name = name[:-2] + "json"
                     yield (func, output_name)
-        finally:
-            sys.path.pop(0)
-    return []
 
 
 def _render_function(func, kwargs):
@@ -163,6 +160,17 @@ def execute(file, args=None, default_args=None, env=None, verbose=True):
             else:
                 exit_code = exit_status >> 8
                 return exit_code
+
+
+@contextlib.contextmanager
+def imports(*paths):
+    for path in reversed(paths):
+        sys.path.insert(0, path)
+    try:
+        yield
+    finally:
+        for path in paths:
+            sys.path.remove(path)
 
 
 def mirror(*sources, target="."):
