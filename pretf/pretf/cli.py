@@ -3,24 +3,9 @@ import sys
 from . import __version__, create, execute
 
 
-def run():
-    """
-    This is the default run function to use if one hasn't been defined
-    in a pretf.py file in the current directory.
-
-    The default behaviour is to create *.tf.json files
-    from any *.tf.py files in the current directory,
-    and then execute Terraform.
-
-    """
-
-    create(".")
-    execute("terraform")
-
-
 def main():
     """
-    This is the pretf CLI tool.
+    This is the pretf CLI tool entrypoint.
 
     """
 
@@ -45,3 +30,18 @@ def main():
         config["run"]()
     else:
         run()
+
+
+def run():
+    """
+    This is the default run function to use if one hasn't been defined
+    in a pretf.py file in the current directory.
+
+    The default behaviour is to create *.tf.json files
+    from any *.tf.py files in the current directory,
+    and then execute Terraform.
+
+    """
+
+    create(".")
+    execute("terraform")

@@ -90,6 +90,12 @@ def _render_function(func, kwargs):
 
 
 def create(*_paths, **_kwargs):
+    """
+    Create *.tf.json files from *.tf.py files in the specified paths.
+    Keyword arguments are passed along to the *.tf.py functions.
+
+    """
+
     result = []
     for func, name in _load_functions(_paths or ["."]):
 
@@ -164,6 +170,12 @@ def execute(file, args=None, default_args=None, env=None, verbose=True):
 
 @contextlib.contextmanager
 def imports(*paths):
+    """
+    A context manager for temporarily adding paths to the system path,
+    making it possible to import modules from those paths.
+
+    """
+
     for path in reversed(paths):
         sys.path.insert(0, path)
     try:
@@ -201,6 +213,11 @@ def mirror(*sources, target="."):
 
 
 def remove(*patterns, exclude=None):
+    """
+    Deletes all files matching the specified glob patterns.
+    Optionally exclude specific files from being deleted.
+
+    """
 
     old_paths = set()
     for pattern in patterns:
