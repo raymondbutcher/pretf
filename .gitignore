@@ -3,4 +3,22 @@ __pycache__
 *.egg-info/
 build/
 dist/
+
+# Keep pretf.py and *.tf.json files in the test directories,
+# but ignore everything else because pretf.py creates symlinks.
+
+tests/custom/dev/*
+!tests/custom/dev/pretf.py
+!tests/custom/dev/*.tf.json
+
+tests/custom/stage/*
+!tests/custom/stage/pretf.py
+!tests/custom/stage/*.tf.json
+
+tests/custom/prod/*
+!tests/custom/prod/pretf.py
+!tests/custom/prod/*.tf.json
+
+# Ignore aws.tf.json because it may contain AWS credentials.
+
 tests/**/aws.tf.json

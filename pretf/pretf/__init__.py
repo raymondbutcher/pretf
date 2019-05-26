@@ -4,6 +4,7 @@ import os
 import shlex
 import sys
 from glob import glob
+from pathlib import Path
 
 from . import log
 
@@ -46,7 +47,7 @@ class tf:
         return self.__name
 
 
-def _get_terraform_blocks(func, **kwargs):
+def _get_terraform_blocks(func, kwargs):
     result = func(**kwargs)
     if hasattr(result, "__next__") and hasattr(result, "send"):
         block = next(result)
@@ -76,9 +77,9 @@ def _load_functions(paths):
     return []
 
 
-def _render_function(func, **kwargs):
+def _render_function(func, kwargs):
     contents = []
-    for block in _get_terraform_blocks(func, **kwargs):
+    for block in _get_terraform_blocks(func, kwargs):
         if isinstance(block, tf):
             data = dict(iter(block))
         else:
@@ -87,12 +88,12 @@ def _render_function(func, **kwargs):
     return contents
 
 
-def create(*paths, **kwargs):
+def create(*_paths, **_kwargs):
     result = []
-    for name, func in _load_functions(paths):
+    for name, func in _load_functions(_paths or ["."]):
 
         # Render the Terraform blocks.
-        contents = _render_function(func, **kwargs)
+        contents = _render_function(func, _kwargs)
 
         # Write JSON file.
         output_name = f"{name}.tf.json"
@@ -105,7 +106,7 @@ def create(*paths, **kwargs):
     return result
 
 
-def execute(file, args=None, default_args=None, env=None):
+def execute(file, args=None, default_args=None, env=None, verbose=True):
     """
     Executes a command and waits for it to finish.
 
@@ -129,7 +130,8 @@ def execute(file, args=None, default_args=None, env=None):
         else:
             args = [file]
 
-    log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
+    if verbose:
+        log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
 
     if env is None:
         env = os.environ
@@ -158,6 +160,33 @@ def execute(file, args=None, default_args=None, env=None):
             else:
                 exit_code = exit_status >> 8
                 return exit_code
+
+
+def mirror(*sources, target="."):
+    """
+    Creates symlinks from all files and directories in the source
+    directories into the target directory. Deletes all existing
+    symlinks in the target directory.
+
+    """
+
+    target_path = Path(target)
+
+    # Delete old symlinks in target path.
+    for target_file_path in target_path.iterdir():
+        if target_file_path.is_symlink():
+            target_file_path.unlink()
+
+    # Create new symlinks from source paths.
+    for source in sources:
+        if target == ".":
+            log.ok(f"mirror: {source}")
+        else:
+            log.ok(f"mirror: {source} to {target}")
+        source_path = Path(source)
+        for source_file_path in source_path.iterdir():
+            target_file_path = target_path / source_file_path.name
+            target_file_path.symlink_to(source_file_path)
 
 
 def remove(*patterns, exclude=None):

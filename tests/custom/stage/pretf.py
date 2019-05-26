@@ -8,8 +8,8 @@ def run():
     params = {
         "aws_profile": "rbutcher",
         "aws_region": "eu-west-1",
-        "envname": "prod",
-        "envtype": "prod",
+        "envname": "stage",
+        "envtype": "nonprod",
     }
 
     # Create symlinks in the current directory to everthing in ../src
