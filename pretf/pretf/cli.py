@@ -29,7 +29,7 @@ def main():
     cmd = args[0] if args else None
     if cmd in ("version", "-v", "-version", "--version"):
         print(f"Pretf v{__version__}")
-        execute("terraform")
+        execute("terraform", verbose=False)
         return
 
     # Read configuration.
