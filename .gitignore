@@ -1,5 +1,6 @@
-__pycache__
-.terraform
+__pycache__/
+.direnv/
+.terraform/
 *.egg-info/
 build/
 dist/
