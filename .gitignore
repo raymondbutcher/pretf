@@ -1,25 +1,23 @@
+# Start by ignoring everything in the custom test directories,
+# because pretf generates transient files in there.
+tests/custom/*/*
+
+# Then keep the custom test src directory and pretf.py
+# files from the environment directories.
+!tests/custom/src/*
+!tests/custom/*/pretf.py
+
+# Also keep the generated *.tf.json files (except for the ones with AWS
+# credentials) for testing purposes and to demonstrate what gets generated.
+# Normally it would make sense to ignore them.
+!tests/custom/*/*.tf.json
+tests/**/aws.tf.json
+
+# Ignore other files.
 __pycache__/
 .direnv/
 .terraform/
+.vscode/
 *.egg-info/
 build/
 dist/
-
-# Keep pretf.py and *.tf.json files in the test directories,
-# but ignore everything else because pretf.py creates symlinks.
-
-tests/custom/dev/*
-!tests/custom/dev/pretf.py
-!tests/custom/dev/*.tf.json
-
-tests/custom/stage/*
-!tests/custom/stage/pretf.py
-!tests/custom/stage/*.tf.json
-
-tests/custom/prod/*
-!tests/custom/prod/pretf.py
-!tests/custom/prod/*.tf.json
-
-# Ignore aws.tf.json because it may contain AWS credentials.
-
-tests/**/aws.tf.json
