@@ -1,0 +1,10 @@
+site_name: Pretf Documentation
+theme: readthedocs
+pages:
+- Home: index.md
+- Tutorial:
+  - Getting started: tutorial/getting-started.md
+  - Define resources: tutorial/define-resources.md
+  - Dynamic resources: tutorial/dynamic-resources.md
+  - Dynamic references: tutorial/dynamic-references.md
+  - Custom workflows: tutorial/custom-workflows.md
