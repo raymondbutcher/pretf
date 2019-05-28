@@ -35,8 +35,8 @@ def main():
 
 def run():
     """
-    This is the default run function to use if one hasn't been defined
-    in a pretf.py file in the current directory.
+    This is the default run function to use if one hasn't been
+    defined in a pretf.py file in the current directory.
 
     The default behaviour is to create *.tf.json files
     from any *.tf.py files in the current directory,

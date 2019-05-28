@@ -29,7 +29,11 @@ def terraform(dogs, envname, **kwargs):
         # Write a story to S3.
         story = yield tf(
             f"resource.aws_s3_bucket_object.{name}",
-            dict(bucket=bucket.id, key=f"{name}.txt", content=f"{name} barked {barks.count} times"),
+            {
+                "bucket": bucket.id,
+                "key": f"{name}.txt",
+                "content": f"{name} barked {barks.count} times",
+            },
         )
 
         # Also output the story.
