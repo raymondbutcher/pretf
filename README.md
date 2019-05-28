@@ -17,7 +17,7 @@ Terraform is good at managing resources, and the configuration language HCL is s
 * Small codebase.
   * No concept of the hundreds or thousands of Terraform resources, instead there is a generic way to create JSON for them.
 * Easy to learn.
-  * It should take under 5 minutes to fully understand Pretf if you know Python.
+  * It should take a few minutes to fully understand Pretf if you know Python.
 
 ## Overview
 
@@ -29,7 +29,7 @@ Here is what happens when you run `pretf`:
 For example, with `iam.tf.py`:
 
 ```python
-from pretf import tf
+from pretf.core import tf
 
 
 def terraform():
@@ -128,7 +128,7 @@ pip install pretf
 Optionally install AWS helpers:
 
 ```
-pip install pretf-aws
+pip install pretf.aws
 ```
 
 Requires:
@@ -151,23 +151,28 @@ Configuration can be used to:
 In the directory where you will run Pretf/Terraform, create a file named `pretf.py`:
 
 ```python
-from pretf import create, execute, remove
+from pretf.core import execute, tf
 
 
 def run():
+    # Create *.tf.json files from *.tf.py files
+    # with these parameters passed into all functions.
+    created = tf.create(
+      aws_region="eu-west-1",
+      envname="prod",
+      envtype="prod",
+    )
 
-    params = {"aws_region": "eu-west-1", "envname": "prod", "envtype": "prod"}
+    # Clean up any old *.tf.json files that weren't created just now.
+    tf.remove(exclude=created)
 
-    created = create("../src", **params)
-
-    remove("*.tf.json", exclude=created)
-
-    execute("terraform", default_args=["validate"])
+    # Run Terraform and pass along any command line arguments.
+    execute("terraform")
 ```
 
 If Pretf finds a `pretf.py` file with a `run()` function, it will call that instead of performing its default behaviour.
 
-This function can be adjusted to suit your project. Pretf exposes a small number functions designed to be used here, but there is nothing stopping you from importing other libraries or adding your own custom functionality.
+This function can be adjusted to suit your project. Pretf exposes a small number of functions designed to be used here, but there is nothing stopping you from importing other libraries or adding your own custom functionality.
 
 ## Project background
 

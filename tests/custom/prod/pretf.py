@@ -11,4 +11,6 @@ def run():
 
         import pretf_env
 
-        pretf_env.run(envname="prod", envtype="prod")
+        pretf_env.run(
+            envname="prod", envtype="prod", dogs=["cornelius", "cotton", "bandit"]
+        )

@@ -33,7 +33,7 @@ class API:
     def _load_functions(paths):
         with imports(*paths):
             for path in paths:
-                for name in os.listdir(path):
+                for name in sorted(os.listdir(path)):
                     if name.endswith(".tf.py"):
                         # Import function using exec() because the "."
                         # in the file name is not supported by Python.
@@ -41,7 +41,7 @@ class API:
                         with open(os.path.join(path, name)) as open_file:
                             try:
                                 exec(open_file.read(), global_scope)
-                            except:
+                            except Exception:
                                 log.bad(f"error: {name}")
                                 raise
                         func = global_scope["terraform"]
