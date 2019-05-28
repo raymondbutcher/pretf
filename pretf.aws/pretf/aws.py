@@ -3,8 +3,7 @@ import os
 from functools import lru_cache
 from time import sleep
 
-from pretf import log
-from pretf.core import tf
+from pretf.core import log, tf
 
 try:
     from boto_source_profile_mfa import get_session as Session

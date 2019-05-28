@@ -1,8 +1,7 @@
 import sys
 
 from .core import execute, tf
-
-__version__ = "0.0.2"
+from .version import __version__
 
 
 def main():
