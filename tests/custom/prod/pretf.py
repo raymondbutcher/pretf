@@ -1,4 +1,4 @@
-from pretf import imports
+from pretf.core import imports
 
 
 def run():

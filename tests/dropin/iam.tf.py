@@ -1,4 +1,4 @@
-from pretf import tf
+from pretf.core import tf
 
 
 def terraform():
