@@ -1,0 +1,69 @@
+[
+  {
+    "resource": {
+      "aws_s3_bucket": {
+        "test": {
+          "bucket": "pretf-test-dev",
+          "acl": "private",
+          "server_side_encryption_configuration": {
+            "rule": {
+              "apply_server_side_encryption_by_default": {
+                "sse_algorithm": "AES256"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "module": {
+      "bodger_barks": {
+        "source": "./barks"
+      }
+    }
+  },
+  {
+    "resource": {
+      "aws_s3_bucket_object": {
+        "bodger": {
+          "bucket": "${aws_s3_bucket.test.id}",
+          "key": "bodger.txt",
+          "content": "bodger barked ${module.bodger_barks.count} times"
+        }
+      }
+    }
+  },
+  {
+    "output": {
+      "bodger": {
+        "value": "${aws_s3_bucket_object.bodger.content}"
+      }
+    }
+  },
+  {
+    "module": {
+      "peanut_barks": {
+        "source": "./barks"
+      }
+    }
+  },
+  {
+    "resource": {
+      "aws_s3_bucket_object": {
+        "peanut": {
+          "bucket": "${aws_s3_bucket.test.id}",
+          "key": "peanut.txt",
+          "content": "peanut barked ${module.peanut_barks.count} times"
+        }
+      }
+    }
+  },
+  {
+    "output": {
+      "peanut": {
+        "value": "${aws_s3_bucket_object.peanut.content}"
+      }
+    }
+  }
+]
