@@ -9,15 +9,102 @@ from pathlib import Path
 
 from . import log
 
-__version__ = "0.0.1"
+
+class API:
+    def __call__(self, name, data):
+        return Block(name, data)
+
+    @staticmethod
+    def _get_terraform_blocks(func, kwargs):
+        result = func(**kwargs)
+        if hasattr(result, "__next__") and hasattr(result, "send"):
+            block = next(result)
+            yield block
+            while True:
+                try:
+                    block = result.send(block)
+                    yield block
+                except StopIteration:
+                    break
+        else:
+            yield from result
+
+    @staticmethod
+    def _load_functions(paths):
+        with imports(*paths):
+            for path in paths:
+                for name in os.listdir(path):
+                    if name.endswith(".tf.py"):
+                        # Import function using exec() because the "."
+                        # in the file name is not supported by Python.
+                        global_scope = {}
+                        with open(os.path.join(path, name)) as open_file:
+                            try:
+                                exec(open_file.read(), global_scope)
+                            except:
+                                log.bad(f"error: {name}")
+                                raise
+                        func = global_scope["terraform"]
+                        output_name = name[:-2] + "json"
+                        yield (func, output_name)
+
+    @classmethod
+    def _render_function(cls, func, kwargs):
+        contents = []
+        for block in cls._get_terraform_blocks(func, kwargs):
+            if isinstance(block, Block):
+                data = dict(iter(block))
+            else:
+                data = block
+            contents.append(data)
+        return contents
+
+    @classmethod
+    def create(cls, *_paths, **_kwargs):
+        """
+        Creates *.tf.json files from *.tf.py files in the specified paths.
+        Keyword arguments are passed along to the *.tf.py functions.
+
+        """
+
+        result = []
+        for func, name in cls._load_functions(_paths or ["."]):
+
+            # Render the Terraform blocks.
+            contents = cls._render_function(func, _kwargs)
+
+            # Write JSON file.
+            with open(name, "w") as open_file:
+                json.dump(contents, open_file, indent=2)
+
+            log.ok(f"create: {name}")
+            result.append(name)
+
+        return result
+
+    @staticmethod
+    def remove(exclude=None):
+        """
+        Deletes all *.tf.json files in the current directory.
+        Optionally exclude specific files from being deleted.
+
+        """
+
+        old_paths = set(glob("*.tf.json"))
+
+        if isinstance(exclude, str):
+            exclude = [exclude]
+
+        if exclude:
+            for path in exclude:
+                old_paths.discard(path)
+
+        for path in old_paths:
+            log.ok(f"remove: {path}")
+            os.remove(path)
 
 
-class tf:
-    """
-    Creates a Terraform block to output as JSON.
-
-    """
-
+class Block:
     def __init__(self, name, data):
         self.__name = name
         self.__data = data
@@ -46,70 +133,6 @@ class tf:
 
     def __str__(self):
         return self.__name
-
-
-def _get_terraform_blocks(func, kwargs):
-    result = func(**kwargs)
-    if hasattr(result, "__next__") and hasattr(result, "send"):
-        block = next(result)
-        yield block
-        while True:
-            try:
-                block = result.send(block)
-                yield block
-            except StopIteration:
-                break
-    else:
-        yield from result
-
-
-def _load_functions(paths):
-    with imports(*paths):
-        for path in paths:
-            for name in os.listdir(path):
-                if name.endswith(".tf.py"):
-                    # Import function using exec() because the "."
-                    # in the file name is not supported by Python.
-                    global_scope = {}
-                    with open(os.path.join(path, name)) as open_file:
-                        exec(open_file.read(), global_scope)
-                    func = global_scope["terraform"]
-                    output_name = name[:-2] + "json"
-                    yield (func, output_name)
-
-
-def _render_function(func, kwargs):
-    contents = []
-    for block in _get_terraform_blocks(func, kwargs):
-        if isinstance(block, tf):
-            data = dict(iter(block))
-        else:
-            data = block
-        contents.append(data)
-    return contents
-
-
-def create(*_paths, **_kwargs):
-    """
-    Create *.tf.json files from *.tf.py files in the specified paths.
-    Keyword arguments are passed along to the *.tf.py functions.
-
-    """
-
-    result = []
-    for func, name in _load_functions(_paths or ["."]):
-
-        # Render the Terraform blocks.
-        contents = _render_function(func, _kwargs)
-
-        # Write JSON file.
-        with open(name, "w") as open_file:
-            json.dump(contents, open_file, indent=2)
-
-        log.ok(f"create: {name}")
-        result.append(name)
-
-    return result
 
 
 def execute(file, args=None, default_args=None, env=None, verbose=True):
@@ -212,24 +235,4 @@ def mirror(*sources, target="."):
             target_file_path.symlink_to(source_file_path)
 
 
-def remove(*patterns, exclude=None):
-    """
-    Deletes all files matching the specified glob patterns.
-    Optionally exclude specific files from being deleted.
-
-    """
-
-    old_paths = set()
-    for pattern in patterns:
-        old_paths.update(glob(pattern))
-
-    if isinstance(exclude, str):
-        exclude = [exclude]
-
-    if exclude:
-        for path in exclude:
-            old_paths.discard(path)
-
-    for path in old_paths:
-        log.ok(f"remove: {path}")
-        os.remove(path)
+tf = API()

@@ -1,5 +1,5 @@
-from pretf import tf
-from pretf_aws import get_frozen_credentials
+from pretf.aws import get_frozen_credentials
+from pretf.core import tf
 
 
 def terraform(aws_profile, aws_region, **kwargs):

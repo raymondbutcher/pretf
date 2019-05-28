@@ -1,4 +1,4 @@
-from pretf import create, execute, mirror, remove
+from pretf.core import execute, mirror, tf
 
 
 def run(**params):
@@ -12,13 +12,13 @@ def run(**params):
 
     # Create *.tf.json files from *.tf.py symlinks that were just created,
     # using a combination of default and environment-specific parameters.
-    created = create(**combined_params)
+    created = tf.create(**combined_params)
 
     # Remove any *.tf.json files from the current directory that were not
     # created just now. This removes orphans from previous runs; when a
     # *.tf.py file is deleted, the *.tf.json it created previously
     # should be deleted.
-    remove("*.tf.json", exclude=created)
+    tf.remove(exclude=created)
 
     # Run Terraform, defaulting to the validate command.
     execute("terraform", default_args=["validate"])

@@ -3,9 +3,13 @@ import os
 from functools import lru_cache
 from time import sleep
 
-import boto_source_profile_mfa
+from pretf import log
+from pretf.core import tf
 
-from pretf import log, tf
+try:
+    from boto_source_profile_mfa import get_session as Session
+except ImportError:
+    from boto3 import Session
 
 
 def _create_s3_backend(session, bucket, table, region):
@@ -136,7 +140,7 @@ def get_frozen_credentials(session=None, **kwargs):
 
 @lru_cache()
 def get_session(**kwargs):
-    return boto_source_profile_mfa.get_session(**kwargs)
+    return Session(**kwargs)
 
 
 def s3_backend(session, bucket, key, table, region=None):

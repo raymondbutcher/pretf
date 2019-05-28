@@ -1,6 +1,8 @@
 import sys
 
-from . import __version__, create, execute
+from .core import execute, tf
+
+__version__ = "0.0.2"
 
 
 def main():
@@ -43,5 +45,5 @@ def run():
 
     """
 
-    create(".")
+    tf.create()
     execute("terraform")
