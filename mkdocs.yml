@@ -1,5 +1,6 @@
 site_name: Pretf Documentation
 theme: readthedocs
+docs_dir: docs
 pages:
 - Home: index.md
 - Tutorial:
