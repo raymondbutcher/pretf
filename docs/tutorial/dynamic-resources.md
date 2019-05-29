@@ -42,7 +42,7 @@ Now run `pretf validate` and the resulting JSON file will contain those 5 resour
 
 ## The 'f-string' literal
 
-If you are not familiar with the syntax of `f"resource.random_integer.{animal}"` in the above code, then read about [Python f-strings](https://www.python.org/dev/peps/pep-0498/) introduced in Python 3.6. Normally you might write it as `"resource.random_integer.{}".format(animal)` but f-strings allow for similar string formatting features with less code.
+If you are not familiar with the syntax of `f"resource.random_integer.{name}"` in the above code, then read about [Python f-strings](https://www.python.org/dev/peps/pep-0498/) introduced in Python 3.6. Normally we might write it as `"resource.random_integer.{}".format(name)` or `"resource.random_integer.%s" % name`. Instead, we can use f-strings to directly reference the `name` variable inside the string where its value should be used.
 
 ## Why not use 'count'?
 
