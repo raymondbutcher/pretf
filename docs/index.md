@@ -9,12 +9,12 @@
 
 For core functionality:
 
-```
+```shell
 pip install pretf
 ```
 
 For optional helpers:
 
-```
+```shell
 pip install pretf.aws
 ```

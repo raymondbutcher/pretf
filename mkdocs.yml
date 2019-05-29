@@ -9,3 +9,6 @@ pages:
   - Dynamic resources: tutorial/dynamic-resources.md
   - Dynamic references: tutorial/dynamic-references.md
   - Custom workflows: tutorial/custom-workflows.md
+  - Parameters: tutorial/parameters.md
+  - Project structure: tutorial/project-structure.md
+  - AWS projects: tutorial/aws-projects.md
