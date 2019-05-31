@@ -147,6 +147,8 @@ def execute(file, args=None, default_args=None, env=None, verbose=True):
     If args are not provided, and no arguments were used to run this program,
     and default args are provided, then they will be used.
 
+    Returns the exit code from the command that is run.
+
     """
 
     if args is not None:
