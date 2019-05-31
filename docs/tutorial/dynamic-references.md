@@ -1,8 +1,10 @@
 # Dynamic references
 
-In the previous tutorial, `random.tf.py` contained 5 dynamic resources:
+In the previous page, `random.tf.py` contained 5 dynamic resources:
 
 ```python
+# random.tf.py
+
 from pretf.core import tf
 
 
@@ -18,6 +20,8 @@ def terraform():
 Pretf provides an easy way to reference Terraform objects returned by `tf()`:
 
 ```python
+# random.tf.py
+
 from pretf.core import tf
 
 

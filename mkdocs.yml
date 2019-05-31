@@ -1,7 +1,7 @@
 site_name: Pretf Documentation
 theme: readthedocs
 docs_dir: docs
-pages:
+nav:
 - Home: index.md
 - Tutorial:
   - Getting started: tutorial/getting-started.md
