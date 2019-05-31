@@ -28,9 +28,11 @@ def main():
 
     # Call the custom or default run function.
     if "run" in config:
-        config["run"]()
+        exit_code = config["run"]()
     else:
-        run()
+        exit_code = run()
+
+    sys.exit(exit_code)
 
 
 def run():
@@ -45,4 +47,4 @@ def run():
     """
 
     tf.create()
-    execute("terraform")
+    return execute("terraform")
