@@ -5,6 +5,8 @@ The primary feature of Pretf is to read `*.tf.py` files and create matching `*.t
 Start by creating a file named `random.tf.py` in your Terraform project directory:
 
 ```python
+# random.tf.py
+
 from pretf.core import tf
 
 

@@ -1,8 +1,10 @@
 # Dynamic resources
 
-In the previous tutorial, `random.tf.py` defined 3 resources:
+In the previous page, `random.tf.py` defined 3 resources:
 
 ```python
+# random.tf.py
+
 from pretf.core import tf
 
 
@@ -26,6 +28,8 @@ def terraform():
 There is a lot of duplication here, and what if we want to add more animals? Let's use a for-loop:
 
 ```python
+# random.tf.py
+
 from pretf.core import tf
 
 
