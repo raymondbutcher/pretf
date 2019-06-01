@@ -1,4 +1,5 @@
 import sys
+from importlib.machinery import SourceFileLoader
 
 from .core import execute, tf
 from .version import __version__
@@ -18,19 +19,13 @@ def main():
         execute("terraform", verbose=False)
         return
 
-    # Read configuration.
-    config = {}
-    try:
-        with open("pretf.py") as open_file:
-            exec(open_file.read(), config)
-    except FileNotFoundError:
-        pass
-
     # Call the custom or default run function.
-    if "run" in config:
-        exit_code = config["run"]()
-    else:
+    try:
+        pretf = SourceFileLoader("pretf", "pretf.py").load_module()
+    except FileNotFoundError:
         exit_code = run()
+    else:
+        exit_code = pretf.run()
 
     sys.exit(exit_code)
 
