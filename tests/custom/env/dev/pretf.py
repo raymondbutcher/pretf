@@ -7,6 +7,6 @@ def run():
 
     """
 
-    SourceFileLoader("pretf_env", "../src/pretf_env.py").load_module().run(
+    SourceFileLoader("pretf_env", "../pretf_env.py").load_module().run(
         envname="dev", envtype="nonprod", dogs=["bodger", "peanut"]
     )

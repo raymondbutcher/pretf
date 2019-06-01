@@ -185,7 +185,7 @@ def execute(file, args=None, default_args=None, env=None, verbose=True):
                 return exit_code
 
 
-def mirror(*sources, target="."):
+def mirror(*sources, target=".", exclude=frozenset(["__pycache__"])):
     """
     Creates symlinks from all files and directories in the source
     directories into the target directory. Deletes all existing
@@ -208,8 +208,9 @@ def mirror(*sources, target="."):
             log.ok(f"mirror: {source} to {target}")
         source_path = Path(source)
         for source_file_path in source_path.iterdir():
-            target_file_path = target_path / source_file_path.name
-            target_file_path.symlink_to(source_file_path)
+            if source_file_path.name not in exclude:
+                target_file_path = target_path / source_file_path.name
+                target_file_path.symlink_to(source_file_path)
 
 
 tf = API()
