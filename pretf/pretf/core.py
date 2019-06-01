@@ -1,10 +1,10 @@
-import contextlib
 import errno
 import json
 import os
 import shlex
 import sys
 from glob import glob
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from . import log
@@ -31,22 +31,14 @@ class API:
 
     @staticmethod
     def _load_functions(paths):
-        with imports(*paths):
-            for path in paths:
-                for name in sorted(os.listdir(path)):
-                    if name.endswith(".tf.py"):
-                        # Import function using exec() because the "."
-                        # in the file name is not supported by Python.
-                        global_scope = {}
-                        with open(os.path.join(path, name)) as open_file:
-                            try:
-                                exec(open_file.read(), global_scope)
-                            except Exception:
-                                log.bad(f"error: {name}")
-                                raise
-                        func = global_scope["terraform"]
-                        output_name = name[:-2] + "json"
-                        yield (func, output_name)
+        for path in paths:
+            for name in sorted(os.listdir(path)):
+                if name.endswith(".tf.py"):
+                    base_name = name[:-6]
+                    module = SourceFileLoader(base_name, name).load_module()
+                    func = module.terraform
+                    output_name = base_name + ".tf.json"
+                    yield (func, output_name)
 
     @classmethod
     def _render_function(cls, func, kwargs):
@@ -191,23 +183,6 @@ def execute(file, args=None, default_args=None, env=None, verbose=True):
             else:
                 exit_code = exit_status >> 8
                 return exit_code
-
-
-@contextlib.contextmanager
-def imports(*paths):
-    """
-    A context manager for temporarily adding paths to the system path,
-    making it possible to import modules from those paths.
-
-    """
-
-    for path in reversed(paths):
-        sys.path.insert(0, path)
-    try:
-        yield
-    finally:
-        for path in paths:
-            sys.path.remove(path)
 
 
 def mirror(*sources, target="."):
