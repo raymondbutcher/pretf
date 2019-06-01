@@ -11,8 +11,8 @@ from . import log
 
 
 class API:
-    def __call__(self, name, data):
-        return Block(name, data)
+    def __call__(self, path, body=None):
+        return Block(path, body or {})
 
     @staticmethod
     def _get_terraform_blocks(func, kwargs):
@@ -97,22 +97,22 @@ class API:
 
 
 class Block:
-    def __init__(self, name, data):
-        self.__name = name
-        self.__data = data
+    def __init__(self, path, body):
+        self.__path = path
+        self.__body = body
 
     def __iter__(self):
         result = {}
         here = result
-        for part in self.__name.split("."):
+        for part in self.__path.split("."):
             here[part] = {}
             here = here[part]
-        here.update(self.__data)
+        here.update(self.__body)
         return iter(result.items())
 
     def __getattr__(self, attr):
 
-        parts = self.__name.split(".")
+        parts = self.__path.split(".")
 
         if parts[0] == "resource":
             parts.pop(0)
@@ -124,7 +124,7 @@ class Block:
         return "${" + ".".join(parts) + "}"
 
     def __str__(self):
-        return self.__name
+        return self.__path
 
 
 def execute(file, args=None, default_args=None, env=None, verbose=True):
