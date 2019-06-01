@@ -1,7 +1,7 @@
 from pretf.core import execute, mirror, tf
 
 
-def run(**params):
+def run_with_params(**params):
 
     default_params = {"aws_profile": "rbutcher", "aws_region": "eu-west-1"}
     combined_params = dict(default_params, **params)
