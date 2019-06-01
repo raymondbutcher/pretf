@@ -1,4 +1,4 @@
-from importlib.machinery import SourceFileLoader
+from pretf.core import import_file
 
 
 def run():
@@ -7,6 +7,7 @@ def run():
 
     """
 
-    SourceFileLoader("pretf_env", "../pretf_env.py").load_module().run(
-        envname="dev", envtype="nonprod", dogs=["bodger", "peanut"]
-    )
+    with import_file("../pretf_env.py") as pretf_env:
+        pretf_env.run_with_params(
+            envname="dev", envtype="nonprod", dogs=["bodger", "peanut"]
+        )

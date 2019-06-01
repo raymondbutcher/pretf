@@ -3,8 +3,9 @@ import json
 import os
 import shlex
 import sys
+from contextlib import contextmanager
 from glob import glob
-from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 from . import log
@@ -34,11 +35,10 @@ class API:
         for path in paths:
             for name in sorted(os.listdir(path)):
                 if name.endswith(".tf.py"):
-                    base_name = name[:-6]
-                    module = SourceFileLoader(base_name, name).load_module()
-                    func = module.terraform
-                    output_name = base_name + ".tf.json"
-                    yield (func, output_name)
+                    with import_file(name) as module:
+                        func = module.terraform
+                        output_name = name[:-2] + "json"
+                        yield (func, output_name)
 
     @classmethod
     def _render_function(cls, func, kwargs):
@@ -183,6 +183,32 @@ def execute(file, args=None, default_args=None, env=None, verbose=True):
             else:
                 exit_code = exit_status >> 8
                 return exit_code
+
+
+@contextmanager
+def import_file(path):
+    """
+    Imports a Python module from any local filesystem path.
+    Temporarily alters sys.path to allow the imported module
+    to import other modules in the same directory.
+
+    """
+
+    pathdir = os.path.dirname(path)
+    if pathdir in sys.path:
+        added_to_sys_path = False
+    else:
+        sys.path.insert(0, pathdir)
+        added_to_sys_path = True
+    try:
+        name = os.path.basename(path).split(".")[0]
+        spec = spec_from_file_location(name, path)
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        yield module
+    finally:
+        if added_to_sys_path:
+            sys.path.remove(pathdir)
 
 
 def mirror(*sources, target=".", exclude=frozenset(["__pycache__"])):

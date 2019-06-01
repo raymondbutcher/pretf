@@ -1,7 +1,7 @@
+import os
 import sys
-from importlib.machinery import SourceFileLoader
 
-from .core import execute, tf
+from .core import execute, import_file, tf
 from .version import __version__
 
 
@@ -20,12 +20,11 @@ def main():
         return
 
     # Call the custom or default run function.
-    try:
-        pretf = SourceFileLoader("pretf", "pretf.py").load_module()
-    except FileNotFoundError:
-        exit_code = run()
+    if os.path.exists("pretf.py"):
+        with import_file("pretf.py") as pretf:
+            exit_code = pretf.run()
     else:
-        exit_code = pretf.run()
+        exit_code = run()
 
     sys.exit(exit_code)
 
