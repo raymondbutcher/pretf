@@ -19,8 +19,7 @@ setup(
     author_email="ray.butcher@claranet.uk",
     license="MIT License",
     packages=find_namespace_packages("pretf.*"),
-    #modules=["pretf.cli", "pretf.core", "pretf.log"],
-    #packages=["pretf.core"],
     entry_points={"console_scripts": ("pretf=pretf.cli:main",)},
     install_requires=["colorama"],
+    zip_safe=False,
 )

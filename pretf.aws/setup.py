@@ -19,4 +19,5 @@ setup(
     license="MIT License",
     packages=find_namespace_packages("pretf.*"),
     install_requires=["boto3", "pretf"],
+    zip_safe=False,
 )
