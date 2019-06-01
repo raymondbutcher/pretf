@@ -1,11 +1,9 @@
-# Define resources
-
 The primary feature of Pretf is to read `*.tf.py` files and create matching `*.tf.json` files. These JSON files are supported by Terraform as an alternative to the more commonly used `*.tf` files.
 
-Start by creating a file named `random.tf.py` in your Terraform project directory:
+Start by creating a file named `animals.tf.py` in your Terraform project directory:
 
 ```python
-# random.tf.py
+# animals.tf.py
 
 from pretf.core import tf
 
@@ -27,13 +25,13 @@ def terraform():
     })
 ```
 
-Note that the function must be named `terraform` for Pretf to find it.
+The function must be named `terraform` for Pretf to find it.
 
 Now run `pretf validate`, which will generate a JSON file and run `terraform validate`:
 
 ```shell
 $ pretf validate
-[pretf] create: random.tf.json
+[pretf] create: animals.tf.json
 [pretf] run: terraform validate
 Success! The configuration is valid.
 ```
@@ -54,9 +52,11 @@ With Terraform successfully validating your generated JSON file, you can now run
 
 If you are not familiar with the `yield` keyword in the above code, then read about [Python Generators](https://www.python.org/dev/peps/pep-0255/) introduced in Python 2.2. Normally we might create a list, append elements to that list, and then return the list at the end of the function. Instead, we can just `yield` each element as we go.
 
-## Translating HCL to Python
+## Translate HCL to Python
 
-HCL resource:
+Translating HCL code into Python `tf` objects is very simple. The signature for creating them is `tf(path, body)`. The values for `path` and `body` look very similar to the original HCL, only requiring slight adjustments to be valid Python syntax and match the `tf()` signature.
+
+The following HCL resource:
 
 ```terraform
 resource "random_integer" "dog" {
@@ -65,30 +65,13 @@ resource "random_integer" "dog" {
 }
 ```
 
-Python resource:
-
-```python
-tf("resource.random_integer.dog", {
-    "min": 1,
-    "max": 10,
-})
-```
-
-The signature for the `tf` object is `tf(name: str, data: dict)`.
-
-HCL name:
+Can be broken up into the HCL path:
 
 ```terraform
 resource "random_integer" "dogs"
 ```
 
-Python name:
-
-```python
-"resource.random_integer.dogs"
-```
-
-HCL data:
+And the HCL body:
 
 ```terraform
 {
@@ -97,11 +80,45 @@ HCL data:
 }
 ```
 
-Python data:
+Simply take each part of the HCL path and combine it into a single dot-separated Python string.
 
+HCL path:
+
+```terraform
+resource "random_integer" "dogs"
 ```
+
+Python path:
+
+```python
+"resource.random_integer.dogs"
+```
+
+And translate the HCL body directly into a Python dictionary.
+
+HCL body:
+
+```terraform
+{
+  min = 1
+  max = 10
+}
+```
+
+Python body:
+
+```python
 {
   "min": 1,
   "max": 10,
 }
+```
+
+Now pass the translated values into `tf()`.
+
+```python
+tf("resource.random_integer.dog", {
+    "min": 1,
+    "max": 10,
+})
 ```

@@ -1,5 +1,3 @@
-# AWS projects
-
 This page will explain:
 
 * pip install pretf.aws

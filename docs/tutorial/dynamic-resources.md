@@ -1,48 +1,25 @@
-# Dynamic resources
-
-In the previous page, `random.tf.py` defined 3 resources:
+There is too much duplication on the previous page, and what if we want to add more animals? Let's use a 'for loop':
 
 ```python
-# random.tf.py
-
-from pretf.core import tf
-
-
-def terraform():
-    yield tf("resource.random_integer.dog", {
-        "min": 1,
-        "max": 10,
-    })
-
-    yield tf("resource.random_integer.cat", {
-        "min": 1,
-        "max": 10,
-    })
-
-    yield tf("resource.random_integer.buffalo", {
-        "min": 1,
-        "max": 10,
-    })
-```
-
-There is a lot of duplication here, and what if we want to add more animals? Let's use a for-loop:
-
-```python
-# random.tf.py
+# animals.tf.py
 
 from pretf.core import tf
 
 
 def terraform():
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]
-    for name in animals:
-        yield tf(f"resource.random_integer.{name}", {
+    for name in animals:  # loop over list
+        yield tf(f"resource.random_integer.{name}", {  # dynamic resource name
             "min": 1,
             "max": 10,
         })
 ```
 
 Now run `pretf validate` and the resulting JSON file will contain those 5 resources.
+
+## The 'for' statement
+
+Unlike Terraform, Python (and by extension Pretf) supports 'for loops'. Normally, we might write the same Terraform code multiple times, with slight differences in the resource name and/or arguments. With Pretf, we can use a 'for loop'.
 
 ## The 'f-string' literal
 
