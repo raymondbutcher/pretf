@@ -1,17 +1,14 @@
-# Start by ignoring everything in the custom test directories,
-# because pretf generates transient files in there.
-tests/custom/*/*
-
-# Then keep the custom test src directory and pretf.py
-# files from the environment directories.
-!tests/custom/src/*
-!tests/custom/*/pretf.py
+# Ignore everything in the env directories except for pretf.py
+# because Pretf and Terraform create symlinks, *.tf.json files,
+# backend state files, etc.
+tests/custom/env/*/*
+!tests/custom/env/*/pretf.py
 
 # Also keep the generated *.tf.json files (except for the ones with AWS
 # credentials) for testing purposes and to demonstrate what gets generated.
 # Normally it would make sense to ignore them.
-!tests/custom/*/*.tf.json
-tests/**/aws.tf.json
+!tests/custom/env/*/*.tf.json
+aws.tf.json
 
 # Ignore other files.
 __pycache__/
