@@ -11,12 +11,12 @@ except ImportError:
     from boto3 import Session
 
 
-def _create_s3_backend(session, bucket, table, region):
+def _create_s3_backend(session, bucket, table, region_name):
 
     # Prompt before creating anything.
     account_id = get_account_id(session)
-    bucket_arn = _get_s3_bucket_arn(region, account_id, bucket)
-    table_arn = _get_dynamodb_table_arn(region, account_id, table)
+    bucket_arn = _get_s3_bucket_arn(region_name, account_id, bucket)
+    table_arn = _get_dynamodb_table_arn(region_name, account_id, table)
     log.ok(f"backend: {bucket_arn}")
     log.ok(f"backend: {table_arn}")
     if not log.accept(f"backend: create backend resources"):
@@ -28,7 +28,7 @@ def _create_s3_backend(session, bucket, table, region):
         stack_name = bucket
     else:
         stack_name = f"{bucket}-{table}"
-    stack_arn = _get_cloudformation_stack_arn(region, account_id, stack_name)
+    stack_arn = _get_cloudformation_stack_arn(region_name, account_id, stack_name)
     log.ok(f"backend: creating {stack_arn}")
 
     # Create the stack.
@@ -81,19 +81,19 @@ def _create_s3_backend(session, bucket, table, region):
                 log.bad(f"backend: {stack['StackStatusReason']}")
 
 
-def _get_cloudformation_stack_arn(region, account_id, stack_name):
-    return f"arn:aws:cloudformation:{region}:{account_id}:stack/{stack_name}"
+def _get_cloudformation_stack_arn(region_name, account_id, stack_name):
+    return f"arn:aws:cloudformation:{region_name}:{account_id}:stack/{stack_name}"
 
 
-def _get_dynamodb_table_arn(region, account_id, table):
-    return f"arn:aws:dynamodb:{region}:{account_id}:{table}"
+def _get_dynamodb_table_arn(region_name, account_id, table):
+    return f"arn:aws:dynamodb:{region_name}:{account_id}:{table}"
 
 
-def _get_s3_bucket_arn(region, account_id, bucket):
-    return f"arn:aws:s3:{region}:{account_id}:{bucket}"
+def _get_s3_bucket_arn(region_name, account_id, bucket):
+    return f"arn:aws:s3:{region_name}:{account_id}:{bucket}"
 
 
-def _get_s3_backend_status(session, region, bucket, table):
+def _get_s3_backend_status(session, region_name, bucket, table):
 
     s3_client = session.client("s3")
 
@@ -106,7 +106,7 @@ def _get_s3_backend_status(session, region, bucket, table):
         bucket_exists = True
         bucket_versioning_enabled = response["Status"] == "Enabled"
 
-    dynamodb_client = session.client("dynamodb", region_name=region)
+    dynamodb_client = session.client("dynamodb", region_name=region_name)
 
     try:
         dynamodb_client.describe_table(TableName=table)
@@ -120,6 +120,33 @@ def _get_s3_backend_status(session, region, bucket, table):
         "bucket_versioning_enabled": bucket_versioning_enabled,
         "table_exists": table_exists,
     }
+
+
+def export_environment_variables(session=None, **kwargs):
+    """
+    Exports AWS credentials as environment variables.
+
+    """
+
+    if session is None:
+        session = get_session(**kwargs)
+
+    creds = session.get_credentials().get_frozen_credentials()
+
+    if creds.access_key:
+        os.environ["AWS_ACCESS_KEY_ID"] = creds.access_key
+
+    if creds.secret_key:
+        os.environ["AWS_SECRET_ACCESS_KEY"] = creds.secret_key
+
+    if creds.token:
+        os.environ["AWS_SECURITY_TOKEN"] = creds.token
+        os.environ["AWS_SESSION_TOKEN"] = creds.token
+
+    region_name = kwargs.get('region_name') or session.region_name
+    if region_name:
+        os.environ["AWS_REGION"] = region_name
+        os.environ["AWS_DEFAULT_REGION"] = region_name
 
 
 @lru_cache()
@@ -142,7 +169,7 @@ def get_session(**kwargs):
     return Session(**kwargs)
 
 
-def s3_backend(session, bucket, key, table, region=None):
+def terraform_s3_backend(session, bucket, key, table, region=None):
     """
     This ensures that the S3 backend exists, prompting to create it
     if necessary, sets the credentials as environment variables,
@@ -156,7 +183,7 @@ def s3_backend(session, bucket, key, table, region=None):
     # Check if the backend resources have been created.
 
     status = _get_s3_backend_status(
-        session=session, region=region, bucket=bucket, table=table
+        session=session, region_name=region, bucket=bucket, table=table
     )
 
     if not all(status.values()):
@@ -186,26 +213,14 @@ def s3_backend(session, bucket, key, table, region=None):
 
             raise SystemExit(1)
 
-        _create_s3_backend(session=session, bucket=bucket, table=table, region=region)
+        _create_s3_backend(session=session, bucket=bucket, table=table, region_name=region)
 
     # Use environment variables for credentials, rather than adding
     # them to the backend configuration, because Terraform gets
-    # confused when backend configuration changes.
+    # confused when backend configuration changes, which happens
+    # with certain AWS credential types such as assuming roles.
 
-    os.environ["AWS_REGION"] = region
-    os.environ["AWS_DEFAULT_REGION"] = region
-
-    creds = session.get_credentials().get_frozen_credentials()
-
-    if creds.access_key:
-        os.environ["AWS_ACCESS_KEY_ID"] = creds.access_key
-
-    if creds.secret_key:
-        os.environ["AWS_SECRET_ACCESS_KEY"] = creds.secret_key
-
-    if creds.token:
-        os.environ["AWS_SECURITY_TOKEN"] = creds.token
-        os.environ["AWS_SESSION_TOKEN"] = creds.token
+    export_environment_variables(session=session, region_name=region)
 
     # Return the configuration to use the backend.
 
