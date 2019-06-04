@@ -8,7 +8,7 @@ Terraform is good at managing resources, and the configuration language HCL is s
 
 ## Documentation
 
-The documentation for Pretf is located at: [https://pretf.readthedocs.io/en/latest/](https://pretf.readthedocs.io/en/latest/)
+The documentation for Pretf is located at: [https://pretf.readthedocs.io/](https://pretf.readthedocs.io/)
 
 ## Features and goals
 
