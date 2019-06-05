@@ -31,62 +31,63 @@ Code:
 ```python
 # env/dev/pretf.py
 
-from pretf.core import execute, mirror, tf
+from pretf.run import create, execute, mirror, remove
 
 
 def run():
+    # Delete *.tf.json files.
+    remove()
+
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
 
     # Create *.tf.json files from *.tf.py symlinks that were just created,
     # passing parameters into the terraform() functions.
-    created = tf.create(
+    create(
         animals=["dog", "cat", "buffalo", "rabbit", "badger"],
         users=["ray", "violet"],
     )
 
-    # Remove all *.tf.json files except for the ones created just now.
-    # This assumes that there are no manually created *.tf.json files.
-    tf.remove(exclude=created)
-
     # Execute Terraform.
-    return execute("terraform")
+    return execute()
 ```
 
 ```python
 # env/stage/pretf.py
 
-from pretf.core import execute, mirror, tf
+from pretf.run import create, execute, mirror, remove
 
 
 def run():
+    # Delete *.tf.json files.
+    remove()
+
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
 
     # Create *.tf.json files from *.tf.py symlinks that were just created,
     # passing parameters into the terraform() functions.
-    created = tf.create(
+    create(
         animals=["dog", "cat", "buffalo"],
         users=["ray", "violet"],
     )
 
-    # Remove all *.tf.json files except for the ones created just now.
-    # This assumes that there are no manually created *.tf.json files.
-    tf.remove(exclude=created)
-
     # Execute Terraform.
-    return execute("terraform")
+    return execute()
 ```
 
 ```python
 # env/prod/pretf.py
 
-from pretf.core import execute, mirror, tf
+from pretf.run import create, execute, mirror, remove
 
 
 def run():
+    # Delete *.tf.json files.
+    remove()
+
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
@@ -98,12 +99,8 @@ def run():
         users=["ray"],
     )
 
-    # Remove all *.tf.json files except for the ones created just now.
-    # This assumes that there are no manually created *.tf.json files.
-    tf.remove(exclude=created)
-
     # Execute Terraform.
-    return execute("terraform")
+    return execute()
 ```
 
 ```ini
@@ -127,30 +124,29 @@ The above example contains three `pretf.py` files with the same code. One way to
 ```python
 # env/pretf_env.py
 
-from pretf.core import execute, mirror, tf
+from pretf.run import create, execute, mirror, remove
 
 
 def run_with_params(**params):
+    # Delete *.tf.json files.
+    remove()
+
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
 
     # Create *.tf.json files from *.tf.py symlinks that were just created,
     # passing parameters into the terraform() functions.
-    created = tf.create(**params)
-
-    # Remove all *.tf.json files except for the ones created just now.
-    # This assumes that there are no manually created *.tf.json files.
-    tf.remove(exclude=created)
+    create(**params)
 
     # Execute Terraform.
-    return execute("terraform")
+    return execute()
 ```
 
 ```python
 # env/dev/pretf.py
 
-from pretf.core import import_file
+from pretf.util import import_file
 
 
 def run():
@@ -169,7 +165,7 @@ def run():
 ```python
 # env/stage/pretf.py
 
-from pretf.core import import_file
+from pretf.util import import_file
 
 
 def run():
@@ -188,7 +184,7 @@ def run():
 ```python
 # env/prod/pretf.py
 
-from pretf.core import import_file
+from pretf.util import import_file
 
 
 def run():

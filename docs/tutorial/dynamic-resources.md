@@ -3,7 +3,7 @@ There is too much duplication on the previous page, and what if we want to add m
 ```python
 # animals.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform():
@@ -32,8 +32,8 @@ Terraform supports creating resources from a list like this:
 ```terraform
 resource "random_integer" "animals" {
   count = length(var.animals)
-  min = 1
-  max = 10
+  min   = 1
+  max   = 10
 }
 ```
 

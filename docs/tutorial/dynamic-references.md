@@ -3,7 +3,7 @@ The previous page has 5 dynamic resources but nothing is done with them. To acce
 ```python
 # animals.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform():
@@ -28,7 +28,7 @@ The above code contains the pattern `result = yield tf(name, data)`.
 
 Pretf sends yielded values back to generators. This allows functions assign `tf()` objects to a variable and yield them in the same line.
 
-## Reference without 'tf()' object
+## Reference without yielding
 
 If something is defined in another file, but you still want to reference it, then create a `tf()` object with no body. Do not `yield` it, because that would include it in the `*.tf.json` output.
 

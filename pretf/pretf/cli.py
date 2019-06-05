@@ -1,7 +1,8 @@
 import os
 import sys
 
-from .core import execute, import_file, tf
+from .run import create, execute, remove
+from .util import import_file
 from .version import __version__
 
 
@@ -16,7 +17,7 @@ def main():
     cmd = args[0] if args else None
     if cmd in ("version", "-v", "-version", "--version"):
         print(f"Pretf v{__version__}")
-        execute("terraform", verbose=False)
+        execute(verbose=False)
         return
 
     # Call the custom or default run function.
@@ -34,11 +35,13 @@ def run():
     This is the default run function to use if one hasn't been
     defined in a pretf.py file in the current directory.
 
-    The default behaviour is to create *.tf.json files
-    from any *.tf.py files in the current directory,
-    and then execute Terraform.
-
     """
 
-    tf.create()
-    return execute("terraform")
+    # Delete *.tf.json files.
+    remove()
+
+    # Create *.tf.json files from *.tf.py files.
+    create()
+
+    # Execute Terraform.
+    return execute()

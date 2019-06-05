@@ -1,5 +1,5 @@
+from pretf.api import tf
 from pretf.aws import get_session, terraform_s3_backend
-from pretf.core import tf
 
 
 def terraform(aws_profile, aws_region, envtype, **kwargs):
