@@ -125,7 +125,7 @@ And then Terraform would manage those resources.
 
 Configuration is completely optional. By default, Pretf will create `*.tf.json` files from any `*.tf.py` files found in the current directory and then execute Terraform.
 
-If you want something else to happen when Pretf runs, simply create a `pretf.py` file and write your own `run()` function. This could include:
+If you want something else to happen when Pretf runs, simply create a `pretf.py` file with your own `run()` function. This could include:
 
 * Passing parameters into your Python functions.
 * Using files from outside of the current directory.
