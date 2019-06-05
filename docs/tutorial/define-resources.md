@@ -5,7 +5,7 @@ Start by creating a file named `animals.tf.py` in your Terraform project directo
 ```python
 # animals.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform():

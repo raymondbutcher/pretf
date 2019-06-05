@@ -1,4 +1,4 @@
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform(dogs, envname, **kwargs):

@@ -8,7 +8,7 @@ Pretf is not a replacement for Terraform. It is used to generate Terraform confi
 
 On the surface, Terragrunt appears to:
 
-1. Add extra functions to Terraform (with interpolation syntax, in a place where Terraform will ignore it)
+1. Add extra functions to Terraform (with interpolation syntax, in a place where Terraform will ignore it).
 2. Work with some Terragrunt-specific conventions or patterns to provide extra features on top of Terraform.
 
 Pretf avoids working within the confines of `*.tf` files or supplied functions, instead letting you write Python code, and write your own functions. This is much more flexible, as long as you are familiar with Python.

@@ -3,7 +3,8 @@ import os
 from functools import lru_cache
 from time import sleep
 
-from pretf.core import log, tf
+from pretf import log
+from pretf.api import tf
 
 try:
     from boto_source_profile_mfa import get_session as Session
@@ -143,7 +144,7 @@ def export_environment_variables(session=None, **kwargs):
         os.environ["AWS_SECURITY_TOKEN"] = creds.token
         os.environ["AWS_SESSION_TOKEN"] = creds.token
 
-    region_name = kwargs.get('region_name') or session.region_name
+    region_name = kwargs.get("region_name") or session.region_name
     if region_name:
         os.environ["AWS_REGION"] = region_name
         os.environ["AWS_DEFAULT_REGION"] = region_name
@@ -213,7 +214,9 @@ def terraform_s3_backend(session, bucket, key, table, region=None):
 
             raise SystemExit(1)
 
-        _create_s3_backend(session=session, bucket=bucket, table=table, region_name=region)
+        _create_s3_backend(
+            session=session, bucket=bucket, table=table, region_name=region
+        )
 
     # Use environment variables for credentials, rather than adding
     # them to the backend configuration, because Terraform gets

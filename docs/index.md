@@ -27,13 +27,14 @@ pip install pretf.aws
 
 Here is what happens when you run `pretf`:
 
-1. It finds `*.tf.py` files in the current directory and creates `*.tf.json` files.
+1. It deletes `*.tf.json` files from the current directory.
+1. It finds `*.tf.py` files in the current directory and creates matching `*.tf.json` files.
 1. It executes `terraform`, passing along any provided command line arguments.
 
 For example, with `iam.tf.py`:
 
 ```python
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform():
@@ -123,9 +124,9 @@ And then Terraform would manage those resources.
 
 ## Configuration
 
-Configuration is completely optional. By default, Pretf will create `*.tf.json` files from any `*.tf.py` files found in the current directory and then execute Terraform.
+Configuration is completely optional. By default, Pretf will delete `*.tf.json` files, create `*.tf.json` files from `*.tf.py` files, and then execute Terraform.
 
-If you want something else to happen when Pretf runs, simply create a `pretf.py` file with your own `run()` function. This could include:
+To make something else to happen when Pretf runs, simply create a `pretf.py` file with your own `run()` function. This could include:
 
 * Passing parameters into your Python functions.
 * Using files from outside of the current directory.

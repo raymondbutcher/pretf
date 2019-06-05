@@ -5,25 +5,24 @@ Let's start by showing `pretf.py` and `animals.tf.py` from the previous pages, p
 ```python
 # pretf.py
 
-from pretf.core import execute, tf
+from pretf.run import create, execute, remove
 
 
 def run():
-    # Create *.tf.json files from *.tf.py files.
-    created = tf.create()
+    # Delete *.tf.json files.
+    remove()
 
-    # Remove all *.tf.json files except for the ones created just now.
-    # This assumes that there are no manually created *.tf.json files.
-    tf.remove(exclude=created)
+    # Create *.tf.json files from *.tf.py files.
+    create()
 
     # Execute Terraform.
-    return execute("terraform")
+    return execute()
 ```
 
 ```python
 # animals.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform():
@@ -41,7 +40,7 @@ def terraform():
 ```python
 # users.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform():
@@ -57,29 +56,28 @@ Let's pass parameters in from `pretf.py`. To use parameters, pass them into the 
 ```python
 # pretf.py
 
-from pretf.core import execute, tf
+from pretf.run import create, execute, remove
 
 
 def run():
+    # Delete *.tf.json files.
+    remove()
+
     # Create *.tf.json files from *.tf.py files,
     # passing parameters into the terraform() functions.
-    created = tf.create(
+    create(
         animals=["dog", "cat", "buffalo", "rabbit", "badger"],
         users=["ray", "violet"],
     )
 
-    # Remove all *.tf.json files except for the ones created just now.
-    # This assumes that there are no manually created *.tf.json files.
-    tf.remove(exclude=created)
-
     # Execute Terraform.
-    return execute("terraform")
+    return execute()
 ```
 
 ```python
 # animals.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform(animals, users):  # parameters from pretf.py
@@ -96,7 +94,7 @@ def terraform(animals, users):  # parameters from pretf.py
 ```python
 # users.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform(animals, users):  # parameters from pretf.py
@@ -115,7 +113,7 @@ This pattern becomes much more useful as the number of unused parameters increas
 ```python
 # animals.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform(animals, **kwargs):
@@ -132,7 +130,7 @@ def terraform(animals, **kwargs):
 ```python
 # users.tf.py
 
-from pretf.core import tf
+from pretf.api import tf
 
 
 def terraform(users, **kwargs):

@@ -1,22 +1,19 @@
+from pretf.api import tf
 from pretf.aws import get_frozen_credentials
-from pretf.core import tf
 
 
 def terraform(aws_profile, aws_region, **kwargs):
     """
-    This function would normally be a generator,
-    but it can also be a regular function that returns a list.
-
-    This also demonstrates returning a standard dictionary
-    instead of using the tf object.
-
-    This also shows how to use pretf_aws to get AWS credentials
+    This shows how to use pretf_aws to get AWS credentials
     and use them in multiple providers. This allows for a single
     Terraform stack to manage resources in multiple accounts.
     However, in this test I am using the same account twice.
 
     The result of this file (aws.tf.json) is in .gitignore
     to avoid publishing AWS credentials.
+
+    This also demonstrates returning a standard dictionary
+    instead of using the tf object.
 
     """
 
@@ -26,7 +23,7 @@ def terraform(aws_profile, aws_region, **kwargs):
 
     creds = get_frozen_credentials(profile_name=aws_profile)
 
-    tf_block = tf(
+    yield tf(
         "provider.aws",
         {
             "region": aws_region,
@@ -36,7 +33,7 @@ def terraform(aws_profile, aws_region, **kwargs):
         },
     )
 
-    dict_block = {
+    yield {
         "provider": {
             "aws": {
                 "alias": "london",
@@ -47,5 +44,3 @@ def terraform(aws_profile, aws_region, **kwargs):
             }
         }
     }
-
-    return [tf_block, dict_block]
