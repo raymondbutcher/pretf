@@ -1,11 +1,11 @@
-SOURCES = pretf/pretf pretf.aws/pretf tests
+SOURCES = pretf/pretf pretf.aws/pretf examples
 
 .PHONY: all
 all:
 	isort --recursive $(SOURCES)
 	black $(SOURCES)
 	flake8 --ignore E501 $(SOURCES)
-	cd tests; terraform fmt -recursive
+	cd examples; terraform fmt -recursive
 
 clean:
 	cd pretf; make clean
