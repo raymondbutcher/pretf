@@ -8,7 +8,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from . import log
 
 
-def execute(file, args, env=None, verbose=True):
+def execute(file, args, env=os.environ, verbose=True):
     """
     Executes a command and waits for it to finish.
 
@@ -26,9 +26,6 @@ def execute(file, args, env=None, verbose=True):
 
     if verbose:
         log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
-
-    if env is None:
-        env = os.environ
 
     child_pid = os.fork()
     if child_pid == 0:

@@ -25,8 +25,6 @@ def run():
 
 Executes Terraform and waits for it to finish. Command line arguments are passed through to Terraform. Returns the exit code from Terraform.
 
-Consider using `pretf.run.execute` to execute Terraform. This is a lower level function.
-
 Signature:
 
 ```python
