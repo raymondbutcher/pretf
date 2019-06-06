@@ -1,0 +1,5 @@
+# Ignore everything in the env directories except for pretf.py
+# because Pretf and Terraform create symlinks, *.tf.json files,
+# backend state files, etc.
+env/*/*
+!env/*/pretf.py
