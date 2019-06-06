@@ -101,6 +101,6 @@ From the [Terraform documentation](https://www.terraform.io/docs/configuration/v
     </ul>
 </blockquote>
 
-Pretf uses the same rules when resolving variable values, with one exception. If a project has `*.tfvars.py` files to generate `*.tfvars.json` files then those files will have the lowest precedence, i.e. all other sources will be checked first.
+Pretf uses the same rules when resolving variable values.
 
-As a result, it is possible for Pretf and Terraform to have different variable values in cases where values are being set in multiple places. Because of this, it is recommended to set variable values in only one place.
+If a project has `*.tfvars.py` files to generate `*.tfvars.json` files that would change the value of a variable (i.e. one of the above sources has already set the variable to a different value) then Pretf will exit with an descriptive error message. This ensures that Python and Terraform run with consistent variable values.
