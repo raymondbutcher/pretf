@@ -1,7 +1,5 @@
 import json
-import os
 import sys
-from glob import glob
 from pathlib import Path
 
 from . import log, util
@@ -23,7 +21,7 @@ def create():
     for file_path, contents in sorted(file_contents.items()):
         if contents:
 
-            output_path = file_path.with_suffix('.json')
+            output_path = file_path.with_suffix(".json")
 
             # Merge list of blocks into single block
             # in tfvars.json files.
