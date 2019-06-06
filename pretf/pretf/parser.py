@@ -50,11 +50,11 @@ def parse_tf_file(path: Path) -> list:
             elif in_comment:
                 if line.startswith("*/"):
                     in_comment = False
-                elif line.startswith("#"):
-                    continue
-                else:
-                    log.bad(f"error parsing {path}")
-                    raise
+            elif line.startswith("#"):
+                continue
+            else:
+                log.bad(f"error parsing {path}")
+                raise
 
     return parsed
 
