@@ -1,19 +1,5 @@
-# Ignore everything in the env directories except for pretf.py
-# because Pretf and Terraform create symlinks, *.tf.json files,
-# backend state files, etc.
-tests/custom/env/*/*
-!tests/custom/env/*/pretf.py
-
-# Also keep the generated *.tf.json files (except for the ones with AWS
-# credentials) for testing purposes and to demonstrate what gets generated.
-# Normally it would make sense to ignore them.
-!tests/custom/env/*/*.tf.json
-aws.tf.json
-
-# Ignore other files.
 __pycache__/
 .direnv/
-.terraform/
 .vscode/
 *.egg-info/
 build/
