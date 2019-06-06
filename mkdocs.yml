@@ -9,8 +9,8 @@ nav:
   - Define resources: tutorial/define-resources.md
   - Dynamic resources: tutorial/dynamic-resources.md
   - Dynamic references: tutorial/dynamic-references.md
+  - Terraform variables: tutorial/terraform-variables.md
   - Custom workflows: tutorial/custom-workflows.md
-  - Parameters: tutorial/parameters.md
   - Project structure: tutorial/project-structure.md
   - AWS projects: tutorial/aws-projects.md
 - API:

@@ -1,9 +1,9 @@
 from pretf.api import tf
 
 
-def terraform(dogs, envname, **kwargs):
+def terraform(var):
 
-    name = f"pretf-test-{envname}"
+    name = f"pretf-test-{var.envname}"
 
     bucket = yield tf(
         "resource.aws_s3_bucket.test",
@@ -21,7 +21,7 @@ def terraform(dogs, envname, **kwargs):
     )
 
     # Loop through all dogs specified in this environment.
-    for name in dogs:
+    for name in var.dogs:
 
         # Use a module to determine the number of barks by this dog.
         barks = yield tf(f"module.{name}_barks", {"source": "./barks"})

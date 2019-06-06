@@ -2,16 +2,16 @@ from pretf.api import tf
 from pretf.aws import get_session, terraform_s3_backend
 
 
-def terraform(aws_profile, aws_region, envtype, **kwargs):
+def terraform(var):
 
-    session = get_session(profile_name=aws_profile)
+    session = get_session(profile_name=var.aws_profile)
 
-    backend_name = f"pretf-tfstate-{envtype}"
+    backend_name = f"pretf-tfstate-{var.envtype}"
 
     yield terraform_s3_backend(
         bucket=backend_name,
         key="custom-dev.tfstate",
-        region=aws_region,
+        region=var.aws_region,
         session=session,
         table=backend_name,
     )

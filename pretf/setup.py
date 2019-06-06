@@ -20,6 +20,6 @@ setup(
     license="MIT License",
     packages=find_namespace_packages("pretf.*"),
     entry_points={"console_scripts": ("pretf=pretf.cli:main",)},
-    install_requires=["colorama"],
+    install_requires=["colorama", "pyhcl"],
     zip_safe=False,
 )

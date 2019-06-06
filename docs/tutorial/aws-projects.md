@@ -26,14 +26,14 @@ from pretf.api import tf
 from pretf.aws import get_session, terraform_s3_backend
 
 
-def terraform(aws_profile, aws_region, envtype, **kwargs):
+def terraform(var):
 
     # This gets a Boto3 session using an AWS profile for credentials,
     # but any Boto3 credentials method will work. If the profile
     # requires an MFA token, you will be prompted. This is something
     # that Terraform by itself does not do.
     # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
-    session = get_session(profile_name=aws_profile)
+    session = get_session(profile_name=var.aws_profile)
 
     # This will check for the existence of the specified S3 bucket
     # and DynamoDB table. If they do not exist, you will be prompted
@@ -42,11 +42,11 @@ def terraform(aws_profile, aws_region, envtype, **kwargs):
     # configuration block for the S3 backend is returned. It is then
     # yielded to be included in the generated JSON file.
     yield terraform_s3_backend(
-        bucket=f"pretf-tfstate-{envtype}",
+        bucket=f"pretf-tfstate-{var.envtype}",
         key="custom-dev.tfstate",
-        region=aws_region,
+        region=var.aws_region,
         session=session,
-        table=f"pretf-tfstate-{envtype}",
+        table=f"pretf-tfstate-{var.envtype}",
     )
 
     # It is also a good idea to pin the Terraform version in this file.
@@ -66,23 +66,23 @@ from pretf.api import tf
 from pretf.aws import get_frozen_credentials
 
 
-def terraform(aws_profile_nonprod, aws_profile_prod, aws_region, **kwargs):
+def terraform(var):
 
-    nonprod_creds = get_frozen_credentials(profile_name=aws_profile_nonprod)
+    nonprod_creds = get_frozen_credentials(profile_name=var.aws_profile_nonprod)
 
     yield = tf("provider.aws", {
         "alias": "nonprod",
-        "region": aws_region,
+        "region": var.aws_region,
         "access_key": nonprod_creds.access_key,
         "secret_key": nonprod_creds.secret_key,
         "token": nonprod_creds.token,
     })
 
-    prod_creds = get_frozen_credentials(profile_name=aws_profile_prod)
+    prod_creds = get_frozen_credentials(profile_name=var.aws_profile_prod)
 
     yield = tf("provider.aws", {
         "alias": "prod",
-        "region": aws_region,
+        "region": var.aws_region,
         "access_key": prod_creds.access_key,
         "secret_key": prod_creds.secret_key,
         "token": prod_creds.token,

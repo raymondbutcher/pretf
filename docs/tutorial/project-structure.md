@@ -17,10 +17,13 @@ terraform/
   env/
     dev/
       pretf.py
+      terraform.tfvars
     stage/
       pretf.py
+      terraform.tfvars
     prod/
       pretf.py
+      terraform.tfvars
   src/
     *.tf
     *.tf.py
@@ -35,19 +38,16 @@ from pretf.run import create, execute, mirror, remove
 
 
 def run():
-    # Delete *.tf.json files.
+    # Delete *.tf.json and *.tfvars.json files.
     remove()
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
 
-    # Create *.tf.json files from *.tf.py symlinks that were just created,
-    # passing parameters into the terraform() functions.
-    create(
-        animals=["dog", "cat", "buffalo", "rabbit", "badger"],
-        users=["ray", "violet"],
-    )
+    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
+    # symlinks that were just created.
+    create()
 
     # Execute Terraform.
     return execute()
@@ -60,19 +60,16 @@ from pretf.run import create, execute, mirror, remove
 
 
 def run():
-    # Delete *.tf.json files.
+    # Delete *.tf.json and *.tfvars.json files.
     remove()
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
 
-    # Create *.tf.json files from *.tf.py symlinks that were just created,
-    # passing parameters into the terraform() functions.
-    create(
-        animals=["dog", "cat", "buffalo"],
-        users=["ray", "violet"],
-    )
+    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
+    # symlinks that were just created.
+    create()
 
     # Execute Terraform.
     return execute()
@@ -85,19 +82,16 @@ from pretf.run import create, execute, mirror, remove
 
 
 def run():
-    # Delete *.tf.json files.
+    # Delete *.tf.json and *.tfvars.json files.
     remove()
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
 
-    # Create *.tf.json files from *.tf.py symlinks that were just created,
-    # passing parameters into the terraform() functions.
-    created = tf.create(
-        animals=["dog", "cat"],
-        users=["ray"],
-    )
+    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
+    # symlinks that were just created.
+    create()
 
     # Execute Terraform.
     return execute()
@@ -107,10 +101,11 @@ def run():
 # .gitignore
 
 # Ignore everything in the env directories except for pretf.py
-# because Pretf and Terraform create symlinks, *.tf.json files,
-# backend state files, etc.
+# and terraform.tfvars because Pretf and Terraform create symlinks,
+# *.tf.json files, backend state files, etc.
 terraform/env/*/*
 !terraform/env/*/pretf.py
+!terraform/env/*/terraform.tfvars
 ```
 
 ## The 'mirror' function
@@ -119,7 +114,7 @@ The above code uses the `mirror()` function which creates symlinks in the curren
 
 ## Reuse logic
 
-The above example contains three `pretf.py` files with the same code. One way to avoid this duplicated logic is to move it into a separate `pretf_env.py` file, import it from each `pretf.py` file, and pass in any relevant parameters. For example:
+The above example contains three `pretf.py` files with the same code. One way to avoid this duplicated logic is to move it into a separate `pretf_env.py` file and use it from each `pretf.py` file in the environment directories. For example:
 
 ```python
 # env/pretf_env.py
@@ -127,17 +122,17 @@ The above example contains three `pretf.py` files with the same code. One way to
 from pretf.run import create, execute, mirror, remove
 
 
-def run_with_params(**params):
-    # Delete *.tf.json files.
+def run():
+    # Delete *.tf.json and *.tfvars.json files.
     remove()
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
     mirror("../../src")
 
-    # Create *.tf.json files from *.tf.py symlinks that were just created,
-    # passing parameters into the terraform() functions.
-    create(**params)
+    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
+    # symlinks that were just created.
+    create()
 
     # Execute Terraform.
     return execute()
@@ -151,15 +146,12 @@ from pretf.util import import_file
 
 def run():
     """
-    Calls the shared run_with_params() function with environment-specific parameters.
+    Calls the shared run() functio.
 
     """
 
     with import_file("../pretf_env.py") as pretf_env:
-        pretf_env.run_with_params(
-            animals=["dog", "cat", "buffalo", "rabbit", "badger"],
-            users=["ray", "violet"],
-        )
+        pretf_env.run()
 ```
 
 ```python
@@ -170,15 +162,12 @@ from pretf.util import import_file
 
 def run():
     """
-    Calls the shared run_with_params() function with environment-specific parameters.
+    Calls the shared run() functio.
 
     """
 
     with import_file("../pretf_env.py") as pretf_env:
-        pretf_env.run_with_params(
-            animals=["dog", "cat", "buffalo"],
-            users=["ray", "violet"],
-        )
+        pretf_env.run()
 ```
 
 ```python
@@ -189,60 +178,14 @@ from pretf.util import import_file
 
 def run():
     """
-    Calls the shared run_with_params() function with environment-specific parameters.
+    Calls the shared run() functio.
 
     """
 
     with import_file("../pretf_env.py") as pretf_env:
-        pretf_env.run_with_params(
-            animals=["dog", "cat"],
-            users=["ray"],
-        )
+        pretf_env.run()
 ```
 
 ## The 'import_file' function
 
 The above code uses the `import_file()` context manager which imports a module from any local filesystem path. It also temporarily adds the file's directory to `sys.path` so that the imported module is able to import other modules in the same directory.
-
-## Parameter files
-
-It might make sense in your project to define parameters in a separate `.json` or `.yaml` files. This would result in further separation of data and code. For example:
-
-```shell
-terraform/
-  env/
-    dev/
-      params.json
-      pretf.py
-    stage/
-      params.json
-      pretf.py
-    prod/
-      params.json
-      pretf.py
-  src/
-    *.tf
-    *.tf.py
-```
-
-or:
-
-```shell
-terraform/
-  env/
-    dev/
-      pretf.py
-    stage/
-      pretf.py
-    prod/
-      pretf.py
-  params/
-    dev.json
-    stage.json
-    prod.json
-  src/
-    *.tf
-    *.tf.py
-```
-
-Because this all happens in Python, you are not limited to those file types. You could access a database, HTTP API, anything.

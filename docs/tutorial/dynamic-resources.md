@@ -6,7 +6,7 @@ There is too much duplication on the previous page, and what if we want to add m
 from pretf.api import tf
 
 
-def terraform():
+def terraform(var):
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]
     for name in animals:  # loop over list
         yield tf(f"resource.random_integer.{name}", {  # dynamic resource name

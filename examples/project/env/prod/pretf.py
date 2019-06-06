@@ -3,11 +3,9 @@ from pretf.util import import_file
 
 def run():
     """
-    Calls the shared run() function with environment-specific parameters.
+    Calls the shared run() function.
 
     """
 
     with import_file("../pretf_env.py") as pretf_env:
-        pretf_env.run_with_params(
-            envname="prod", envtype="prod", dogs=["cornelius", "cotton", "bandit"]
-        )
+        pretf_env.run()
