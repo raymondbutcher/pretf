@@ -7,27 +7,27 @@ def _init(_cache=[]):
         _cache.append(True)
 
 
-def accept(question):
+def accept(message):
     """
-    Prompt the user to enter "yes" or "no". Returns True if the
+    Prompts the user to enter "yes" or "no". Returns True if the
     response was "yes", otherwise False. Ctrl-c counts as "no".
 
     """
 
-    question = "[pretf] " + question + " [yes/no]: "
-    answer = ""
-    while answer not in ("yes", "no"):
+    message = "[pretf] " + message + " [yes/no]: "
+    response = ""
+    while response not in ("yes", "no"):
         try:
-            answer = input(question).lower()
+            response = input(message).lower()
         except KeyboardInterrupt:
-            answer = "no"
+            response = "no"
             print()
-    return answer == "yes"
+    return response == "yes"
 
 
 def bad(message):
     """
-    Display a bad pretf message.
+    Displays a message prefixed with [pref] in red.
 
     """
 
@@ -37,7 +37,7 @@ def bad(message):
 
 def ok(message):
     """
-    Display a normal pretf message.
+    Displays a message prefixed with [pref] in cyan.
 
     """
 
