@@ -23,22 +23,22 @@ def create():
     for file_path, contents in sorted(file_contents.items()):
         if contents:
 
-            output_name = file_path.name[:-2] + "json"
+            output_path = file_path.with_suffix('.json')
 
             # Merge list of blocks into single block
             # in tfvars.json files.
-            if output_name.endswith(".tfvars.json"):
+            if output_path.name.endswith(".tfvars.json"):
                 merged = {}
                 for block in contents:
                     for name, value in block.items():
                         merged[name] = value
                 contents = merged
 
-            with open(output_name, "w") as open_file:
+            with output_path.open("w") as open_file:
                 json.dump(contents, open_file, indent=2)
 
-            log.ok(f"create: {output_name}")
-            created.append(output_name)
+            log.ok(f"create: {output_path.name}")
+            created.append(output_path)
 
     return created
 
@@ -71,6 +71,8 @@ def mirror(*sources, target=".", exclude=["__pycache__"]):
         if target_file_path.is_symlink():
             target_file_path.unlink()
 
+    created = []
+
     # Create new symlinks from source paths.
     for source in sources:
         if target == ".":
@@ -82,11 +84,14 @@ def mirror(*sources, target=".", exclude=["__pycache__"]):
             if source_file_path.name not in exclude:
                 target_file_path = target_path / source_file_path.name
                 target_file_path.symlink_to(source_file_path)
+                created.append(target_file_path)
+
+    return created
 
 
 def remove(exclude=None):
     """
-    Deletes all *.tf.json files in the current directory.
+    Deletes all *.tf.json and *.tfvars.json files in the current directory.
     Optionally exclude specific files from being deleted.
 
     """
@@ -94,8 +99,8 @@ def remove(exclude=None):
     removed = []
 
     old_paths = set()
-    old_paths.update(glob("*.tf.json"))
-    old_paths.update(glob("*.tfvars.json"))
+    old_paths.update(Path().glob("*.tf.json"))
+    old_paths.update(Path().glob("*.tfvars.json"))
 
     if isinstance(exclude, str):
         exclude = [exclude]
@@ -105,7 +110,7 @@ def remove(exclude=None):
             old_paths.discard(path)
 
     for path in old_paths:
-        os.remove(path)
+        path.unlink()
         removed.append(path)
 
     return removed
