@@ -9,10 +9,10 @@ from pretf.run import create, execute, remove
 
 
 def run():
-    # Delete *.tf.json files.
+    # Delete *.tf.json and *.tfvars.json files.
     remove()
 
-    # Create *.tf.json files from *.tf.py files.
+    # Create *.tf.json and *.tfvars.json files from *.tf.py files.
     create()
 
     # Execute Terraform.
