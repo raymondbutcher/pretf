@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -49,9 +50,31 @@ def execute(verbose=True):
 
     """
 
-    return util.execute(
-        file="terraform", args=["terraform"] + sys.argv[1:], verbose=verbose
-    )
+    # Find the Terraform executable in the PATH.
+    for path in os.environ["PATH"].split(os.pathsep):
+
+        terraform_path = os.path.join(path, "terraform")
+
+        # Skip if it doesn't exist here.
+        if not os.path.exists(terraform_path):
+            continue
+
+        # Skip if it's not executable.
+        if not os.access(terraform_path, os.X_OK):
+            continue
+
+        # Skip if it's a symlink to Pretf.
+        real_name = os.path.basename(os.path.realpath(terraform_path))
+        if real_name == "pretf":
+            continue
+
+        # This is a valid executable, run it.
+        return util.execute(
+            file=terraform_path, args=[terraform_path] + sys.argv[1:], verbose=verbose
+        )
+
+    log.bad("terraform: command not found")
+    return 1
 
 
 def mirror(*sources, target=".", exclude=["__pycache__"]):
