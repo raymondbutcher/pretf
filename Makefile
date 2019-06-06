@@ -1,4 +1,4 @@
-SOURCES = pretf/pretf pretf.aws/pretf examples
+SOURCES = pretf/pretf pretf.aws/pretf examples tests
 
 .PHONY: all
 all:
@@ -6,6 +6,7 @@ all:
 	black $(SOURCES)
 	flake8 --ignore E501 $(SOURCES)
 	cd examples; terraform fmt -recursive
+	python -m unittest discover tests
 
 clean:
 	cd pretf; make clean
