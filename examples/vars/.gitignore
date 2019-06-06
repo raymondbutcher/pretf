@@ -1,2 +1,3 @@
 *.tf.json
+*.tfvars.json
 .terraform*

@@ -1,6 +1,8 @@
 import os
 import sys
 
+from . import log
+from .render import VariableError
 from .run import create, execute, remove
 from .util import import_file
 from .version import __version__
@@ -20,12 +22,22 @@ def main():
         execute(verbose=False)
         return
 
-    # Call the custom or default run function.
-    if os.path.exists("pretf.py"):
-        with import_file("pretf.py") as pretf:
-            exit_code = pretf.run()
-    else:
-        exit_code = run()
+    try:
+
+        # Call the custom or default run function.
+        if os.path.exists("pretf.py"):
+            with import_file("pretf.py") as pretf:
+                exit_code = pretf.run()
+        else:
+            exit_code = run()
+
+    except VariableError as error:
+        if hasattr(error, "errors"):
+            for error in error.errors:
+                log.bad(str(error))
+        else:
+            log.bad(str(error))
+        exit_code = 1
 
     sys.exit(exit_code)
 

@@ -23,7 +23,7 @@ Example:
 from pretf.api import tf
 
 
-def terraform():
+def terraform(var):
 
     # The group resource is defined in another file,
     # but we want to reference it here, so we can

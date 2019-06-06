@@ -6,7 +6,7 @@ The previous page has 5 dynamic resources but nothing is done with them. To acce
 from pretf.api import tf
 
 
-def terraform():
+def terraform(var):
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]
     for name in animals:
         animal = yield tf(f"resource.random_integer.{name}", {

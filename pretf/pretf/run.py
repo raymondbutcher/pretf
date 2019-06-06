@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-from collections import defaultdict
 from glob import glob
 from pathlib import Path
 
@@ -9,25 +8,35 @@ from . import log, util
 from .render import Renderer
 
 
-def create(*_paths, **_kwargs):
+def create():
     """
-    Creates *.tf.json files from *.tf.py files in the specified paths.
-    Keyword arguments are passed along to the *.tf.py functions.
+    Creates *.tf.json and *.tfvars.json files
+    from *.tf.py and *.tfvars.py files.
 
     """
 
-    # Render the JSON data from *.tf.py files.
-    file_contents = defaultdict(list)
-    for file_name, block in Renderer(_paths, _kwargs).render():
-        file_contents[file_name].append(block)
+    # Render the JSON data from *.tf.py and *.tfvars.py files.
+    file_contents = Renderer().render()
 
     # Write JSON files.
     created = []
-    for file_name, contents in sorted(file_contents.items()):
+    for file_path, contents in sorted(file_contents.items()):
         if contents:
-            output_name = file_name[:-2] + "json"
+
+            output_name = file_path.name[:-2] + "json"
+
+            # Merge list of blocks into single block
+            # in tfvars.json files.
+            if output_name.endswith(".tfvars.json"):
+                merged = {}
+                for block in contents:
+                    for name, value in block.items():
+                        merged[name] = value
+                contents = merged
+
             with open(output_name, "w") as open_file:
                 json.dump(contents, open_file, indent=2)
+
             log.ok(f"create: {output_name}")
             created.append(output_name)
 
@@ -86,6 +95,7 @@ def remove(exclude=None):
 
     old_paths = set()
     old_paths.update(glob("*.tf.json"))
+    old_paths.update(glob("*.tfvars.json"))
 
     if isinstance(exclude, str):
         exclude = [exclude]
