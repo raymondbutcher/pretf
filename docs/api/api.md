@@ -9,7 +9,6 @@ tf(path, body=None)
 
 path:
     required str
-
 body:
     optional dict
 
