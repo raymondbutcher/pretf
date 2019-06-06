@@ -2,7 +2,7 @@
 
 Pretf is a completely transparent, drop-in Terraform wrapper that generates Terraform configuration with Python. It requires no configuration and no changes to standard Terraform projects to start using it.
 
-Terraform is good at managing resources, and the configuration language HCL is sometimes quite nice, but HCL is very limited when compared to Python. Luckily, Terraform also supports configuration as JSON files. Pretf allows you to write Python code, with for-loops and everything, to output simple JSON files for Terraform.
+Terraform includes first-class support for configuration in JSON files. Pretf generates those JSON files using your Python functions.
 
 ## Requirements
 

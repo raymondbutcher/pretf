@@ -27,6 +27,12 @@ The Pulumi SDK includes classes for every resource, while Pretf only uses generi
 
 If you want to use Terraform, then Pretf gets you some of the selling points of Pulumi (write the logic in Python) wthout making you switch products.
 
+## Jinjaform
+
+[Jinjaform](https://github.com/claranet/jinjaform) is another Terraform wrapper by the same author as Pretf.
+
+Jinjaform has been successful in some respects. However, the mixture of Jinja2 templates and HCL is ugly. In an attempt to make those templates cleaner, support for custom Jinja2 filters and functions (written in Python) was added. So now Jinjaform mixes HCL, Jinja2 and Python. Pretf is the next step, just getting out of the way and letting you write some Python code.
+
 ## Custom wrappers
 
 Wrappers written in Bash or Make seem to have some or all of these problems:
