@@ -13,6 +13,7 @@ nav:
   - Custom workflows: tutorial/custom-workflows.md
   - Project structure: tutorial/project-structure.md
   - AWS projects: tutorial/aws-projects.md
+  - direnv and asdf-vm: tutorial/direnv-and-asdf-vm.md
 - API:
   - pretf.api: api/api.md
   - pretf.aws: api/aws.md
