@@ -16,7 +16,7 @@ def terraform(var):
             "max": 10,
         })
         yield tf(f"output.{name}", {
-            "vaue": animal.result,  # access "result" attribute of resource
+            "value": animal.result,  # access "result" attribute of resource
         })
 ```
 
@@ -36,12 +36,12 @@ If something is defined in another file, but you still want to reference it, the
 
 ```python
 yield tf("output.dog", {
-    "vaue": tf("resource.random_integer.dog").result,
+    "value": tf("resource.random_integer.dog").result,
 })
 ```
 
 ```python
 yield tf(f"output.{name}", {
-    "vaue": tf(f"resource.random_integer.{name}").result,
+    "value": tf(f"resource.random_integer.{name}").result,
 })
 ```

@@ -16,7 +16,7 @@ def terraform(var):
             "max": 10,
         })
         yield tf(f"output.{name}", {
-            "vaue": animal.result,
+            "value": animal.result,
         })
 ```
 
@@ -70,7 +70,7 @@ def terraform(var):
             "max": 10,
         })
         yield tf(f"output.{name}", {
-            "vaue": animal.result,
+            "value": animal.result,
         })
 ```
 
