@@ -1,5 +1,7 @@
 ## execute
 
+> Note: this is a lower level function than the simpler `pretf.run.execute` which is limited to executing only Terraform.
+
 Executes a command and waits for it to finish.
 
 If args are provided, then they will be used.
@@ -11,8 +13,6 @@ If args are not provided, and no arguments were used to run this program,
 and default args are provided, then they will be used.
 
 Returns the exit code from the command that is run.
-
-> Note: this is a lower level function than the simpler `pretf.run.execute` which is limited to executing only Terraform.
 
 Signature:
 
