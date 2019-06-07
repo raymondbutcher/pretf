@@ -5,7 +5,7 @@ The following `pretf.py` file implements the default behaviour of Pretf. This is
 ```python
 # pretf.py
 
-from pretf.run import create, execute, remove
+from pretf.api import create, execute, remove
 
 
 def run():

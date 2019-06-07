@@ -1,12 +1,22 @@
+from functools import wraps
+
 import colorama
 
 
-def _init(_cache=[]):
-    if not _cache:
-        colorama.init()
-        _cache.append(True)
+def uses_colorama(func, state={}):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+
+        if not state:
+            colorama.init()
+            state["init"] = True
+
+        return func(*args, **kwargs)
+
+    return wrapped
 
 
+@uses_colorama
 def accept(message):
     """
     Prompts the user to enter "yes" or "no". Returns True if the
@@ -25,21 +35,21 @@ def accept(message):
     return response == "yes"
 
 
+@uses_colorama
 def bad(message):
     """
     Displays a message prefixed with [pref] in red.
 
     """
 
-    _init()
     print(colorama.Fore.RED + "[pretf] " + message + colorama.Style.RESET_ALL)
 
 
+@uses_colorama
 def ok(message):
     """
     Displays a message prefixed with [pref] in cyan.
 
     """
 
-    _init()
     print(colorama.Fore.CYAN + "[pretf] " + message + colorama.Style.RESET_ALL)

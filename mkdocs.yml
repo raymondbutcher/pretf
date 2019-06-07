@@ -17,6 +17,4 @@ nav:
 - API:
   - pretf.api: api/api.md
   - pretf.aws: api/aws.md
-  - pretf.log: api/log.md
-  - pretf.run: api/run.md
   - pretf.util: api/util.md

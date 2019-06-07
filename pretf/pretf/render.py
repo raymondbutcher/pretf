@@ -10,7 +10,7 @@ from .util import import_file
 
 
 class Block:
-    def __init__(self, path, body):
+    def __init__(self, path, body=None):
         self.__path = path
         self.__body = body or {}
 
