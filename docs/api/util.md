@@ -1,6 +1,6 @@
 ## execute
 
-> Note: this is a lower level function than the simpler `pretf.run.execute` which is limited to executing only Terraform.
+> Note: this is a lower level function than the simpler `pretf.api.execute` which is limited to executing only Terraform.
 
 Executes a command and waits for it to finish.
 
