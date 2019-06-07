@@ -1,4 +1,6 @@
-The previous page has 5 dynamic resources but nothing is done with them. To access an attribute of a resource, just... access it:
+The previous page has 5 dynamic resources but nothing is done with them. To access an attribute of a resource, just... access it.
+
+This does not return the actual dynamic value of the resource managed by Terraform. Instead, it returns an interpolation reference string for Terraform to use when it runs.
 
 ```python
 # animals.tf.py

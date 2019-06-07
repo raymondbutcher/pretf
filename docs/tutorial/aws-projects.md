@@ -18,7 +18,6 @@ pip install boto-source-profile-mfa
 
 Pretf can dynamically generate the [S3 backend](https://www.terraform.io/docs/backends/types/s3.html) configuration, and even create the resources required for the backend.
 
-
 ```python
 # terraform.tf.py
 
