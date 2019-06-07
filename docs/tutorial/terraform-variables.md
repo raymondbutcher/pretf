@@ -34,7 +34,7 @@ def terraform(var):
 
 ## Terraform variables
 
-Teraform variables can be access using the `var` argument passed into `terraform()` functions. Let's use them instead of hardcoding the values:
+Terraform variables can be accessed using the `var` argument passed into `terraform()` functions. Let's use them instead of hardcoding the values:
 
 
 ```terraform
@@ -103,4 +103,4 @@ From the [Terraform documentation](https://www.terraform.io/docs/configuration/v
 
 Pretf uses the same rules when resolving variable values.
 
-If a project has `*.tfvars.py` files to generate `*.tfvars.json` files that would change the value of a variable (i.e. one of the above sources has already set the variable to a different value) then Pretf will exit with an descriptive error message. This ensures that Python and Terraform run with consistent variable values.
+If a project has `*.tfvars.py` files to generate `*.tfvars.json` files that would change the value of a variable (i.e. one of the above sources has already set the variable to a different value) then Pretf will exit with a descriptive error message. This ensures that Python and Terraform run with consistent variable values.
