@@ -34,7 +34,7 @@ Code:
 ```python
 # env/dev/pretf.py
 
-from pretf.run import create, execute, mirror, remove
+from pretf.api import create, execute, mirror, remove
 
 
 def run():
@@ -56,7 +56,7 @@ def run():
 ```python
 # env/stage/pretf.py
 
-from pretf.run import create, execute, mirror, remove
+from pretf.api import create, execute, mirror, remove
 
 
 def run():
@@ -78,7 +78,7 @@ def run():
 ```python
 # env/prod/pretf.py
 
-from pretf.run import create, execute, mirror, remove
+from pretf.api import create, execute, mirror, remove
 
 
 def run():
@@ -119,7 +119,7 @@ The above example contains three `pretf.py` files with the same code. One way to
 ```python
 # env/pretf_env.py
 
-from pretf.run import create, execute, mirror, remove
+from pretf.api import create, execute, mirror, remove
 
 
 def run():

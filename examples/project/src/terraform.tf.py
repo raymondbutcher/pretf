@@ -16,4 +16,4 @@ def terraform(var):
         table=backend_name,
     )
 
-    yield tf("terraform", {"required_version": "0.12.0"})
+    yield tf("terraform", {"required_version": "0.12.1"})
