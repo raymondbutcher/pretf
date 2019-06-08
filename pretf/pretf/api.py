@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from . import log, util
-from .render import Block, Renderer
+from .render import Block, Renderer, json_default
 
 
 def create():
@@ -34,7 +34,7 @@ def create():
                 contents = merged
 
             with output_path.open("w") as open_file:
-                json.dump(contents, open_file, indent=2)
+                json.dump(contents, open_file, indent=2, default=json_default)
 
             log.ok(f"create: {output_path.name}")
             created.append(output_path)

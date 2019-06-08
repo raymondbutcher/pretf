@@ -24,9 +24,13 @@ class Block:
             here.update(self.__body)
         else:
             result[self.__path] = self.__body
-        return iter(result.items())
+        for key, value in result.items():
+            yield (key, value)
 
-    def __getattr__(self, attr):
+    def __getattr__(self, name):
+        return self[name]
+
+    def __getitem__(self, key):
 
         parts = self.__path.split(".")
 
@@ -35,15 +39,47 @@ class Block:
         elif parts[0] == "variable":
             parts[0] = "var"
 
-        parts.append(attr)
+        parts.append(key)
 
-        return "${" + ".".join(parts) + "}"
+        return Interpolated(".".join(parts))
 
     def __repr__(self):
-        return f"Block({self})"
+        return f"tf({repr(self.__path)}, {repr(self.__body)})"
 
     def __str__(self):
         return self.__path
+
+
+class Collection:
+    def __init__(self, blocks, outputs):
+        self.__blocks = blocks
+        self.__outputs = outputs
+
+    def __getattr__(self, name):
+        if name in self.__outputs:
+            return self.__outputs[name]
+        raise AttributeError(f"output not defined: {name}")
+
+    def __iter__(self):
+        for value in self.__blocks:
+            yield value
+
+
+class Interpolated:
+    def __init__(self, value):
+        self.__value = value
+
+    def __eq__(self, other):
+        return str(self) == other
+
+    def __getattr__(self, attr):
+        return type(self)(self.__value + "." + attr)
+
+    def __repr__(self):
+        return f"Interpolated({repr(self.__value)})"
+
+    def __str__(self):
+        return "${" + self.__value + "}"
 
 
 class Renderer:
@@ -67,7 +103,7 @@ class Renderer:
         # This will be populated with any files that are not waiting
         # on a variable, so they are able to be generated.
         self.unblocked_files = []
-        self.send_queue = {}
+        self.return_values = {}
 
         # Results from processed files go here.
         self.results = defaultdict(list)
@@ -173,92 +209,90 @@ class Renderer:
         file_item = self.unblocked_files.pop()
         file_path, file_gen = file_item
 
+        return_value = self.return_values.get(file_path)
         try:
-            try:
-                return_value = self.send_queue.pop(file_path)
-            except KeyError:
-                yielded = next(file_gen)
-            else:
-                yielded = file_gen.send(return_value)
+            yielded = file_gen.send(return_value)
         except StopIteration:
             if file_path.name.endswith(".tfvars.py"):
                 self.tfvars_remaining -= 1
             return
 
-        # The file generator yielded a Block (or a raw dictionary,
-        # or an invalid value). Add it to the file contents to be
-        # written as JSON. Also check if any variables were defined
-        # in this block, and use them to resume any blocked generators
-        # that are waiting for the variable.
-
-        if isinstance(yielded, Block):
-            # Convert the block into a dictionary.
-            block = dict(iter(yielded))
-        elif isinstance(yielded, dict):
-            block = yielded
-        else:
-            raise TypeError(f"{yielded} in {file_path}")
-
-        # Include this block in the results.
-        self.results[file_path].append(block)
-
-        self.send_queue[file_path] = yielded
+        self.return_values[file_path] = yielded
         self.unblocked_files.append(file_item)
 
-        if file_path.name.endswith(".tfvars.py"):
+        for block in unwrap_yielded(yielded):
 
-            if file_path.name == "terraform.tfvars.py":
-                parse = True
-            elif file_path.name.endswith(".auto.tfvars.py"):
-                parse = True
+            self.results[file_path].append(block)
+
+            if file_path.name.endswith(".tfvars.py"):
+                self.process_tfvars_block(file_path, block)
             else:
-                output_file_path = file_path.with_suffix(".json").resolve()
-                for var_file_path in self.variable_files:
-                    if var_file_path.resolve() == output_file_path:
-                        parse = True
-                        break
-                else:
-                    parse = False
-
-            if parse:
-                for var_name, var_value in block.items():
-
-                    # Check that we're not changing a variable value
-                    # as this could result in Python code using one
-                    # value and Terraform using another.
-                    if var_name in self.variable_values:
-                        if self.variable_values[var_name] != var_value:
-                            var_from = self.variable_from[var_name]
-                            raise VariableNotConsistent(var_name, var_from, file_path)
-                    else:
-                        # Otherwise, set the variable value and resume
-                        # and files that were waiting for it.
-                        self.variable_values[var_name] = var_value
-                        self.resume_files(var_name, var_value)
-
-        else:
-
-            # If this block contained a variable, then unblock
-            # any files that are blocked by this variable.
-            for var in get_variables_from_block(block):
-
-                var_name = var["name"]
-
-                self.variable_names.add(var_name)
-
-                if "default" in var:
-                    self.variable_defaults[var_name] = var["default"]
-
-                try:
-                    var_value = self.get_variable_value(var_name, file_path)
-                except VariableError:
-                    pass
-                else:
-                    self.resume_files(var_name, var_value)
+                self.process_tf_block(file_path, block)
 
     def process_files(self):
         while self.unblocked_files:
             self.process_file()
+
+    def process_tf_block(self, file_path, block):
+        """
+        Read variables from this file and resume
+        any files that are waiting for them.
+
+        """
+
+        for var in get_variables_from_block(block):
+
+            name = var["name"]
+
+            self.variable_names.add(name)
+
+            if "default" in var:
+                self.variable_defaults[name] = var["default"]
+
+            try:
+                value = self.get_variable_value(name, file_path)
+            except VariableError:
+                pass
+            else:
+                self.resume_files(name, value)
+
+    def process_tfvars_block(self, file_path, block):
+        """
+        Read variables from this file and resume
+        any files that are waiting for them.
+
+        """
+
+        # Only process this file if it will also be used by
+        # Terraform as a variable source. Otherwise, Pretf
+        # and Terraform could have inconsistent values.
+        if file_path.name == "terraform.tfvars.py":
+            pass
+        elif file_path.name.endswith(".auto.tfvars.py"):
+            pass
+        else:
+            output_file_path = file_path.with_suffix(".json").resolve()
+            for var_file_path in self.variable_files:
+                if var_file_path.resolve() == output_file_path:
+                    break
+            else:
+                # Don't parse this file
+                return
+
+        for name, value in block.items():
+
+            # Check that we're not changing a variable value
+            # as this could result in Python code using one
+            # value and Terraform using another.
+            if name in self.variable_values:
+                if self.variable_values[name] != value:
+                    var_from = self.variable_from[name]
+                    raise VariableNotConsistent(name, var_from, file_path)
+            else:
+                # Otherwise, set the variable value and resume
+                # any files that are waiting for it.
+                self.variable_values[name] = value
+                self.resume_files(name, value)
 
     def render(self):
         # Find files to process.
@@ -295,7 +329,7 @@ class Renderer:
         while self.blocked_files[var_name]:
             file_item = self.blocked_files[var_name].pop()
             file_path, file_gen = file_item
-            self.send_queue[file_path] = var_value
+            self.return_values[file_path] = var_value
             self.unblocked_files.append(file_item)
 
 
@@ -351,3 +385,21 @@ class VariableProxy:
         return self.__renderer.get_variable_value(name, self.__file_path)
 
     __getitem__ = __getattr__
+
+
+def json_default(obj):
+    if isinstance(obj, Interpolated):
+        return str(obj)
+    raise TypeError(repr(obj))
+
+
+def unwrap_yielded(yielded):
+    if isinstance(yielded, Block):
+        yield dict(iter(yielded))
+    elif isinstance(yielded, Collection):
+        for nested in yielded:
+            yield from unwrap_yielded(nested)
+    elif isinstance(yielded, dict):
+        yield yielded
+    else:
+        raise TypeError(yielded)

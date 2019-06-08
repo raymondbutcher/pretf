@@ -1,22 +1,7 @@
 from functools import wraps
 
 from .parser import get_outputs_from_block, get_variables_from_block
-from .render import Block, VariableNotDefined, VariableNotPopulated
-
-
-class Collection:
-    def __init__(self, blocks, outputs):
-        self.__blocks = blocks
-        self.__outputs = outputs
-
-    def __getattr__(self, name):
-        try:
-            return self.__outputs[name]
-        except KeyError:
-            raise AttributeError(f"output not defined: {name}")
-
-    def __iter__(self):
-        return iter(self.__blocks)
+from .render import Collection, VariableNotDefined, VariableNotPopulated, unwrap_yielded
 
 
 class VariableProxy:
@@ -61,12 +46,12 @@ def collect(func):
     @wraps(func)
     def wrapped(**kwargs):
 
-        var = VariableProxy(kwargs)
+        var_proxy = VariableProxy(kwargs)
+        gen = func(var_proxy)
 
         blocks = []
         outputs = {}
 
-        gen = func(var)
         yielded = None
         while True:
 
@@ -75,28 +60,23 @@ def collect(func):
             except StopIteration:
                 break
 
-            if isinstance(yielded, Block):
-                block = dict(iter(yielded))
-            elif isinstance(yielded, dict):
-                block = yielded
-            else:
-                raise TypeError(yielded)
+            for block in unwrap_yielded(yielded):
 
-            variable = None
-            for variable in get_variables_from_block(block):
-                name = variable["name"]
-                var._variables.add(name)
-                if "default" in variable:
-                    var._defaults[name] = variable["default"]
+                var = None
+                for var in get_variables_from_block(block):
+                    name = var["name"]
+                    var_proxy._variables.add(name)
+                    if "default" in var:
+                        var_proxy._defaults[name] = var["default"]
 
-            output = None
-            for output in get_outputs_from_block(block):
-                name = output["name"]
-                value = output["value"]
-                outputs[name] = value
+                output = None
+                for output in get_outputs_from_block(block):
+                    name = output["name"]
+                    value = output["value"]
+                    outputs[name] = value
 
-            if not variable and not output:
-                blocks.append(block)
+                if not var and not output:
+                    blocks.append(block)
 
         return Collection(blocks, outputs)
 
