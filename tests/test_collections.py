@@ -2,7 +2,8 @@ import unittest
 
 from pretf.api import tf
 from pretf.collections import collect
-from pretf.render import Block, VariableNotPopulated
+from pretf.render import Block
+from pretf.variables import VariableNotPopulated
 
 
 @collect
