@@ -1,30 +1,30 @@
 from functools import wraps
 
 from .parser import get_outputs_from_block, get_variables_from_block
-from .render import Collection, VariableNotDefined, VariableNotPopulated, unwrap_yielded
+from .render import Collection, unwrap_yielded
+from .variables import VariableNotDefined, VariableNotPopulated
 
 
 class VariableProxy:
     def __init__(self, values):
-        self._variables = set()
         self._defaults = {}
+        self._names = set()
         self._values = values
 
     def __getattr__(self, name):
-        return self[name]
 
-    def __getitem__(self, key):
+        if name not in self._names:
+            raise VariableNotDefined(name, "pretf.collections")
 
-        if key not in self._variables:
-            raise VariableNotDefined(key, "pretf.collections")
+        if name in self._values:
+            return self._values[name]
 
-        if key in self._values:
-            return self._values[key]
+        if name in self._defaults:
+            return self._defaults[name]
 
-        if key in self._defaults:
-            return self._defaults[key]
+        raise VariableNotPopulated(name, "pretf.collections")
 
-        raise VariableNotPopulated(key, "pretf.collections")
+    __getitem__ = __getattr__
 
 
 def collect(func):
@@ -65,7 +65,7 @@ def collect(func):
                 var = None
                 for var in get_variables_from_block(block):
                     name = var["name"]
-                    var_proxy._variables.add(name)
+                    var_proxy._names.add(name)
                     if "default" in var:
                         var_proxy._defaults[name] = var["default"]
 

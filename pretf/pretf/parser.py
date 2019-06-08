@@ -97,6 +97,12 @@ def get_variables_from_file(path):
         raise ValueError(path.name)
 
 
+def get_variables_from_file_with_source(file_path):
+    for var in get_variables_from_file(file_path):
+        var["source"] = file_path.name
+        yield var
+
+
 def get_variables_from_tf_file(path):
 
     contents = parse_tf_file_for_variables(path)
