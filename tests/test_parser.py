@@ -2,7 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
-from pretf import log
+from pretf.api import log
 from pretf.parser import get_variables_from_file
 
 

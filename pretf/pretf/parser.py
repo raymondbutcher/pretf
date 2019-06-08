@@ -47,6 +47,23 @@ def clean_block_string(block_string):
     return block_string
 
 
+def get_outputs_from_block(block):
+
+    if "output" not in block:
+        return
+
+    output = block["output"]
+
+    if isinstance(output, dict):
+        outputs = [output]
+    else:
+        outputs = output
+
+    for output in outputs:
+        for name, block in output.items():
+            yield {"name": name, "value": block["value"]}
+
+
 def get_variables_from_block(block):
 
     if "variable" not in block:

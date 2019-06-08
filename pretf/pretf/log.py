@@ -24,7 +24,7 @@ def accept(message):
 
     """
 
-    message = "[pretf] " + message + " [yes/no]: "
+    message = f"[pretf] {message} [yes/no]: "
     response = ""
     while response not in ("yes", "no"):
         try:
@@ -42,7 +42,7 @@ def bad(message):
 
     """
 
-    print(colorama.Fore.RED + "[pretf] " + message + colorama.Style.RESET_ALL)
+    print(f"{colorama.Fore.RED}[pretf] {message}{colorama.Style.RESET_ALL}")
 
 
 @uses_colorama
@@ -52,4 +52,4 @@ def ok(message):
 
     """
 
-    print(colorama.Fore.CYAN + "[pretf] " + message + colorama.Style.RESET_ALL)
+    print(f"{colorama.Fore.CYAN}[pretf] {message}{colorama.Style.RESET_ALL}")
