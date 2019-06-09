@@ -130,17 +130,15 @@ def run():
 
 ## mirror
 
-Creates symlinks from all files and directories in the source directories into the target directory. Deletes all existing symlinks in the target directory.
+Creates symlinks from all files and directories in the source directories into the current directory. Deletes all existing symlinks in the current directory.
 
 Signature:
 
 ```python
-mirror(*sources, target=".", exclude=["__pycache__"])
+mirror(*source_dirs, exclude=["__pycache__"])
 
-sources:
-    required str sequence of directories to mirror into the target directory
-target:
-    optional str of where to create the symlinks
+source_dirs:
+    required str sequence of directories to mirror into the current directory
 exclude:
     optional list of file names to exclude
 
