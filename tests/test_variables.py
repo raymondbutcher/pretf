@@ -3,12 +3,12 @@ import unittest
 from pathlib import Path
 
 from pretf.api import log
-from pretf.parser import get_variables_from_file
+from pretf.variables import get_variables_from_file
 
 
-class TestParser(unittest.TestCase):
+class TestVariables(unittest.TestCase):
     def find_test_files(self):
-        test_files_path = Path(__file__).parent / "test_parser_files"
+        test_files_path = Path(__file__).parent / "test_variables_files"
         test_files = set(test_files_path.iterdir())
         for test_file_path in sorted(test_files):
             if not test_file_path.name.endswith(".expected.json"):
@@ -23,6 +23,8 @@ class TestParser(unittest.TestCase):
             with self.subTest(test_file_path.name):
                 with expected_file_path.open() as open_file:
                     expected = json.load(open_file)
-                result = list(get_variables_from_file(test_file_path))
+                result = []
+                for var in get_variables_from_file(test_file_path):
+                    result.append(dict(var))
                 self.assertEqual(expected, result)
                 log.ok(f"success: {test_file_path.name}")

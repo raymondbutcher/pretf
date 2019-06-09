@@ -3,31 +3,117 @@ import shlex
 import sys
 from pathlib import Path
 
-from .parser import get_variables_from_file_with_source
+from .parser import (
+    parse_json_file_for_blocks,
+    parse_tf_file_for_variables,
+    parse_tfvars_file_for_variables,
+)
+from .util import once
 
 
-class TerraformVariables:
-    def __init__(self, file_paths):
-        self._cli_var_files = set()
-        self._defaults = {}
-        self._file_paths = file_paths
-        self._file_paths_preventing_defaults = set()
-        self._loaded = False
-        self._loading = False
-        self._names = set()
-        self._sources = {}
+class VariableProxy:
+    def __init__(self, store, consumer):
+        self._store = store
+        self._consumer = consumer
+
+    def __contains__(self, name):
+        return name in self._store
+
+    def __getattr__(self, name):
+        return self._store.get(name, self._consumer)
+
+    __getitem__ = __getattr__
+
+
+class VariableStore:
+    def __init__(self):
+        self._allow_defaults = True
+        self._definitions = {}
         self._values = {}
 
-    def _load(self):
-        if not self._loaded:
-            if not self._loading:
-                self._loading = True
-                for var in self._load_terraform_variables():
-                    self.add(var)
-                self._loading = False
-                self._loaded = True
+    def __contains__(self, name):
+        if name in self._definitions:
+            if name in self._values:
+                return True
+            if self._allow_defaults:
+                if self._definitions[name].has_default:
+                    return True
+        return False
 
-    def _load_terraform_variables(self):
+    def add(self, var):
+        if isinstance(var, VariableDefinition):
+            if var.name in self._definitions:
+                old_var = self._definitions[var.name]
+                raise VariableAlreadyDefined(old_var=old_var, new_var=var)
+            self._definitions[var.name] = var
+        elif isinstance(var, VariableValue):
+            self._values[var.name] = var
+        else:
+            raise TypeError(var)
+
+    def enable_defaults(self):
+        self._allow_defaults = True
+
+    def disable_defaults(self):
+        self._allow_defaults = False
+
+    def get(self, name, consumer):
+        if name in self._definitions:
+            if name in self._values:
+                return self._values[name].value
+            if self._allow_defaults:
+                if self._definitions[name].has_default:
+                    return self._definitions[name].default
+            raise VariableNotPopulated(name, consumer)
+        raise VariableNotDefined(name, consumer)
+
+    def proxy(self, consumer):
+        return VariableProxy(store=self, consumer=consumer)
+
+
+class TerraformVariableStore(VariableStore):
+    def __init__(self, files_to_create):
+        super().__init__()
+        self._files_to_create = files_to_create
+        self._files_created = set()
+        self._tfvars_waiting = set()
+
+    def add(self, var, allow_change=True):
+        # Ensure Terraform variables are loaded before anything from Pretf,
+        # because there is a loading order that needs to be followed,
+        # and Pretf values come afterwards.
+        self.load()
+
+        # This check is used to prevent changing variables values in Pretf,
+        # to ensure that Pretf and Terraform always have consistent values.
+        if not allow_change and var.name in self._values:
+            old_var = self._values[var.name]
+            if var.value != old_var.value:
+                raise VariableNotConsistent(old_var=old_var, new_var=var)
+
+        super().add(var)
+
+    def file_created(self, name):
+        self._files_created.add(name)
+        self._tfvars_waiting.discard(name)
+        if not self._tfvars_waiting:
+            self.enable_defaults()
+
+    def tfvars_wait_for(self, name):
+        if name not in self._files_created:
+            self._tfvars_waiting.add(name)
+            self.disable_defaults()
+
+    def tfvars_waiting_for(self, name):
+        self.load()
+        return name in self._tfvars_waiting
+
+    def get(self, name, consumer):
+        self.load()
+        return super().get(name, consumer)
+
+    @once
+    def load(self):
         """
         Load Terraform variables from various sources.
 
@@ -44,42 +130,50 @@ class TerraformVariables:
 
         """
 
-        file_paths_groups = {"auto": [], "vars": [], "default": []}
-        suffix_groups = {
-            ".auto.tfvars.json": "auto",
-            ".auto.tfvars": "auto",
-            ".tf.json": "vars",
-            ".tf": "vars",
-        }
+        auto_tfvars_file_names = set()
+        default_tfvars_file_names = set()
+        tf_file_names = set()
 
-        for file_path in sorted(self._file_paths):
-            if file_path.name in ("terraform.tfvars", "terraform.tfvars.json"):
-                file_paths_groups["default"].append(file_path)
-            else:
-                for suffix, group in suffix_groups.items():
-                    if file_path.name.endswith(suffix):
-                        file_paths_groups[group].append(file_path)
+        future_names = list(os.listdir()) + list(self._files_to_create.keys())
+        for name in future_names:
+
+            if name.endswith(".auto.tfvars") or name.endswith(".auto.tfvars.json"):
+                auto_tfvars_file_names.add(name)
+            elif name in ("terraform.tfvars", "terraform.tfvars.json"):
+                default_tfvars_file_names.add(name)
+            elif name.endswith(".tf") or name.endswith(".tf.json"):
+                tf_file_names.add(name)
 
         # Load variable definitions.
-        for file_path in file_paths_groups["vars"]:
-            yield from get_variables_from_file_with_source(file_path)
+        for name in tf_file_names:
+            if name not in self._files_to_create:
+                for var in get_variables_from_file(Path(name)):
+                    self.add(var)
 
         # Load variable values.
         # 1. Environment variables.
         for key, value in os.environ.items():
             if key.startswith("TF_VAR_"):
-                name = key[7:]
-                yield {"name": name, "value": value, "source": key}
+                var = VariableValue(name=key[7:], value=value, source=key)
+                self.add(var)
 
         # 2. The terraform.tfvars file, if present.
         # 3. The terraform.tfvars.json file, if present.
-        for file_path in file_paths_groups["default"]:
-            yield from get_variables_from_file_with_source(file_path)
+        for name in sorted(default_tfvars_file_names):
+            if name in self._files_to_create:
+                self.tfvars_wait_for(name)
+            else:
+                for var in get_variables_from_file(Path(name)):
+                    self.add(var)
 
         # 4. Any *.auto.tfvars or *.auto.tfvars.json files,
         #    processed in lexical order of their filenames.
-        for file_path in file_paths_groups["auto"]:
-            yield from get_variables_from_file_with_source(file_path)
+        for name in sorted(auto_tfvars_file_names):
+            if name in self._files_to_create:
+                self.tfvars_wait_for(name)
+            else:
+                for var in get_variables_from_file(Path(name)):
+                    self.add(var)
 
         # 5. Any -var and -var-file options on the command line,
         #    in the order they are provided.
@@ -87,88 +181,52 @@ class TerraformVariables:
             if arg.startswith("-var="):
                 var_string = shlex.split(arg[5:])[0]
                 name, value = var_string.split("=", 1)
-                yield {"name": name, "value": value, "source": arg}
+                var = VariableValue(name=name, value=value, source=arg)
+                self.add(var)
             elif arg.startswith("-var-file="):
-                file_path = Path(os.path.abspath(arg[10:]))
-                if file_path in self._file_paths or file_path.exists():
-                    yield from get_variables_from_file_with_source(file_path)
+                path = Path(os.path.abspath(arg[10:]))
+                will_create = False
+                if os.path.abspath(path.parent) == os.path.abspath("."):
+                    if path.name in self._files_to_create:
+                        will_create = True
+                if will_create:
+                    self.tfvars_wait_for(name)
                 else:
-                    self._cli_var_files.add(file_path)
+                    for var in get_variables_from_file(path):
+                        self.add(var)
 
-    def add(self, var):
-        """
-        Adds a variable. Returns True if it was a new value.
 
-        """
+class VariableDefinition:
+    def __init__(self, name, source, **kwargs):
+        self.name = name
+        self.source = source
+        self.has_default = False
+        for key, value in kwargs.items():
+            if key == "default":
+                self.has_default = True
+                self.default = value
+            else:
+                raise TypeError(
+                    f"{self.__class__.__name__}() got an unexpected keyword argument {repr(key)}"
+                )
 
-        self._load()
+    def __iter__(self):
+        yield ("name", self.name)
+        if hasattr(self, "default"):
+            yield ("default", self.default)
+        yield ("source", self.source)
 
-        name = var["name"]
-        source = var["source"]
 
-        if "value" in var:
+class VariableValue:
+    def __init__(self, name, value, source):
+        self.name = name
+        self.value = value
+        self.source = source
 
-            value = var["value"]
-
-            if not self._loading:
-                if name in self.__values and self.__values[name] != value:
-                    old_source = self.get_source(name)
-                    raise VariableNotConsistent(
-                        name, old_source=old_source, new_source=source
-                    )
-
-            self._values[name] = value
-            self._sources[name] = source
-
-        else:
-
-            self._names.add(name)
-
-            if "default" in var:
-
-                self._defaults[name] = var["default"]
-                self._sources.setdefault(name, source)
-
-    def disable_defaults(self, file_path):
-        self._file_paths_preventing_defaults.add(file_path)
-
-    def enable_defaults(self, file_path):
-        self._file_paths_preventing_defaults.remove(file_path)
-
-    def get_value(self, name, path):
-
-        self._load()
-
-        if name not in self._names:
-            raise VariableNotDefined(name, path)
-
-        if name in self._values:
-            return self._values[name]
-
-        if not self._file_paths_preventing_defaults:
-            if name in self._defaults:
-                return self._defaults[name]
-
-        raise VariableNotPopulated(name, path)
-
-    def get_source(self, name):
-        return self._sources[name]
-
-    def is_source_file(self, file_path):
-
-        name = file_path.name
-
-        if name == "terraform.tfvars.py":
-            return True
-
-        if name.endswith(".auto.tfvars.py"):
-            return True
-
-        output_file_path = file_path.with_suffix(".json")
-        if output_file_path in self._cli_var_files:
-            return True
-
-        return False
+    def __iter__(self):
+        yield ("name", self.name)
+        yield ("value", self.value)
+        yield ("source", self.source)
 
 
 class VariableError(Exception):
@@ -183,29 +241,95 @@ class VariableError(Exception):
         return f"\n{errors}"
 
 
-class VariableNotConsistent(VariableError):
-    def __init__(self, name, old_source, new_source):
-        self.name = name
-        self.old_source = old_source
-        self.new_source = new_source
+class VariableAlreadyDefined(VariableError):
+    def __init__(self, old_var, new_var):
+        self.old_var = old_var
+        self.new_var = new_var
 
     def __str__(self):
-        return f"create: {self.new_source} cannot set value for var.{self.name} because {self.old_source} set it with a different value"
+        return f"create: {self.new_var.source} cannot define var.{self.name} because {self.old_var.source} already defined it"
+
+
+class VariableNotConsistent(VariableError):
+    def __init__(self, old_var, new_var):
+        self.old_var = old_var
+        self.new_var = new_var
+
+    def __str__(self):
+        return f"create: {self.new_var.source} cannot set var.{self.new_var.name}={repr(self.new_var.value)} because {self.old_var.source} set var.{self.old_var.name}={repr(self.old_var.value)}"
 
 
 class VariableNotDefined(VariableError):
-    def __init__(self, name, source):
+    def __init__(self, name, consumer):
         self.name = name
-        self.source = source
+        self.consumer = consumer
 
     def __str__(self):
-        return f"create: {self.source} cannot access var.{self.name} because it has not been defined"
+        return f"create: {self.consumer} cannot access var.{self.name} because it has not been defined"
 
 
 class VariableNotPopulated(VariableError):
-    def __init__(self, name, source):
+    def __init__(self, name, consumer):
         self.name = name
-        self.source = source
+        self.consumer = consumer
 
     def __str__(self):
-        return f"create: {self.source} cannot access var.{self.name} because it has no value"
+        return f"create: {self.consumer} cannot access var.{self.name} because it has no value"
+
+
+def get_variables_from_block(block, source):
+
+    if "variable" not in block:
+        return
+
+    variable = block["variable"]
+
+    if isinstance(variable, dict):
+        variables = [variable]
+    else:
+        variables = variable
+
+    for variable in variables:
+        for name, block in variable.items():
+            kwargs = {"name": name, "source": source}
+            if "default" in block:
+                kwargs["default"] = block["default"]
+            yield VariableDefinition(**kwargs)
+
+
+def get_variables_from_file(path):
+    if path.name.endswith(".tf"):
+        yield from get_variables_from_tf_file(path)
+    elif path.name.endswith(".tfvars"):
+        yield from get_variables_from_tfvars_file(path)
+    elif path.name.endswith(".tf.json"):
+        yield from get_variables_from_tf_json_file(path)
+    elif path.name.endswith(".tfvars.json"):
+        yield from get_variables_from_tfvars_json_file(path)
+    else:
+        raise ValueError(path.name)
+
+
+def get_variables_from_tf_file(path):
+    blocks = parse_tf_file_for_variables(path)
+    for block in blocks:
+        yield from get_variables_from_block(block, path.name)
+
+
+def get_variables_from_tfvars_file(path):
+    contents = parse_tfvars_file_for_variables(path)
+    for name, value in contents.items():
+        yield VariableValue(name=name, value=value, source=path.name)
+
+
+def get_variables_from_tf_json_file(path):
+    blocks = parse_json_file_for_blocks(path)
+    for block in blocks:
+        yield from get_variables_from_block(block, path.name)
+
+
+def get_variables_from_tfvars_json_file(path):
+    blocks = parse_json_file_for_blocks(path)
+    for blocks in blocks:
+        for name, value in blocks.items():
+            yield VariableValue(name=name, value=value, source=path.name)

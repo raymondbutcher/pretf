@@ -1,11 +1,18 @@
 ## create
 
-Creates `*.tf.json` and `*.tfvars.json` files from `*.tf.py` and `*.tfvars.py` files.
+Creates `*.tf.json` and `*.tfvars.json` files in the current directory from `*.tf.py` and `*.tfvars.py` files in the source directories.
+
+Uses the current directory as a source directory if none are specified. If multiple directories are specified, and there are duplicate file names, the files in the latter directories take precedence.
+
+It is recommended to call create() only once. Pass in multiple source_dirs rather than calling it multiple times. Pretf parses variables from files in the current directory and the source_dirs. Calling it multiple times with different source_dirs could give Pretf a different set of files to parse each time it is called, resulting in different variables each time.
 
 Signature:
 
 ```python
-create()
+create(*source_dirs)
+
+source_dirs:
+    optional sequence of directories to use for source files
 
 returns:
     list(pathlib.Path) of created files
@@ -18,7 +25,7 @@ from pretf.api import create
 
 
 def run():
-    create(env="dev")
+    create()
 ```
 
 ## execute

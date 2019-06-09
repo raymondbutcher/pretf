@@ -1,0 +1,47 @@
+[
+    {
+        "name": "image_id",
+        "source": "variables.tf"
+    },
+    {
+        "name": "availability_zone_names",
+        "default": [
+            "us-west-1a"
+        ],
+        "source": "variables.tf"
+    },
+    {
+        "name": "image_id_2",
+        "source": "variables.tf"
+    },
+    {
+        "name": "access_key",
+        "source": "variables.tf"
+    },
+    {
+        "name": "secret_key",
+        "source": "variables.tf"
+    },
+    {
+        "name": "region",
+        "default": "us-east-1",
+        "source": "variables.tf"
+    },
+    {
+        "name": "cidrs",
+        "default": [],
+        "source": "variables.tf"
+    },
+    {
+        "name": "cidrs_2",
+        "source": "variables.tf"
+    },
+    {
+        "name": "amis",
+        "default": {
+            "us-east-1": "ami-b374d5a5",
+            "us-west-2": "ami-4b32be2b"
+        },
+        "source": "variables.tf"
+    }
+]

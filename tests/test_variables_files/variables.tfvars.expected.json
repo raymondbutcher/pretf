@@ -1,20 +1,23 @@
 [
     {
         "name": "image_id",
-        "value": "ami-abc123"
+        "value": "ami-abc123",
+        "source": "variables.tfvars"
     },
     {
         "name": "availability_zone_names",
         "value": [
             "us-east-1a",
             "us-west-1c"
-        ]
+        ],
+        "source": "variables.tfvars"
     },
     {
         "name": "amis",
         "value": {
             "us-east-1": "ami-abc123",
             "us-west-2": "ami-def456"
-        }
+        },
+        "source": "variables.tfvars"
     }
 ]

@@ -1,30 +1,26 @@
 from functools import wraps
 
-from .parser import get_outputs_from_block, get_variables_from_block
-from .render import Collection, unwrap_yielded
-from .variables import VariableNotDefined, VariableNotPopulated
+from .parser import get_outputs_from_block
+from .render import unwrap_yielded
+from .variables import VariableStore, VariableValue, get_variables_from_block
 
 
-class VariableProxy:
-    def __init__(self, values):
-        self._defaults = {}
-        self._names = set()
-        self._values = values
+class Collection:
+    def __init__(self, blocks, outputs):
+        self.__blocks = blocks
+        self.__outputs = outputs
 
     def __getattr__(self, name):
+        if name in self.__outputs:
+            return self.__outputs[name]
+        raise AttributeError(f"output not defined: {name}")
 
-        if name not in self._names:
-            raise VariableNotDefined(name, "pretf.collections")
-
-        if name in self._values:
-            return self._values[name]
-
-        if name in self._defaults:
-            return self._defaults[name]
-
-        raise VariableNotPopulated(name, "pretf.collections")
-
-    __getitem__ = __getattr__
+    def __iter__(self):
+        for block in self.__blocks:
+            if isinstance(block, Collection):
+                yield from block
+            else:
+                yield block
 
 
 def collect(func):
@@ -46,7 +42,17 @@ def collect(func):
     @wraps(func)
     def wrapped(**kwargs):
 
-        var_proxy = VariableProxy(kwargs)
+        # Create a store to track variables.
+        var_store = VariableStore()
+
+        # Load variable values from kwargs passed into the collection function.
+        for key, value in kwargs.items():
+            var = VariableValue(name=key, value=value, source="kwargs")
+            var_store.add(var)
+
+        # Create a proxy for accessing variable values.
+        var_proxy = var_store.proxy(func.__name__)
+
         gen = func(var_proxy)
 
         blocks = []
@@ -62,19 +68,19 @@ def collect(func):
 
             for block in unwrap_yielded(yielded):
 
+                # Use variable blocks to update the variable store.
                 var = None
-                for var in get_variables_from_block(block):
-                    name = var["name"]
-                    var_proxy._names.add(name)
-                    if "default" in var:
-                        var_proxy._defaults[name] = var["default"]
+                for var in get_variables_from_block(block, func.__name__):
+                    var_store.add(var)
 
+                # Use output blocks to update the output values.
                 output = None
                 for output in get_outputs_from_block(block):
                     name = output["name"]
                     value = output["value"]
                     outputs[name] = value
 
+                # Use any other blocks in the resulting JSON.
                 if not var and not output:
                     blocks.append(block)
 
