@@ -40,25 +40,11 @@ def create(*source_dirs):
 
     # Write JSON files.
     created = []
-    for file_path, contents in sorted(file_contents.items()):
-        if contents:
-
-            output_path = file_path.with_suffix(".json")
-
-            # Merge list of blocks into single block
-            # in tfvars.json files.
-            if output_path.name.endswith(".tfvars.json"):
-                merged = {}
-                for block in contents:
-                    for name, value in block.items():
-                        merged[name] = value
-                contents = merged
-
-            with output_path.open("w") as open_file:
-                json.dump(contents, open_file, indent=2, default=json_default)
-
-            log.ok(f"create: {output_path.name}")
-            created.append(output_path)
+    for output_path, contents in sorted(file_contents.items()):
+        with output_path.open("w") as open_file:
+            json.dump(contents, open_file, indent=2, default=json_default)
+        log.ok(f"create: {output_path.name}")
+        created.append(output_path)
 
     return created
 

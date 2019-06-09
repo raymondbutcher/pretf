@@ -72,11 +72,12 @@ class VariableStore:
 
 
 class TerraformVariableStore(VariableStore):
-    def __init__(self, files_to_create):
+    def __init__(self, files_to_create, process_jobs):
         super().__init__()
         self._files_to_create = files_to_create
         self._files_created = set()
         self._tfvars_waiting = set()
+        self._process_jobs = process_jobs
 
     def add(self, var, allow_change=True):
         # Ensure Terraform variables are loaded before anything from Pretf,
@@ -110,6 +111,7 @@ class TerraformVariableStore(VariableStore):
 
     def get(self, name, consumer):
         self.load()
+        self._process_jobs(until=name)
         return super().get(name, consumer)
 
     @once
