@@ -1,0 +1,10 @@
+[
+    {
+        "name": "source_image_region",
+        "source": "announcing_terraform_4.tf"
+    },
+    {
+        "name": "target_image_regions",
+        "source": "announcing_terraform_4.tf"
+    }
+]

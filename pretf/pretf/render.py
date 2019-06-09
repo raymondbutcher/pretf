@@ -1,11 +1,12 @@
-import os
 from collections import defaultdict
-from functools import lru_cache
-from pathlib import Path
 
-from .parser import get_variables_from_block
 from .util import import_file
-from .variables import TerraformVariables, VariableError, VariableNotConsistent
+from .variables import (
+    TerraformVariableStore,
+    VariableError,
+    VariableValue,
+    get_variables_from_block,
+)
 
 
 class Block:
@@ -48,21 +49,6 @@ class Block:
         return self.__path
 
 
-class Collection:
-    def __init__(self, blocks, outputs):
-        self.__blocks = blocks
-        self.__outputs = outputs
-
-    def __getattr__(self, name):
-        if name in self.__outputs:
-            return self.__outputs[name]
-        raise AttributeError(f"output not defined: {name}")
-
-    def __iter__(self):
-        for value in self.__blocks:
-            yield value
-
-
 class Interpolated:
     def __init__(self, value):
         self.__value = value
@@ -81,32 +67,26 @@ class Interpolated:
 
 
 class Renderer:
-    def __init__(self):
+    def __init__(self, files_to_create):
+        # These are all of the files that will be created.
+        self.files_to_create = files_to_create
+
         # This will be populated with any files that have tried
         # to use a variable that is not defined or populated yet.
         self.blocked_files = defaultdict(list)
 
         # This will be populated with any files that are not waiting
-        # on a variable, so they are able to be generated.
+        # on a variable, so they can continue to be created.
         self.unblocked_files = []
         self.return_values = {}
 
         # Results from processed files go here.
         self.results = defaultdict(list)
 
-    @lru_cache()
-    def file_paths(self):
-        result = []
-        for path in sorted(os.listdir()):
-            # Get absolute path without resolving symlinks.
-            path = Path(os.path.abspath(path))
-            result.append(path)
-        return result
-
-    @property
-    @lru_cache()
-    def variables(self):
-        return TerraformVariables(file_paths=self.file_paths())
+        # Variables will be populated from environment variables,
+        # command line arguments, and files, as per standard Terraform
+        # behaviour. They will also be populated as files get created.
+        self.variables = TerraformVariableStore(files_to_create=files_to_create)
 
     def process_file(self):
 
@@ -117,8 +97,8 @@ class Renderer:
         try:
             yielded = file_gen.send(return_value)
         except StopIteration:
-            if self.variables.is_source_file(file_path):
-                self.variables.enable_defaults(file_path)
+            output_name = file_path.with_suffix(".json").name
+            self.variables.file_created(output_name)
             return
 
         self.return_values[file_path] = yielded
@@ -138,53 +118,44 @@ class Renderer:
             self.process_file()
 
     def process_tf_block(self, file_path, block):
-        for var in get_variables_from_block(block):
+        for var in get_variables_from_block(block, file_path.name):
+            # Add the variable definition. This doesn't necessarily
+            # make it available to use, because a tfvars file may
+            # populate it later.
             self.variables.add(var)
-            try:
-                value = self.variables.get_value(var["name"], file_path)
-            except VariableError:
-                pass
-            else:
-                self.resume_files(var["name"], value)
+
+            # Resume files waiting for this variable
+            # if the variable available to use now.
+            if var.name in self.variables:
+                value = self.variables.get(var.name, file_path)
+                self.resume_files(var.name, value)
 
     def process_tfvars_block(self, file_path, block):
-        if self.variables.is_source_file(file_path):
+        # Only populate the variable store with values in this file
+        # if it is waiting for this file. It is possible to generate
+        # tfvars files that don't get used as a source for values.
+        output_name = file_path.with_suffix(".json").name
+        if self.variables.tfvars_waiting_for(output_name):
             for name, value in block.items():
+                # Add the variable value. Raise an error if it changes
+                # the value, because it could result in Pretf using
+                # the old value and Terraform using the new one.
+                var = VariableValue(name=name, value=value, source=file_path.name)
+                self.variables.add(var, allow_change=False)
 
-                var = {"name": name, "value": value, "source": file_path.name}
-                self.variables.add(var)
-
-                try:
-                    existing_value = self.variables.get_value(name, file_path)
-                except VariableError:
-                    self.variables.set_value(name, value, file_path)
-                    self.resume_files(name, value)
-                else:
-                    if value != existing_value:
-                        old_source = self.variables.get_source(name)
-                        raise VariableNotConsistent(
-                            name, old_source=old_source, new_source=file_path
-                        )
+                # Resume files waiting for this variable.
+                self.resume_files(name, value)
 
     def render(self):
+        # Add files to be processed.
+        for file_path in self.files_to_create.values():
+            var = self.variables.proxy(file_path)
+            with import_file(file_path) as module:
+                file_gen = module.terraform(var)
+            file_item = [file_path, file_gen]
+            self.unblocked_files.append(file_item)
 
-        # Find files to process.
-        for file_path in self.file_paths():
-            file_name = file_path.name
-            if file_name.endswith(".tf.py") or file_name.endswith(".tfvars.py"):
-
-                var = VariableProxy(self, file_path)
-
-                with import_file(file_path) as module:
-                    file_gen = module.terraform(var)
-
-                file_item = [file_path, file_gen]
-                self.unblocked_files.append(file_item)
-
-                if self.variables.is_source_file(file_path):
-                    self.variables.disable_defaults(file_path)
-
-        # Process all files one block at a time.
+        # Process files one block at a time.
         self.process_files()
 
         # Raise an exception if any files could not be generated
@@ -194,7 +165,7 @@ class Renderer:
             for file_item in file_items:
                 file_path, file_gen = file_item
                 try:
-                    self.variables.get_value(var_name, file_path)
+                    self.variables.get(var_name, file_path)
                 except VariableError as error:
                     variable_error.add(error)
                 else:
@@ -202,6 +173,7 @@ class Renderer:
         if variable_error.errors:
             raise variable_error
 
+        # All files were created successfully.
         return self.results
 
     def resume_files(self, var_name, var_value):
@@ -210,18 +182,6 @@ class Renderer:
             file_path, file_gen = file_item
             self.return_values[file_path] = var_value
             self.unblocked_files.append(file_item)
-
-
-class VariableProxy:
-    def __init__(self, renderer, file_path):
-        self.__renderer = renderer
-        self.__file_path = file_path
-
-    def __getattr__(self, name):
-        self.__renderer.process_files()
-        return self.__renderer.variables.get_value(name, self.__file_path)
-
-    __getitem__ = __getattr__
 
 
 def json_default(obj):
@@ -233,10 +193,7 @@ def json_default(obj):
 def unwrap_yielded(yielded):
     if isinstance(yielded, Block):
         yield dict(iter(yielded))
-    elif isinstance(yielded, Collection):
-        for nested in yielded:
-            yield from unwrap_yielded(nested)
     elif isinstance(yielded, dict):
         yield yielded
     else:
-        raise TypeError(yielded)
+        yield from yielded

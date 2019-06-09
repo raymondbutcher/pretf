@@ -7,15 +7,36 @@ from . import log, util
 from .render import Block, Renderer, json_default
 
 
-def create():
+def create(*source_dirs):
     """
-    Creates *.tf.json and *.tfvars.json files
-    from *.tf.py and *.tfvars.py files.
+    Creates *.tf.json and *.tfvars.json files in the current directory
+    from *.tf.py and *.tfvars.py files in the source directories.
+
+    Uses the current directory as a source directory if none are specified.
+    If multiple directories are specified, and there are duplicate file names,
+    the files in the latter directories take precedence.
+
+    It is recommended to call create() only once. Pass in multiple
+    source_dirs rather than calling it multiple times. Pretf parses
+    variables from files in the current directory and the source_dirs.
+    Calling it multiple times with different source_dirs could give
+    Pretf a different set of files to parse each time it is called,
+    resulting in different variables each time.
 
     """
+
+    # Find all files in the specified source directories.
+    files_to_create = {}
+    for source_dir_path in map(Path, source_dirs or ["."]):
+        for path in source_dir_path.iterdir():
+            name = path.name
+            if name.endswith(".tf.py") or name.endswith(".tfvars.py"):
+                output_name = path.with_suffix(".json").name
+                files_to_create[output_name] = path
 
     # Render the JSON data from *.tf.py and *.tfvars.py files.
-    file_contents = Renderer().render()
+    file_renderer = Renderer(files_to_create)
+    file_contents = file_renderer.render()
 
     # Write JSON files.
     created = []
