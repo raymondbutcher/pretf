@@ -25,13 +25,16 @@ class Collection:
 
 def collect(func):
     """
-    This is a decorator used to create a Collection.
+    This is a decorator used to create a collection. Collections are similar
+    to Terraform modules except the resources are included in the root
+    module rather than under a named module.
+
     Decorated functions should:
 
-    * accept a single argument "var"
-    * yield pretf.api.tf blocks
-        * optionally including variable blocks to define inputs
-        * optionally including output blocks to define outputs
+    * Accept a single argument "var"
+    * Yield pretf.api.tf blocks
+        * Optionally including "variable" blocks to define inputs
+        * Optionally including "output" blocks to define outputs
 
     When using a collection, any required inputs defined by variable blocks
     must be passed in as keyword arguments. Any outputs defined by output
