@@ -3,8 +3,8 @@ import sys
 
 from . import log
 from .api import create, execute, remove
-from .render import VariableError
 from .util import import_file
+from .variables import VariableError
 from .version import __version__
 
 
