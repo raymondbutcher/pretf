@@ -70,7 +70,7 @@ def execute(verbose=True):
 
         # This is a valid executable, run it.
         return util.execute(
-            file=terraform_path, args=[terraform_path] + sys.argv[1:], verbose=verbose
+            file=terraform_path, args=["terraform"] + sys.argv[1:], verbose=verbose
         )
 
     log.bad("terraform: command not found")
