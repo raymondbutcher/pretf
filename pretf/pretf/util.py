@@ -2,8 +2,11 @@ import errno
 import os
 import shlex
 import sys
+from collections import defaultdict
 from contextlib import contextmanager
+from functools import lru_cache, wraps
 from importlib.util import module_from_spec, spec_from_file_location
+from threading import Lock
 
 from . import log
 
@@ -77,3 +80,20 @@ def import_file(path):
     finally:
         if added_to_sys_path:
             sys.path.remove(pathdir)
+
+
+def once(func):
+
+    locks = defaultdict(Lock)
+
+    @lru_cache(maxsize=None)
+    def get_key(*args, **kwargs):
+        return object()
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        key = get_key(*args, **kwargs)
+        if locks[key].acquire(blocking=False):
+            return func(*args, **kwargs)
+
+    return wrapped
