@@ -17,5 +17,6 @@ nav:
 - API:
   - pretf.api: api/api.md
   - pretf.aws: api/aws.md
+  - pretf.collections: api/collections.md
   - pretf.util: api/util.md
   - projects: api/projects.md
