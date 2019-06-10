@@ -1,4 +1,5 @@
 from collections import defaultdict
+from pathlib import PurePath
 
 from .util import import_file
 from .variables import TerraformVariableStore, VariableValue, get_variables_from_block
@@ -174,7 +175,7 @@ class RenderJob:
 
 
 def json_default(obj):
-    if isinstance(obj, Interpolated):
+    if isinstance(obj, (Interpolated, PurePath)):
         return str(obj)
     raise TypeError(repr(obj))
 
