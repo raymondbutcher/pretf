@@ -5,20 +5,7 @@ def terraform(var):
 
     name = f"pretf-test-{var.envname}"
 
-    bucket = yield tf(
-        "resource.aws_s3_bucket.test",
-        {
-            "bucket": name,
-            "acl": "private",
-            "server_side_encryption_configuration": {
-                "rule": {
-                    "apply_server_side_encryption_by_default": {
-                        "sse_algorithm": "AES256"
-                    }
-                }
-            },
-        },
-    )
+    bucket = yield tf("resource.aws_s3_bucket.test", {"bucket": name, "acl": "private"})
 
     # Loop through all dogs specified in this environment.
     for name in var.dogs:
