@@ -169,7 +169,7 @@ def get_session(**kwargs):
     return Session(**kwargs)
 
 
-def terraform_s3_backend(session, bucket, key, table, region=None):
+def terraform_s3_backend(session, bucket, table, region=None, key="terraform.tfstate"):
     """
     This ensures that the S3 backend exists, prompting to create it
     if necessary, sets the credentials as environment variables,
@@ -235,7 +235,7 @@ def terraform_s3_backend(session, bucket, key, table, region=None):
                     "bucket": bucket,
                     "dynamodb_table": table,
                     "encrypt": True,
-                    "key": "terraform.tfstate",
+                    "key": key,
                 }
             }
         },
