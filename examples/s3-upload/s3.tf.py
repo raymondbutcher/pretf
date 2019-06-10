@@ -69,18 +69,8 @@ def terraform(var):
 
     # Create an S3 bucket.
     bucket = yield tf(
-        "resource.aws_s3_bucket.pretf_test_s3_upload",
-        {
-            "bucket": "pretf-test-s3-upload",
-            "acl": "private",
-            "server_side_encryption_configuration": {
-                "rule": {
-                    "apply_server_side_encryption_by_default": {
-                        "sse_algorithm": "AES256"
-                    }
-                }
-            },
-        },
+        "resource.aws_s3_bucket.test",
+        {"bucket": "pretf-test-s3-upload", "acl": "private"},
     )
 
     # Upload all files from the "files" directory.
