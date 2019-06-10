@@ -1,4 +1,3 @@
 provider "aws" {
-  region  = "eu-west-1"
-  profile = "rbutcher"
+  region = "${var.aws_region}"
 }
