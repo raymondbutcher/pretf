@@ -8,17 +8,18 @@ def terraform(var):
     private_label = "private"
     private = yield tf(
         f"resource.aws_security_group.{private_label}",
-        {"name": "pretf-example-private"},
+        {"name": "pretf-security-groups-private"},
     )
 
     public_label = "public"
     public = yield tf(
-        f"resource.aws_security_group.{public_label}", {"name": "pretf-example-public"}
+        f"resource.aws_security_group.{public_label}",
+        {"name": "pretf-security-groups-public"},
     )
 
     for cidr in sorted(set(var.access_list)):
 
-        cidr_label = cidr.replace(".", "_").replace("/", "_")
+        cidr_name = cidr.replace(".", "_").replace("/", "_")
 
         if IPv4Network(cidr).is_global:
             group = public
@@ -28,8 +29,9 @@ def terraform(var):
             group_label = private_label
 
         for port in (80, 443):
+            rule_name = f"{group_label}_{port}_from_{cidr_name}"
             yield tf(
-                f"resource.aws_security_group_rule.{group_label}_{port}_from_{cidr_label}",
+                f"resource.aws_security_group_rule.{rule_name}",
                 {
                     "security_group_id": group.id,
                     "type": "ingress",

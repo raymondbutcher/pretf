@@ -1,3 +1,15 @@
+variable "aws_profile" {
+  default = "rbutcher"
+}
+
+variable "aws_region" {
+  default = "eu-west-1"
+}
+
+variable "envtype" {
+  default = "nonprod"
+}
+
 variable "access_list" {
   default = [
     "1.1.1.1/32",
