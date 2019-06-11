@@ -168,13 +168,11 @@ def parse_json_file_for_blocks(path: Path):
 
 
 def parse_tfvars_file_for_variables(path: Path):
-
-    with path.open() as open_file:
-        contents = clean_block_string(open_file.read())
-
-    parsed = hcl.loads(contents)
-
-    return parsed
+    cleaned = clean_block_string(path.read_text())
+    if cleaned:
+        return hcl.loads(cleaned)
+    else:
+        return {}
 
 
 def read_chars_from_file(path: Path):
