@@ -137,17 +137,21 @@ def run():
 
 ## mirror
 
-Creates symlinks from all files and directories in the source directories into the current directory. Deletes all existing symlinks in the current directory.
+Creates symlinks from all files and directories matching the source patterns into the current directory. Deletes all pre-existing symlinks in the current directory.
 
 Signature:
 
 ```python
-mirror(*source_dirs, exclude=["__pycache__"])
+mirror(*path_patterns, exclude_name_patterns=[".*", "_*"], cwd=None, verbose=True)
 
-source_dirs:
-    required str sequence of directories to mirror into the current directory
-exclude:
-    optional list of file names to exclude
+path_patterns:
+    required str sequence of path glob patterns to mirror into the current directory
+exclude_name_patterns:
+    optional list of file names glob patterns to exclude
+cwd:
+    optional pathlib.Path of current directory
+verbose:
+    optional bool of whether to print information
 
 returns:
     list(pathlib.Path) of created symlinks
@@ -160,7 +164,7 @@ from pretf.api import mirror
 
 
 def run():
-    mirror("../src")
+    mirror("../src/*")
 ```
 
 ## remove

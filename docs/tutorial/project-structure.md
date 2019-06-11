@@ -43,7 +43,7 @@ def run():
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src")
+    mirror("../../src/*")
 
     # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
     # symlinks that were just created.
@@ -65,7 +65,7 @@ def run():
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src")
+    mirror("../../src/*")
 
     # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
     # symlinks that were just created.
@@ -87,7 +87,7 @@ def run():
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src")
+    mirror("../../src/*")
 
     # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
     # symlinks that were just created.
@@ -128,7 +128,7 @@ def run():
 
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src")
+    mirror("../../src/*")
 
     # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
     # symlinks that were just created.

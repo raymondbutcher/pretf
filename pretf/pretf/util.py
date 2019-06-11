@@ -4,8 +4,10 @@ import shlex
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
+from fnmatch import fnmatch
 from functools import lru_cache, wraps
 from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
 from threading import Lock
 
 from . import log
@@ -54,6 +56,23 @@ def execute(file, args, env=os.environ, verbose=True):
             else:
                 exit_code = exit_status >> 8
                 return exit_code
+
+
+def find_paths(path_patterns, exclude_name_patterns=None, cwd=None):
+
+    if cwd is None:
+        cwd = Path.cwd()
+
+    if exclude_name_patterns is None:
+        exclude_name_patterns = []
+
+    for pattern in path_patterns:
+        for path in cwd.glob(pattern):
+            for exclude_name_pattern in exclude_name_patterns:
+                if fnmatch(path.name, exclude_name_pattern):
+                    break
+            else:
+                yield path
 
 
 @contextmanager

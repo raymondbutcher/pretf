@@ -84,32 +84,32 @@ def execute(verbose=True):
     return 1
 
 
-def mirror(*source_dirs, exclude=["__pycache__"]):
+def mirror(*path_patterns, exclude_name_patterns=[".*", "_*"], cwd=None, verbose=True):
     """
-    Creates symlinks from all files and directories in the source
-    directories into the current directory. Deletes all existing
-    symlinks in the current directory.
+    Creates symlinks from all files and directories matching
+    the source patterns into the current directory. Deletes
+    all pre-existing symlinks in the current directory.
 
     """
 
-    exclude = set(exclude)
+    if cwd is None:
+        cwd = Path.cwd()
 
-    # Delete old symlinks in the current directory.
-    cwd = Path.cwd()
-    for file_path in cwd.iterdir():
-        if file_path.is_symlink():
-            file_path.unlink()
+    if verbose:
+        log.ok(f"mirror: {' '.join(path_patterns)}")
 
+    # Delete old symlinks.
+    for path in cwd.iterdir():
+        if path.is_symlink():
+            path.unlink()
+
+    # Create new symlinks.
     created = []
-
-    # Create new symlinks from source paths.
-    for source_dir in source_dirs:
-        log.ok(f"mirror: {source_dir}")
-        for source_file_path in Path(source_dir).iterdir():
-            if source_file_path.name not in exclude:
-                target_file_path = cwd / source_file_path.name
-                target_file_path.symlink_to(source_file_path)
-                created.append(target_file_path)
+    paths = util.find_paths(path_patterns, exclude_name_patterns=exclude_name_patterns)
+    for real_path in paths:
+        link_path = cwd / real_path.name
+        link_path.symlink_to(real_path)
+        created.append(link_path)
 
     return created
 
