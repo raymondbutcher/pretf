@@ -1,6 +1,6 @@
 ## export_environment_variables
 
-Sets environment variables for AWS credentials using the provided [boto3.Session](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html) or [boto3.Session](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html) arguments. This should usually not be necessary because `terraform_s3_backend()` does this automatically.
+Sets environment variables for AWS credentials using the provided [boto3.Session](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html) or [boto3.Session](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html) arguments. This should usually not be necessary because `terraform_backend_s3()` does this automatically.
 
 Signature:
 
@@ -123,25 +123,22 @@ def terraform(var):
     session = get_session(profile_name=var.aws_profile)
 ```
 
-## terraform_s3_backend
+## terraform_backend_s3
 
-Ensures that the S3 backend exists, prompting to create it if necessary, sets the credentials as environment variables, then returns a Terraform configuration block for it.
+Ensures that the S3 backend exists, prompting to create it if necessary, sets the credentials as environment variables, then returns a Terraform configuration block for it. Accepts the same options as the [S3 backend configuration variables](https://www.terraform.io/docs/backends/types/s3.html#configuration-variables).
+
 
 Signature:
 
 ```python
-terraform_s3_backend(session, bucket, key, table, region=None)
+terraform_backend_s3(bucket, dynamodb_table, **config)
 
-session:
-    required boto3.Session
 bucket:
     required str for the S3 bucket name to use for storing the Terraform state file
-key:
-    required str for the S3 object key to use for storing the Terraform state file
-table:
+dynamodb_table:
     required str for the DynamoDB table to use for locking the Terraform state file
-region:
-    option str for the AWS region, defaults to the session region
+**config:
+    required dict of other configuration options as per Terraform documentation
 
 returns:
     Block
@@ -150,16 +147,15 @@ returns:
 Example:
 
 ```python
-from pretf.aws import terraform_s3_backend
+from pretf.aws import terraform_backend_s3
 
 
 def terraform(var):
-    session = get_session(profile_name=var.aws_profile)
-    yield terraform_s3_backend(
+    yield terraform_backend_s3(
         bucket="example-tfstate-bucket",
+        dynamodb_table="example-tfstate-table",
         key="terraform.tfstate",
+        profile=var.aws_profile,
         region="eu-west-1",
-        session=session,
-        table="example-tfstate-table",
     )
 ```

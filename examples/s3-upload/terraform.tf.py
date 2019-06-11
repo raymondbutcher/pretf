@@ -1,19 +1,17 @@
 from pretf.api import tf
-from pretf.aws import get_session, terraform_s3_backend
+from pretf.aws import terraform_backend_s3
 
 
 def terraform(var):
 
-    session = get_session(profile_name=var.aws_profile)
-
     backend_name = f"pretf-tfstate-{var.envtype}"
 
-    yield terraform_s3_backend(
+    yield terraform_backend_s3(
         bucket=backend_name,
+        dynamodb_table=backend_name,
         key="s3-upload.tfstate",
+        profile=var.aws_profile,
         region=var.aws_region,
-        session=session,
-        table=backend_name,
     )
 
     yield tf("terraform", {"required_version": "0.12.1"})

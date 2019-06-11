@@ -75,7 +75,11 @@ def import_file(path):
         name = os.path.basename(path).split(".")[0]
         spec = spec_from_file_location(name, path)
         module = module_from_spec(spec)
-        spec.loader.exec_module(module)
+        try:
+            spec.loader.exec_module(module)
+        except Exception as error:
+            log.bad(error)
+            raise
         yield module
     finally:
         if added_to_sys_path:
