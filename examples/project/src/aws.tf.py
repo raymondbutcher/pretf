@@ -1,4 +1,3 @@
-from pretf.api import tf
 from pretf.aws import provider_aws
 
 

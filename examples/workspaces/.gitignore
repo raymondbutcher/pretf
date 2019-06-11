@@ -1,0 +1,5 @@
+.terraform*
+*.tf.json
+workspace.auto.tfvars
+workspace.tf.py
+!src/workspace.tf.py
