@@ -169,7 +169,9 @@ def get_session(**kwargs):
     return Session(**kwargs)
 
 
-def terraform_s3_backend(session, bucket, table, region=None, key="terraform.tfstate"):
+def terraform_backend_s3(
+    bucket, dynamodb_table, **config
+):
     """
     This ensures that the S3 backend exists, prompting to create it
     if necessary, sets the credentials as environment variables,
@@ -177,13 +179,39 @@ def terraform_s3_backend(session, bucket, table, region=None, key="terraform.tfs
 
     """
 
-    if not region:
-        region = session.region_name
+    # Avoid unsupported options.
+
+    unsupported = (
+        "iam_endpoint",
+        "assume_role_policy",
+        "shared_credentials_file",
+        "sts_endpoint",
+    )
+    for key in unsupported:
+        if key in config:
+            raise NotImplementedError("{key} is not supported")
+
+    # Create a session from any AWS credentials options.
+
+    session_kwargs = {}
+    session_kwargs_map = {
+        "profile": "profile_name",
+        "access_key": "aws_access_key_id",
+        "secret_key": "aws_secret_access_key",
+        "token": "aws_session_token",
+    }
+    for config_key, session_key in session_kwargs_map.items():
+        if config_key in config:
+            session_kwargs[session_key] = config.pop(config_key)
+
+    session = get_session(**session_kwargs)
+
+    region = config.get("region") or session.region_name
 
     # Check if the backend resources have been created.
 
     status = _get_s3_backend_status(
-        session=session, region_name=region, bucket=bucket, table=table
+        session=session, region_name=region, bucket=bucket, table=dynamodb_table
     )
 
     if not all(status.values()):
@@ -194,7 +222,7 @@ def terraform_s3_backend(session, bucket, table, region=None, key="terraform.tfs
 
             account_id = get_account_id(session=session)
             bucket_arn = _get_s3_bucket_arn(region, account_id, bucket)
-            table_arn = _get_dynamodb_table_arn(region, account_id, table)
+            table_arn = _get_dynamodb_table_arn(region, account_id, dynamodb_table)
 
             if status["bucket_exists"]:
                 log.ok(f"backend: {bucket_arn} found")
@@ -214,7 +242,7 @@ def terraform_s3_backend(session, bucket, table, region=None, key="terraform.tfs
             raise SystemExit(1)
 
         _create_s3_backend(
-            session=session, bucket=bucket, table=table, region_name=region
+            session=session, bucket=bucket, table=dynamodb_table, region_name=region
         )
 
     # Use environment variables for credentials, rather than adding
@@ -226,17 +254,14 @@ def terraform_s3_backend(session, bucket, table, region=None, key="terraform.tfs
 
     # Return the configuration to use the backend.
 
-    return tf(
-        "terraform",
+    config.setdefault("encrypt", True)
+
+    config.update(
         {
-            "backend": {
-                "s3": {
-                    "region": region,
-                    "bucket": bucket,
-                    "dynamodb_table": table,
-                    "encrypt": True,
-                    "key": key,
-                }
-            }
-        },
+            "region": region,
+            "bucket": bucket,
+            "dynamodb_table": dynamodb_table,
+        }
     )
+
+    return tf("terraform", {"backend": {"s3": config}})

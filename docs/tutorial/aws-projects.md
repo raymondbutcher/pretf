@@ -22,30 +22,22 @@ Pretf can dynamically generate the [S3 backend](https://www.terraform.io/docs/ba
 # terraform.tf.py
 
 from pretf.api import tf
-from pretf.aws import get_session, terraform_s3_backend
+from pretf.aws import terraform_backend_s3
 
 
 def terraform(var):
-
-    # This gets a Boto3 session using an AWS profile for credentials,
-    # but any Boto3 credentials method will work. If the profile
-    # requires an MFA token, you will be prompted. This is something
-    # that Terraform by itself does not do.
-    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
-    session = get_session(profile_name=var.aws_profile)
-
     # This will check for the existence of the specified S3 bucket
     # and DynamoDB table. If they do not exist, you will be prompted
     # to create them with a CloudFormation stack. The AWS credentials
     # will then be exported as environment variables, and a Terraform
     # configuration block for the S3 backend is returned. It is then
     # yielded to be included in the generated JSON file.
-    yield terraform_s3_backend(
+    yield terraform_backend_s3(
         bucket=f"pretf-tfstate-{var.envtype}",
+        dynamodb_table=f"pretf-tfstate-{var.envtype}",
         key="custom-dev.tfstate",
+        profile=var.aws_profile,
         region=var.aws_region,
-        session=session,
-        table=f"pretf-tfstate-{var.envtype}",
     )
 
     # It is also a good idea to pin the Terraform version in this file.
