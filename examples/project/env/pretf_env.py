@@ -10,7 +10,7 @@ def run():
 
     # Create symlinks in the current directory to everthing in ../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src")
+    mirror("../../src/*")
 
     # Create *.tf.json files from *.tf.py symlinks that were just created,
     # using a combination of default and environment-specific parameters.
