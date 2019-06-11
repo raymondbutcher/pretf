@@ -13,6 +13,4 @@ def terraform(var):
 
     yield provider_aws(profile=var.aws_profile, region=var.aws_region)
 
-    london = yield provider_aws(profile=var.aws_profile, region="eu-west-1", alias="london")
-
-    print(london.alias)
+    yield provider_aws(profile=var.aws_profile, region="eu-west-1", alias="london")
