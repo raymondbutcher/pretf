@@ -31,7 +31,7 @@ class Block:
         elif parts[0] == "variable":
             parts[0] = "var"
         elif parts[0] == "provider":
-            alias = self.__body.get('alias')
+            alias = self.__body.get("alias")
             if alias:
                 return f"{parts[1]}.{alias}"
             else:
