@@ -169,27 +169,35 @@ def get_session(**kwargs):
     return Session(**kwargs)
 
 
-def terraform_backend_s3(
-    bucket, dynamodb_table, **config
-):
+def provider_aws(**body):
+    """
+    Returns an AWS provider block. If provided, the `profile` option
+    will be replaced with static credentials.
+
+    """
+
+    if "profile" in body:
+
+        session = get_session(profile_name=body.pop("profile"))
+
+        if session.region_name:
+            body.setdefault("region", session.region_name)
+
+        creds = get_frozen_credentials(session)
+        body["access_key"] = creds.access_key
+        body["secret_key"] = creds.secret_key
+        body["token"] = creds.token
+
+    return tf("provider.aws", body)
+
+
+def terraform_backend_s3(bucket, dynamodb_table, **config):
     """
     This ensures that the S3 backend exists, prompting to create it
     if necessary, sets the credentials as environment variables,
     then returns a Terraform configuration block for it.
 
     """
-
-    # Avoid unsupported options.
-
-    unsupported = (
-        "iam_endpoint",
-        "assume_role_policy",
-        "shared_credentials_file",
-        "sts_endpoint",
-    )
-    for key in unsupported:
-        if key in config:
-            raise NotImplementedError("{key} is not supported")
 
     # Create a session from any AWS credentials options.
 
@@ -254,14 +262,9 @@ def terraform_backend_s3(
 
     # Return the configuration to use the backend.
 
+    config["bucket"] = bucket
     config.setdefault("encrypt", True)
-
-    config.update(
-        {
-            "region": region,
-            "bucket": bucket,
-            "dynamodb_table": dynamodb_table,
-        }
-    )
+    config["dynamodb_table"] = dynamodb_table
+    config["region"] = region
 
     return tf("terraform", {"backend": {"s3": config}})

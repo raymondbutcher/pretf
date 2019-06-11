@@ -123,6 +123,35 @@ def terraform(var):
     session = get_session(profile_name=var.aws_profile)
 ```
 
+## provider_aws
+
+Returns an [AWS provider block](https://www.terraform.io/docs/providers/aws/index.html). If provided, the `profile` option will be replaced with static credentials.
+
+Signature:
+
+```python
+provider_aws(**body)
+
+**body:
+    required dict of configuration options as per Terraform documentation
+
+returns:
+    Block
+```
+
+Example:
+
+```python
+from pretf.aws import provider_aws
+
+
+def terraform(var):
+    yield provider_aws(
+        profile=var.aws_profile,
+        region=var.aws_region,
+    )
+```
+
 ## terraform_backend_s3
 
 Ensures that the S3 backend exists, prompting to create it if necessary, sets the credentials as environment variables, then returns a Terraform configuration block for it. Accepts the same options as the [S3 backend configuration variables](https://www.terraform.io/docs/backends/types/s3.html#configuration-variables).

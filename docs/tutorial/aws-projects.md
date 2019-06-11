@@ -14,6 +14,23 @@ Additionally, these utilities will make use of [boto-source-profile-mfa](https:/
 pip install boto-source-profile-mfa
 ```
 
+## AWS providers
+
+Pretf can generate AWS provider blocks, with full support for MFA prompts.
+
+```python
+# aws.tf.py
+
+from pretf.aws import provider_aws
+
+
+def terraform(var):
+    yield provider_aws(
+        profile=var.aws_profile,
+        region=var.aws_region,
+    )
+```
+
 ## Terraform S3 backend
 
 Pretf can dynamically generate the [S3 backend](https://www.terraform.io/docs/backends/types/s3.html) configuration, and even create the resources required for the backend.
@@ -54,28 +71,14 @@ It is easy to work with multiple AWS accounts from the same Terraform stack. Thi
 # aws.tf.py
 
 from pretf.api import tf
-from pretf.aws import get_frozen_credentials
+from pretf.aws import provider_aws
 
 
 def terraform(var):
-
-    nonprod_creds = get_frozen_credentials(profile_name=var.aws_profile_nonprod)
-
-    yield = tf("provider.aws", {
-        "alias": "nonprod",
-        "region": var.aws_region,
-        "access_key": nonprod_creds.access_key,
-        "secret_key": nonprod_creds.secret_key,
-        "token": nonprod_creds.token,
-    })
-
-    prod_creds = get_frozen_credentials(profile_name=var.aws_profile_prod)
-
-    yield = tf("provider.aws", {
-        "alias": "prod",
-        "region": var.aws_region,
-        "access_key": prod_creds.access_key,
-        "secret_key": prod_creds.secret_key,
-        "token": prod_creds.token,
-    })
+    for alias, profile in var.aws_profiles.items():
+        yield = provider_aws(
+            alias=alias,
+            profile=profile,
+            region=var.aws_region,
+        )
 ```

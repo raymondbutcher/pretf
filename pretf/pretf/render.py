@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import PurePath
 
 from .util import import_file
@@ -31,6 +30,12 @@ class Block:
             parts.pop(0)
         elif parts[0] == "variable":
             parts[0] = "var"
+        elif parts[0] == "provider":
+            alias = self.__body.get('alias')
+            if alias:
+                return f"{parts[1]}.{alias}"
+            else:
+                return parts[1]
 
         parts.append(name)
 
