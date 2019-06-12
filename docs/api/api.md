@@ -35,7 +35,7 @@ Executes Terraform and waits for it to finish. Command line arguments are passed
 Signature:
 
 ```python
-def execute(verbose:bool=True) -> int:
+def execute(verbose: bool = True) -> int:
 
 verbose:
     whether to print the command
@@ -54,7 +54,9 @@ def run():
     return execute()
 ```
 
-## log.accept
+## log
+
+<h3>log.accept</h3>
 
 Prompts the user to enter "yes" or "no". Returns `True` if the response was "yes", otherwise `False`. Pressing Ctrl-C counts as "no".
 
@@ -83,7 +85,7 @@ def run():
         print("user did not accept the prompt")
 ```
 
-## log.bad
+<h3>log.bad</h3>
 
 Displays a message prefixed with `[pref]` in red.
 
@@ -109,7 +111,7 @@ def run():
     log.bad("something bad happened")
 ```
 
-## log.ok
+<h3>log.ok</h3>
 
 Displays a message prefixed with `[pref]` in cyan.
 
@@ -216,15 +218,15 @@ This is used to create Terraform configuration blocks from within `terraform()` 
 Signature:
 
 ```python
-tf(path, body=None)
+def tf(path: str, body: Optional[dict] = None) -> Block
 
 path:
-    required str
+    configuration block path
 body:
-    optional dict
+    configuration block body
 
 returns:
-    Block
+    configuration block
 ```
 
 Example:
