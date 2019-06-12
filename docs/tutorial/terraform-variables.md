@@ -5,19 +5,17 @@ Let's start by showing `animals.tf.py` from the previous pages, plus a new file 
 ```python
 # animals.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]  # hardcoded
     for name in animals:
-        animal = yield tf(f"resource.random_integer.{name}", {
+        animal = yield block("resource", "random_integer", name, {
             "min": 1,
             "max": 10,
         })
-        yield tf(f"output.{name}", {
-            "value": animal.result,
-        })
+        yield block("output", name, {"value": animal.result})
 ```
 
 ```python
@@ -29,7 +27,9 @@ from pretf.api import tf
 def terraform(var):
     users = ["ray", "violet"]  # hardcoded
     for name in users:
-        yield tf(f"resource.aws_iam_user.{name}", {"name": name})
+        yield block("resource", "aws_iam_user", "name", {
+            "name": name,
+        })
 ```
 
 ## Terraform variables
@@ -60,16 +60,16 @@ users = ["ray", "violet"]
 ```python
 # animals.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
     for name in var.animals: # using terraform variables
-        animal = yield tf(f"resource.random_integer.{name}", {
+        animal = yield block("resource", "random_integer", name, {
             "min": 1,
             "max": 10,
         })
-        yield tf(f"output.{name}", {
+        yield block("output", name, {
             "value": animal.result,
         })
 ```
@@ -77,12 +77,14 @@ def terraform(var):
 ```python
 # users.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
     for name in var.users: # using terraform variables
-        yield tf(f"resource.aws_iam_user.{name}", {"name": name})
+        yield block("resource", "aws_iam_user", name, {
+            "name": name
+        })
 ```
 
 # Variable definition precedence

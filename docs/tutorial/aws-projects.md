@@ -38,7 +38,6 @@ Pretf can dynamically generate the [S3 backend](https://www.terraform.io/docs/ba
 ```python
 # terraform.tf.py
 
-from pretf.api import tf
 from pretf.aws import terraform_backend_s3
 
 
@@ -56,11 +55,6 @@ def terraform(var):
         profile=var.aws_profile,
         region=var.aws_region,
     )
-
-    # It is also a good idea to pin the Terraform version in this file.
-    yield tf("terraform", {
-        "required_version": "0.12.0",
-    })
 ```
 
 ## Multiple AWS accounts
@@ -70,7 +64,6 @@ It is easy to work with multiple AWS accounts from the same Terraform stack. Thi
 ```python
 # aws.tf.py
 
-from pretf.api import tf
 from pretf.aws import provider_aws
 
 

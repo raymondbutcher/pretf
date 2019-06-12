@@ -3,13 +3,13 @@ There is too much duplication on the previous page, and what if we want to add m
 ```python
 # animals.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]
     for name in animals:  # loop over list
-        yield tf(f"resource.random_integer.{name}", {  # dynamic resource name
+        yield block("resource", "random_integer", name, {  # dynamic resource name
             "min": 1,
             "max": 10,
         })
@@ -20,10 +20,6 @@ Now run `pretf validate` and the resulting JSON file will contain those 5 resour
 ## The 'for' statement
 
 Unlike Terraform, Python (and by extension Pretf) supports 'for loops'. Normally, we might write the same Terraform code multiple times, with slight differences in the resource name and/or arguments. With Pretf, we can use a 'for loop'.
-
-## The 'f-string' literal
-
-If you are not familiar with the syntax of `f"resource.random_integer.{name}"` in the above code, then read about [Python f-strings](https://www.python.org/dev/peps/pep-0498/) introduced in Python 3.6. Normally we might write it as `"resource.random_integer.{}".format(name)` or `"resource.random_integer.%s" % name`. Instead, we can use f-strings to directly reference the `name` variable inside the string where its value should be used.
 
 ## Why not use 'count'?
 

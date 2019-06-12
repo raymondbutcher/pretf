@@ -1,19 +1,23 @@
 from ipaddress import IPv4Network
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
 
     private_label = "private"
-    private = yield tf(
-        f"resource.aws_security_group.{private_label}",
+    private = yield block(
+        "resource",
+        "aws_security_group",
+        private_label,
         {"name": "pretf-security-groups-private"},
     )
 
     public_label = "public"
-    public = yield tf(
-        f"resource.aws_security_group.{public_label}",
+    public = yield block(
+        "resource",
+        "aws_security_group",
+        public_label,
         {"name": "pretf-security-groups-public"},
     )
 
@@ -29,9 +33,11 @@ def terraform(var):
             group_label = private_label
 
         for port in (80, 443):
-            rule_name = f"{group_label}_{port}_from_{cidr_name}"
-            yield tf(
-                f"resource.aws_security_group_rule.{rule_name}",
+            rule_label = f"{group_label}_{port}_from_{cidr_name}"
+            yield block(
+                "resource",
+                "aws_security_group_rule",
+                rule_label,
                 {
                     "security_group_id": group.id,
                     "type": "ingress",

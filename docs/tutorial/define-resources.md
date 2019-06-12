@@ -5,21 +5,21 @@ Start by creating a file named `animals.tf.py` in your Terraform project directo
 ```python
 # animals.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
-    yield tf("resource.random_integer.dog", {
+    yield block("resource", "random_integer", "dog", {
         "min": 1,
         "max": 10,
     })
 
-    yield tf("resource.random_integer.cat", {
+    yield block("resource", "random_integer", "cat", {
         "min": 1,
         "max": 10,
     })
 
-    yield tf("resource.random_integer.buffalo", {
+    yield block("resource", "random_integer", "buffalo", {
         "min": 1,
         "max": 10,
     })
@@ -54,7 +54,7 @@ If you are not familiar with the `yield` keyword in the above code, then read ab
 
 ## Translate HCL to Python
 
-Translating HCL code into Python `tf` objects is very simple. The signature for creating them is `tf(path, body)`. The values for `path` and `body` look very similar to the original HCL, only requiring slight adjustments to be valid Python syntax and match the `tf()` signature.
+Translating HCL code into Python block objects is very simple. They are constructed in the same way as the original HCL, only requiring slight adjustments to be valid Python syntax.
 
 The following HCL resource:
 
@@ -65,59 +65,12 @@ resource "random_integer" "dog" {
 }
 ```
 
-Can be broken up into the HCL path:
+Consists of a block type, labels, and the body. Simply take each part of the above and convert them into valid Python types (str and dict) ensure they are quoted appropriately.
 
-```terraform
-resource "random_integer" "dogs"
-```
-
-And the HCL body:
-
-```terraform
-{
-  min = 1
-  max = 10
-}
-```
-
-Simply take each part of the HCL path and combine it into a single dot-separated Python string.
-
-HCL path:
-
-```terraform
-resource "random_integer" "dogs"
-```
-
-Python path:
+Then just pass them into the `block()` function:
 
 ```python
-"resource.random_integer.dogs"
-```
-
-And translate the HCL body directly into a Python dictionary.
-
-HCL body:
-
-```terraform
-{
-  min = 1
-  max = 10
-}
-```
-
-Python body:
-
-```python
-{
-  "min": 1,
-  "max": 10,
-}
-```
-
-Now pass the translated values into `tf()`.
-
-```python
-tf("resource.random_integer.dog", {
+block("resource", "random_integer", "dog", {
     "min": 1,
     "max": 10,
 })

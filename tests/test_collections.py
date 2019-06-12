@@ -1,6 +1,6 @@
 import unittest
 
-from pretf.api import tf
+from pretf.api import block
 from pretf.collections import collect
 from pretf.render import Block
 from pretf.variables import VariableNotPopulated
@@ -9,38 +9,38 @@ from pretf.variables import VariableNotPopulated
 @collect
 def iam_user(var):
     # Inputs.
-    yield tf("variable.name")
-    yield tf("variable.path", {"default": "/"})
+    yield block("variable", "name", {})
+    yield block("variable", "path", {"default": "/"})
 
     # Resources.
-    user = yield tf(
-        f"resource.aws_iam_user.{var.name}", {"name": var.name, "path": var.path}
+    user = yield block(
+        "resource", "aws_iam_user", var.name, {"name": var.name, "path": var.path}
     )
 
     # Outputs.
-    yield tf("output.name", {"value": var.name})
-    yield tf("output.resource", {"value": user})
+    yield block("output", "name", {"value": var.name})
+    yield block("output", "resource", {"value": user})
 
 
 @collect
 def iam_group(var):
     # Inputs.
-    yield tf("variable.name")
-    yield tf("variable.path", {"default": "/"})
+    yield block("variable", "name", {})
+    yield block("variable", "path", {"default": "/"})
 
     # Resources.
-    group = yield tf(f"resource.aws_iam_group.{var.name}", {"name": var.name})
+    group = yield block("resource", "aws_iam_group", var.name, {"name": var.name})
 
     # Outputs.
-    yield tf("output.name", {"value": var.name})
-    yield tf("output.resource", {"value": group})
+    yield block("output", "name", {"value": var.name})
+    yield block("output", "resource", {"value": group})
 
 
 @collect
 def iam_group_with_users(var):
     # Inputs.
-    yield tf("variable.group_name")
-    yield tf("variable.user_names")
+    yield block("variable", "group_name", {})
+    yield block("variable", "user_names", {})
 
     # Yield resources from a nested collection.
     group = yield iam_group(name=var.group_name)
@@ -57,22 +57,24 @@ def iam_group_with_users(var):
     yield from aws_iam_user_group_membership(group=group.resource, users=users)
 
     # Outputs.
-    yield tf("output.group", {"value": group.resource})
-    yield tf("output.users", {"value": group.resource})
+    yield block("output", "group", {"value": group.resource})
+    yield block("output", "users", {"value": group.resource})
 
 
 @collect
 def aws_iam_user_group_membership(var):
     # Inputs.
-    yield tf("variable.group")
-    yield tf("variable.users")
+    yield block("variable", "group", {})
+    yield block("variable", "users", {})
 
     # Resources.
     group_label = str(var.group).split(".")[-1]
     for user_label, user in sorted(var.users.items()):
         label = f"{user_label}_in_{group_label}"
-        yield tf(
-            f"resource.aws_iam_user_group_membership.{label}",
+        yield block(
+            "resource",
+            "aws_iam_user_group_membership",
+            label,
             {"user": user.name, "groups": [var.group.name]},
         )
 

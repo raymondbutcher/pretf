@@ -2,10 +2,20 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
 
-from . import log, util
+from . import labels, log, util
 from .render import Block, Renderer, json_default
+
+
+def block(block_type, *args: Any) -> Block:
+    if args:
+        body = args[-1]
+        labels = list(args[:-1])
+    else:
+        body = None
+        labels = []
+    return Block(block_type, labels, body)
 
 
 def create(*source_dirs: Union[Path, str]) -> List[Path]:
@@ -162,6 +172,4 @@ def remove(
     return removed
 
 
-tf = Block
-
-__all__ = ["create", "execute", "log", "mirror", "remove", "tf"]
+__all__ = ["block", "create", "execute", "labels", "log", "mirror", "remove"]

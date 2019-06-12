@@ -11,15 +11,15 @@ Example:
 ```python
 # iam.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
-    yield tf(f"resource.aws_iam_user.peanut", {
+    yield block("resource", "aws_iam_user", "peanut", {
         "name": "peanut",
     })
 
-    yield tf(f"resource.aws_iam_user.cornelius", {
+    yield block("resource", "aws_iam_user", "cornelius", {
         "name": "cornelius",
     })
 ```
