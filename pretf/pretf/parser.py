@@ -2,6 +2,7 @@ import enum
 import json
 import re
 from pathlib import Path
+from typing import Generator, List
 
 import hcl
 
@@ -15,7 +16,7 @@ class State(enum.Enum):
     STRING = enum.auto()
 
 
-def clean_block_string(block_string):
+def clean_block_string(block_string: str) -> str:
 
     # Remove comments.
     lines = []
@@ -47,7 +48,7 @@ def clean_block_string(block_string):
     return block_string
 
 
-def get_outputs_from_block(block):
+def get_outputs_from_block(block: dict) -> Generator[dict, None, None]:
 
     if "output" not in block:
         return
@@ -64,7 +65,7 @@ def get_outputs_from_block(block):
             yield {"name": name, "value": block["value"]}
 
 
-def parse_tf_file_for_block_strings(path: Path):
+def parse_tf_file_for_block_strings(path: Path) -> Generator[str, None, None]:
 
     states = [State.ROOT]
 
@@ -123,7 +124,7 @@ def parse_tf_file_for_block_strings(path: Path):
         raise ValueError(block)
 
 
-def parse_tf_file_for_variables(path: Path) -> list:
+def parse_tf_file_for_variables(path: Path) -> List[dict]:
     """
     This is a really bad parser for *.tf and *.tfvars files,
     with the only goal being to parse variable definitions and
@@ -154,7 +155,7 @@ def parse_tf_file_for_variables(path: Path) -> list:
     return blocks
 
 
-def parse_json_file_for_blocks(path: Path):
+def parse_json_file_for_blocks(path: Path) -> List[dict]:
 
     with open(path) as open_file:
         contents = json.load(open_file)
@@ -167,15 +168,15 @@ def parse_json_file_for_blocks(path: Path):
     return blocks
 
 
-def parse_tfvars_file_for_variables(path: Path):
+def parse_tfvars_file_for_variables(path: Path) -> List[dict]:
     cleaned = clean_block_string(path.read_text())
     if cleaned:
-        return hcl.loads(cleaned)
+        return [hcl.loads(cleaned)]
     else:
-        return {}
+        return []
 
 
-def read_chars_from_file(path: Path):
+def read_chars_from_file(path: Path) -> Generator[str, None, None]:
     with path.open() as open_file:
         while True:
             char = open_file.read(1)

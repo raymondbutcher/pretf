@@ -279,7 +279,7 @@ class VariableNotPopulated(VariableError):
         return f"create: {self.consumer} cannot access var.{self.name} because it has no value"
 
 
-def get_variables_from_block(block, source):
+def get_variable_definitions_from_block(block, source):
 
     if "variable" not in block:
         return
@@ -299,6 +299,11 @@ def get_variables_from_block(block, source):
             yield VariableDefinition(**kwargs)
 
 
+def get_variable_values_from_block(block, source):
+    for name, value in block.items():
+        yield VariableValue(name=name, value=value, source=source)
+
+
 def get_variables_from_file(path):
     if path.name.endswith(".tf"):
         yield from get_variables_from_tf_file(path)
@@ -315,23 +320,22 @@ def get_variables_from_file(path):
 def get_variables_from_tf_file(path):
     blocks = parse_tf_file_for_variables(path)
     for block in blocks:
-        yield from get_variables_from_block(block, path.name)
+        yield from get_variable_definitions_from_block(block, path.name)
 
 
 def get_variables_from_tfvars_file(path):
-    contents = parse_tfvars_file_for_variables(path)
-    for name, value in contents.items():
-        yield VariableValue(name=name, value=value, source=path.name)
+    blocks = parse_tfvars_file_for_variables(path)
+    for block in blocks:
+        yield from get_variable_values_from_block(block, path.name)
 
 
 def get_variables_from_tf_json_file(path):
     blocks = parse_json_file_for_blocks(path)
     for block in blocks:
-        yield from get_variables_from_block(block, path.name)
+        yield from get_variable_definitions_from_block(block, path.name)
 
 
 def get_variables_from_tfvars_json_file(path):
     blocks = parse_json_file_for_blocks(path)
-    for blocks in blocks:
-        for name, value in blocks.items():
-            yield VariableValue(name=name, value=value, source=path.name)
+    for block in blocks:
+        yield from get_variable_values_from_block(block, path.name)

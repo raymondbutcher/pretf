@@ -1,7 +1,11 @@
 from pathlib import PurePath
 
 from .util import import_file
-from .variables import TerraformVariableStore, VariableValue, get_variables_from_block
+from .variables import (
+    TerraformVariableStore,
+    get_variable_definitions_from_block,
+    get_variable_values_from_block,
+)
 
 
 class Block:
@@ -139,7 +143,7 @@ class RenderJob:
             return self.blocks
 
     def process_tf_block(self, block):
-        for var in get_variables_from_block(block, self.path.name):
+        for var in get_variable_definitions_from_block(block, self.path.name):
             # Add the variable definition. This doesn't necessarily
             # make it available to use, because a tfvars file may
             # populate it later.
@@ -150,11 +154,10 @@ class RenderJob:
         # if it is waiting for this file. It is possible to generate
         # tfvars files that don't get used as a source for values.
         if self.variables.tfvars_waiting_for(self.output_name):
-            for name, value in block.items():
+            for var in get_variable_values_from_block(block, source=self.path.name):
                 # Add the variable value. Raise an error if it changes
                 # the value, because it could result in Pretf using
                 # the old value and Terraform using the new one.
-                var = VariableValue(name=name, value=value, source=self.path.name)
                 self.variables.add(var, allow_change=False)
 
     def run(self):
