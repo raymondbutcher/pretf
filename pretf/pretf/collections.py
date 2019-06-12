@@ -3,7 +3,7 @@ from typing import Any, Generator, Sequence, Union
 
 from .parser import get_outputs_from_block
 from .render import unwrap_yielded
-from .variables import VariableStore, VariableValue, get_variables_from_block
+from .variables import VariableStore, VariableValue, get_variable_definitions_from_block
 
 
 class Collection:
@@ -74,7 +74,7 @@ def collect(func):
 
                 # Use variable blocks to update the variable store.
                 var = None
-                for var in get_variables_from_block(block, func.__name__):
+                for var in get_variable_definitions_from_block(block, func.__name__):
                     var_store.add(var)
 
                 # Use output blocks to update the output values.
