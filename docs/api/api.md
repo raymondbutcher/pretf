@@ -9,13 +9,13 @@ It is recommended to call create() only once. Pass in multiple source_dirs rathe
 Signature:
 
 ```python
-create(*source_dirs)
+def create(*source_dirs: Union[Path, str]) -> List[Path]:
 
 source_dirs:
-    optional sequence of directories to use for source files
+    directories to use for source files
 
 returns:
-    list(pathlib.Path) of created files
+    created files
 ```
 
 Example:
@@ -35,13 +35,13 @@ Executes Terraform and waits for it to finish. Command line arguments are passed
 Signature:
 
 ```python
-execute(verbose=True)
+def execute(verbose:bool=True) -> int:
 
 verbose:
-    optional bool for whether to log the command
+    whether to print the command
 
 returns:
-    int exit code from process
+    exit code from process
 ```
 
 Example:
@@ -142,19 +142,24 @@ Creates symlinks from all files and directories matching the source patterns int
 Signature:
 
 ```python
-mirror(*path_patterns, exclude_name_patterns=[".*", "_*"], cwd=None, verbose=True)
+def mirror(
+    *path_patterns: str,
+    exclude_name_patterns: Sequence[str] = [".*", "_*"],
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: bool = True,
+) -> List[Path]:
 
 path_patterns:
-    required str sequence of path glob patterns to mirror into the current directory
+    path glob patterns to mirror into the current directory
 exclude_name_patterns:
-    optional list of file names glob patterns to exclude
+    name glob patterns to exclude
 cwd:
-    optional pathlib.Path of current directory
+    current directory
 verbose:
-    optional bool of whether to print information
+    whether to print information
 
 returns:
-    list(pathlib.Path) of created symlinks
+    created symlinks
 ```
 
 Example:
@@ -169,18 +174,29 @@ def run():
 
 ## remove
 
-Deletes all `*.tf.json` and `*.tfvars.json` files in the current directory. Optionally exclude specific files from being deleted.
+Deletes matching files from the current directory. Defaults to deleting files normally created by the `create()` function. Optionally exclude files matching a specified pattern.
 
 Signature:
 
 ```python
-remove(exclude=None)
+def remove(
+    path_patterns: Sequence[str] = ["*.tf.json", "*.tfvars.json"],
+    exclude_name_patterns: Sequence[str] = [],
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: bool = True,
+) -> List[Path]:
 
-exclude:
-    optional str or list of str of file names to keep
+path_patterns:
+    path glob patterns to mirror into the current directory
+exclude_name_patterns:
+    name glob patterns to exclude
+cwd:
+    current directory
+verbose:
+    whether to print information
 
 returns:
-    list(pathlib.Path) of deleted files
+    removed files
 ```
 
 Example:
