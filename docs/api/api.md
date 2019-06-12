@@ -61,13 +61,13 @@ Prompts the user to enter "yes" or "no". Returns `True` if the response was "yes
 Signature:
 
 ```python
-log.accept(message)
+def accept(message: Any) -> bool:
 
 message:
-    required str
+    the message to display
 
 returns:
-    bool
+    whether the user entered "yes"
 ```
 
 Example:
@@ -90,10 +90,10 @@ Displays a message prefixed with `[pref]` in red.
 Signature:
 
 ```python
-log.bad(message)
+def bad(message: Any) -> None:
 
 message:
-    required str
+    the message to display
 
 returns:
     None
@@ -116,10 +116,10 @@ Displays a message prefixed with `[pref]` in cyan.
 Signature:
 
 ```python
-log.ok(message)
+def ok(message: Any) -> None:
 
 message:
-    required str
+    the message to display
 
 returns:
     None
