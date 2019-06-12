@@ -6,6 +6,7 @@ all:
 	black $(SOURCES)
 	flake8 --ignore E501 $(SOURCES)
 	mypy -m pretf.api
+	mypy -m pretf.cli
 	cd examples; terraform fmt -recursive
 	python -m unittest discover tests
 
