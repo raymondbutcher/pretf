@@ -6,14 +6,19 @@ from collections import defaultdict
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from functools import lru_cache, wraps
+from importlib.abc import Loader
 from importlib.util import module_from_spec, spec_from_file_location
-from pathlib import Path
+from pathlib import Path, PurePath
 from threading import Lock
+from types import ModuleType
+from typing import Generator, Optional, Sequence, Union
 
 from . import log
 
 
-def execute(file, args, env=os.environ, verbose=True):
+def execute(
+    file: str, args: Sequence[str], env: Optional[dict] = None, verbose: bool = True
+) -> int:
     """
     Executes a command and waits for it to finish.
 
@@ -29,12 +34,15 @@ def execute(file, args, env=os.environ, verbose=True):
 
     """
 
+    if env is None:
+        env = os.environ.copy()
+
     if verbose:
         log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
 
     child_pid = os.fork()
     if child_pid == 0:
-        os.execvpe(file, args, env)
+        os.execvpe(file, list(args), env)
     else:
         while True:
             try:
@@ -56,15 +64,19 @@ def execute(file, args, env=os.environ, verbose=True):
             else:
                 exit_code = exit_status >> 8
                 return exit_code
+    return 1
 
 
-def find_paths(path_patterns, exclude_name_patterns=None, cwd=None):
+def find_paths(
+    path_patterns: Sequence[str],
+    exclude_name_patterns: Sequence[str] = [],
+    cwd: Optional[Union[Path, str]] = None,
+) -> Generator[Path, None, None]:
 
     if cwd is None:
         cwd = Path.cwd()
-
-    if exclude_name_patterns is None:
-        exclude_name_patterns = []
+    elif isinstance(cwd, str):
+        cwd = Path(cwd)
 
     for pattern in path_patterns:
         for path in cwd.glob(pattern):
@@ -76,7 +88,7 @@ def find_paths(path_patterns, exclude_name_patterns=None, cwd=None):
 
 
 @contextmanager
-def import_file(path):
+def import_file(path: Union[PurePath, str]) -> Generator[ModuleType, None, None]:
     """
     Imports a Python module from any local filesystem path.
     Temporarily alters sys.path to allow the imported module
@@ -92,10 +104,12 @@ def import_file(path):
         added_to_sys_path = True
     try:
         name = os.path.basename(path).split(".")[0]
-        spec = spec_from_file_location(name, path)
+        spec = spec_from_file_location(name, str(path))
         module = module_from_spec(spec)
+        assert isinstance(spec.loader, Loader)
+        loader: Loader = spec.loader
         try:
-            spec.loader.exec_module(module)
+            loader.exec_module(module)
         except Exception as error:
             log.bad(error)
             raise
