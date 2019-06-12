@@ -16,7 +16,7 @@ Example:
 ```python
 # security-groups.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 from pretf.collections import collect
 
 
@@ -24,22 +24,23 @@ from pretf.collections import collect
 def security_group(var):
 
     # Inputs.
-    yield tf("variable.name")
-    yield tf("variable.type")
-    yield tf("variable.protocol")
-    yield tf("variable.cidrs", {"default": []})
-    yield tf("variable.ports", {"default": []})
+    yield block("variable", "name", {})
+    yield block("variable", "type", {})
+    yield block("variable", "protocol", {})
+    yield block("variable", "cidrs", {"default": []})
+    yield block("variable", "ports", {"default": []})
 
     # Group resource.
-    group = yield tf(f"resource.aws_security_group.{var.name}", {"name": var.name})
+    group = yield block("resource", "aws_security_group", var.name, {
+        "name": var.name,
+    })
 
     # Rule resources.
     for cidr in sorted(set(var.cidrs)):
         cidr_label = cidr.replace(".", "_").replace("/", "_")
         for port in var.ports:
             rule_label = f"{var.name}_{port}_from_{cidr_label}"
-            yield tf(
-                f"resource.aws_security_group_rule.{rule_label}",
+            yield block("resource", "aws_security_group_rule", rule_label,
                 {
                     "security_group_id": group.id,
                     "type": "ingress",
@@ -51,7 +52,7 @@ def security_group(var):
             )
 
     # Outputs.
-    yield tf(f"output.group", {"value": group})
+    yield block(f"output", "group", {"value": group})
 
 
 def terraform(var):
@@ -62,5 +63,5 @@ def terraform(var):
         protocol="tcp",
         ports=[80, 443],
     )
-    yield tf("output.web_sg_id", {"value": web.group.id})
+    yield block("output", "web_sg_id", {"value": web.group.id})
 ```

@@ -1,3 +1,55 @@
+## block
+
+This is used to create Terraform configuration blocks from within `terraform()` functions in `*.tf.py` files. Blocks must be yielded to be included in the generated JSON files.
+
+Blocks are the most fundamental part of Terraform configuration. Read the [documentation](https://www.terraform.io/docs/configuration/syntax.html) to learn more about blocks.
+
+Signature:
+
+```python
+def block(block_type: str, *labels: str, body: Optional[dict] = None) -> Block
+
+block_type:
+    block type such as "resource", "variable", "provider"
+labels:
+    labels for the block
+body:
+    the body of the block
+
+returns:
+    configuration block
+```
+
+Example:
+
+```python
+from pretf.api import block
+
+
+def terraform(var):
+
+    # The group resource is defined in another file,
+    # but we want to reference it here, so we can
+    # create a block without a body. We don't yield
+    # it so it won't be included in the JSON.
+    group = block("resource", "aws_iam_group", "example")
+
+    # Create and yield a block to include it in the JSON.
+    user = yield block("resource", "aws_iam_user", "example", {
+        "name": "example",
+    })
+
+    # Create and yield another block, this time demonstrating
+    # how block attributes can be accessed. The resulting JSON
+    # will contain Terraform references like:
+    #   "users": "${aws_iam_user.example.name}",
+    #   "groups": ["${aws_iam_group.example.name}"]
+    yield block("resource", "aws_iam_user_group_membership", "example", {
+        "user": user.name,
+        "groups": [group.name]
+    })
+```
+
 ## create
 
 Creates `*.tf.json` and `*.tfvars.json` files in the current directory from `*.tf.py` and `*.tfvars.py` files in the source directories.
@@ -209,52 +261,4 @@ from pretf.api import remove
 
 def run():
     remove()
-```
-
-## tf
-
-This is used to create Terraform configuration blocks from within `terraform()` functions in `*.tf.py` files. Blocks must be yielded to be included in the generated JSON files.
-
-Signature:
-
-```python
-def tf(path: str, body: Optional[dict] = None) -> Block
-
-path:
-    configuration block path
-body:
-    configuration block body
-
-returns:
-    configuration block
-```
-
-Example:
-
-```python
-from pretf.api import tf
-
-
-def terraform(var):
-
-    # The group resource is defined in another file,
-    # but we want to reference it here, so we can
-    # create a block without a body. We don't yield
-    # it so it won't be included in the JSON.
-    group = tf("resource.aws_iam_group.example")
-
-    # Create and yield a block to include it in the JSON.
-    user = yield tf(f"resource.aws_iam_user.example", {
-        "name": "example",
-    })
-
-    # Create and yield another block, this time demonstrating
-    # how block attributes can be accessed. The resulting JSON
-    # will contain Terraform references like:
-    #   "users": "${aws_iam_user.example.name}",
-    #   "groups": ["${aws_iam_group.example.name}"]
-    yield tf("resource.aws_iam_user_group_membership.example", {
-        "user": user.name,
-        "groups": [group.name]
-    })
 ```

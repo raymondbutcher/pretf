@@ -3,7 +3,7 @@ import os
 from functools import lru_cache
 from time import sleep
 
-from pretf.api import log, tf
+from pretf.api import block, log
 
 try:
     from boto_source_profile_mfa import get_session as Session
@@ -188,7 +188,7 @@ def provider_aws(**body):
         body["secret_key"] = creds.secret_key
         body["token"] = creds.token
 
-    return tf("provider.aws", body)
+    return block("provider", "aws", body)
 
 
 def terraform_backend_s3(bucket, dynamodb_table, **config):
@@ -267,4 +267,4 @@ def terraform_backend_s3(bucket, dynamodb_table, **config):
     config["dynamodb_table"] = dynamodb_table
     config["region"] = region
 
-    return tf("terraform", {"backend": {"s3": config}})
+    return block("terraform", {"backend": {"s3": config}})

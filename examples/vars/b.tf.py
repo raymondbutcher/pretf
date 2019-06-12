@@ -1,15 +1,15 @@
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
-    yield tf("output.two_attr", {"value": var.two})
+    yield block("output", "two_attr", {"value": var.two})
 
-    yield tf("output.two_dict", {"value": var["two"]})
+    yield block("output", "two_dict", {"value": var["two"]})
 
-    yield tf("variable.three", {"default": 3})
+    yield block("variable", "three", {"default": 3})
 
-    yield tf("output.three", {"value": var.three})
+    yield block("output", "three", {"value": var.three})
 
-    yield tf("variable.four")
+    yield block("variable", "four", {})
 
-    yield tf("output.four", {"value": var.four})
+    yield block("output", "four", {"value": var.four})

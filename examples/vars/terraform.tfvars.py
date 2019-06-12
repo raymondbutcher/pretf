@@ -1,7 +1,7 @@
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
-    yield tf("three", 3)
+    yield block("three", 3)
 
-    yield tf("four", 4)
+    yield block("four", 4)

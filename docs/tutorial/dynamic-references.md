@@ -5,43 +5,37 @@ This does not return the actual dynamic value of the resource managed by Terrafo
 ```python
 # animals.tf.py
 
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]
     for name in animals:
-        animal = yield tf(f"resource.random_integer.{name}", {
+        animal = yield block("resource", "random_integer", name, {
             "min": 1,
             "max": 10,
         })
-        yield tf(f"output.{name}", {
+        yield block("output", name, {
             "value": animal.result,  # access "result" attribute of resource
         })
 ```
 
 Now run `pretf validate` and the resulting JSON file will contain the additional outputs. Inspecting the generated JSON file shows that `animal.result` was translated into `"${resource.random_integer.dog.result}"` for the `dog` iteration of the loop.
 
-Accessing any attribute of a `tf()` object will return a string containing a Terraform reference to that attribute. This lets you take advantage of Terraform's [implicit resource dependencies](https://learn.hashicorp.com/terraform/getting-started/dependencies.html).
+Accessing any attribute of a block object will return a string containing a Terraform reference to that attribute. This lets you take advantage of Terraform's [implicit resource dependencies](https://learn.hashicorp.com/terraform/getting-started/dependencies.html).
 
 ## Assign and yield
 
-The above code contains the pattern `result = yield tf(name, data)`.
+The above code contains the pattern `result = yield block(...)`.
 
-Pretf sends yielded values back to generators. This allows functions assign `tf()` objects to a variable and yield them in the same line.
+Pretf sends yielded values back to generators. This allows functions assign block objects to a variable and yield them in the same line.
 
 ## Reference without yielding
 
-If something is defined in another file, but you still want to reference it, then create a `tf()` object with no body. Do not `yield` it, because that would include it in the `*.tf.json` output.
+If something is defined in another file, but you still want to reference it, then create a block object with no body. Do not `yield` it, because that would include it in the `*.tf.json` output.
 
 ```python
-yield tf("output.dog", {
-    "value": tf("resource.random_integer.dog").result,
-})
-```
-
-```python
-yield tf(f"output.{name}", {
-    "value": tf(f"resource.random_integer.{name}").result,
+yield block("output", name, {
+    "value": block("resource", "random_integer", name).result,
 })
 ```

@@ -1,4 +1,4 @@
-from pretf.api import tf
+from pretf.api import block
 from pretf.aws import terraform_backend_s3
 
 
@@ -14,4 +14,4 @@ def terraform(var):
         region=var.aws_region,
     )
 
-    yield tf("terraform", {"required_version": "0.12.1"})
+    yield block("terraform", {"required_version": "0.12.1"})

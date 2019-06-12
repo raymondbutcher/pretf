@@ -1,5 +1,5 @@
 from pathlib import Path, PurePath
-from typing import Any, Dict, Generator, Iterable, List, Optional, Union
+from typing import Any, Dict, Generator, Iterable, List, Union
 
 from .util import import_file
 from .variables import (
@@ -10,49 +10,54 @@ from .variables import (
 
 
 class Block(Iterable):
-    def __init__(self, path: str, body: Optional[dict] = None):
-        self.__path = path
-        self.__body = body or {}
+    def __init__(self, block_type: str, labels: List[str], body: Any):
+        self._block_type = block_type
+        self._labels = labels
+        self._body = body
 
     def __iter__(self) -> Generator[tuple, None, None]:
-        result: dict = {}
-        if "." in self.__path:
+        if self._labels:
+            result: dict = {}
             here = result
-            for part in self.__path.split("."):
-                here[part] = {}
-                here = here[part]
-            here.update(self.__body)
+            for label in self._labels[:-1]:
+                here[label] = {}
+                here = here[label]
+            here[self._labels[-1]] = self._body
         else:
-            result[self.__path] = self.__body
-        for key, value in result.items():
-            yield (key, value)
+            result = self._body
+        yield (self._block_type, result)
 
     def __getattr__(self, name) -> Union["Interpolated", str]:
-
-        parts = self.__path.split(".")
-
-        if parts[0] == "resource":
-            parts.pop(0)
-        elif parts[0] == "variable":
-            parts[0] = "var"
-        elif parts[0] == "provider":
-            alias = self.__body.get("alias")
-            if alias:
-                return f"{parts[1]}.{alias}"
-            else:
-                return parts[1]
-
+        if self._block_type == "resource":
+            parts = list(self._labels)
+        elif self._block_type == "variable":
+            parts = ["var"]
+        elif self._block_type == "provider":
+            parts = list(self._labels)
+            if name == "alias":
+                if self._body:
+                    alias = self._body.get("alias")
+                    if alias:
+                        parts.append(alias)
+                return ".".join(parts)
+        elif self._block_type == "locals":
+            parts = ["local"]
+        else:
+            parts = [self._block_type] + list(self._labels)
         parts.append(name)
-
         return Interpolated(".".join(parts))
 
     __getitem__ = __getattr__
 
     def __repr__(self) -> str:
-        return f"tf({repr(self.__path)}, {repr(self.__body)})"
+        parts = [self._block_type]
+        parts.extend(self._labels)
+        if self._body is not None:
+            parts.extend(self._body)
+        return f"block({', '.join(repr(part) for part in parts)})"
 
     def __str__(self) -> str:
-        return self.__path
+        return ".".join([self._block_type] + self._labels)
 
 
 class Interpolated:

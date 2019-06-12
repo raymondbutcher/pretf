@@ -27,7 +27,7 @@ def main() -> None:
         # Call the custom or default run function.
         if os.path.exists("pretf.py"):
             with import_file("pretf.py") as pretf:
-                exit_code = pretf.run()
+                exit_code = pretf.run()  # type: ignore
         else:
             exit_code = run()
 

@@ -34,24 +34,24 @@ Here is what happens when you run `pretf`:
 For example, with `iam.tf.py`:
 
 ```python
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
 
-    group = yield tf('resource.aws_iam_group.admins', {
-        'name': 'admins',
+    group = yield block("resource", "aws_iam_group", "admins", {
+        "name": "admins",
     })
 
     for name in var.admin_user_names:
 
-        user = yield tf(f'resource.aws_iam_user.{name}', {
-            'name': name,
+        user = yield block("resource", "aws_iam_user", name, {
+            "name": name,
         })
 
-        yield tf(f'resource.aws_iam_user_group_membership.{name}', {
-            'user': user.name,
-            'groups': [
+        yield block("resource", "aws_iam_user_group_membership", name, {
+            "user": user.name,
+            "groups": [
                 group.name,
             ],
         })

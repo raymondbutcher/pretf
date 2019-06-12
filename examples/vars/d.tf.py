@@ -1,9 +1,9 @@
-from pretf.api import tf
+from pretf.api import block
 
 
 def terraform(var):
-    yield tf("output.five", {"value": var.five})
+    yield block("output", "five", {"value": var.five})
 
-    yield tf("output.six", {"value": var.six})
+    yield block("output", "six", {"value": var.six})
 
-    yield tf("output.seven", {"value": var.seven})
+    yield block("output", "seven", {"value": var.seven})
