@@ -5,9 +5,7 @@ all:
 	isort --recursive $(SOURCES)
 	black $(SOURCES)
 	flake8 --ignore E501 $(SOURCES)
-	mypy -m pretf.api
-	mypy -m pretf.cli
-	mypy -m pretf.log
+	mypy -m pretf.api -m pretf.cli -m pretf.collections -m pretf.log
 	cd examples; terraform fmt -recursive
 	python -m unittest discover tests
 

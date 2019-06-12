@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Any, Generator, Sequence, Union
 
 from .parser import get_outputs_from_block
 from .render import unwrap_yielded
@@ -6,16 +7,16 @@ from .variables import VariableStore, VariableValue, get_variables_from_block
 
 
 class Collection:
-    def __init__(self, blocks, outputs):
+    def __init__(self, blocks: Sequence[Union[dict, "Collection"]], outputs: dict):
         self.__blocks = blocks
         self.__outputs = outputs
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if name in self.__outputs:
             return self.__outputs[name]
         raise AttributeError(f"output not defined: {name}")
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[dict, Any, None]:
         for block in self.__blocks:
             if isinstance(block, Collection):
                 yield from block
