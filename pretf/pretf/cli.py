@@ -8,7 +8,7 @@ from .variables import VariableError
 from .version import __version__
 
 
-def main():
+def main() -> None:
     """
     This is the pretf CLI tool entrypoint.
 
@@ -42,7 +42,7 @@ def main():
     sys.exit(exit_code)
 
 
-def run():
+def run() -> int:
     """
     This is the default run function to use if one hasn't been
     defined in a pretf.py file in the current directory.
