@@ -1,0 +1,4 @@
+*/dev/*
+*/prod/*
+!pretf.py
+!*.*.auto.tfvars
