@@ -2,12 +2,13 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import List, Optional, Sequence, Union
 
 from . import log, util
 from .render import Block, Renderer, json_default
 
 
-def create(*source_dirs):
+def create(*source_dirs: Union[Path, str]) -> List[Path]:
     """
     Creates *.tf.json and *.tfvars.json files in the current directory
     from *.tf.py and *.tfvars.py files in the source directories.
@@ -27,8 +28,10 @@ def create(*source_dirs):
 
     # Find all files in the specified source directories.
     files_to_create = {}
-    for source_dir_path in map(Path, source_dirs or ["."]):
-        for path in source_dir_path.iterdir():
+    for source_dir in source_dirs or ["."]:
+        if isinstance(source_dir, str):
+            source_dir = Path(source_dir)
+        for path in source_dir.iterdir():
             name = path.name
             if name.endswith(".tf.py") or name.endswith(".tfvars.py"):
                 output_name = path.with_suffix(".json").name
@@ -49,7 +52,7 @@ def create(*source_dirs):
     return created
 
 
-def execute(verbose=True):
+def execute(verbose: bool = True) -> int:
     """
     Executes Terraform and waits for it to finish.
     Command line arguments are passed through to Terraform.
@@ -84,7 +87,12 @@ def execute(verbose=True):
     return 1
 
 
-def mirror(*path_patterns, exclude_name_patterns=[".*", "_*"], cwd=None, verbose=True):
+def mirror(
+    *path_patterns: str,
+    exclude_name_patterns: Sequence[str] = [".*", "_*"],
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: bool = True,
+) -> List[Path]:
     """
     Creates symlinks from all files and directories matching
     the source patterns into the current directory. Deletes
@@ -94,6 +102,8 @@ def mirror(*path_patterns, exclude_name_patterns=[".*", "_*"], cwd=None, verbose
 
     if cwd is None:
         cwd = Path.cwd()
+    elif isinstance(cwd, str):
+        cwd = Path(cwd)
 
     if verbose:
         log.ok(f"mirror: {' '.join(path_patterns)}")
@@ -105,7 +115,11 @@ def mirror(*path_patterns, exclude_name_patterns=[".*", "_*"], cwd=None, verbose
 
     # Create new symlinks.
     created = []
-    paths = util.find_paths(path_patterns, exclude_name_patterns=exclude_name_patterns)
+    paths = util.find_paths(
+        path_patterns=path_patterns,
+        exclude_name_patterns=exclude_name_patterns,
+        cwd=cwd,
+    )
     for real_path in paths:
         link_path = cwd / real_path.name
         link_path.symlink_to(real_path)
@@ -114,27 +128,34 @@ def mirror(*path_patterns, exclude_name_patterns=[".*", "_*"], cwd=None, verbose
     return created
 
 
-def remove(exclude=None):
+def remove(
+    path_patterns: Sequence[str] = ["*.tf.json", "*.tfvars.json"],
+    exclude_name_patterns: Sequence[str] = [],
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: bool = True,
+) -> List[Path]:
     """
-    Deletes all *.tf.json and *.tfvars.json files in the current directory.
-    Optionally exclude specific files from being deleted.
+    Deletes matching files from the current directory.
+    Defaults to deleting files normally created by the create() function.
+    Optionally exclude files matching a specified pattern.
 
     """
+
+    if cwd is None:
+        cwd = Path.cwd()
+    elif isinstance(cwd, str):
+        cwd = Path(cwd)
+
+    if verbose:
+        log.ok(f"remove: {' '.join(path_patterns)}")
 
     removed = []
-
-    old_paths = set()
-    old_paths.update(Path().glob("*.tf.json"))
-    old_paths.update(Path().glob("*.tfvars.json"))
-
-    if isinstance(exclude, str):
-        exclude = [exclude]
-
-    if exclude:
-        for path in exclude:
-            old_paths.discard(path)
-
-    for path in old_paths:
+    paths = util.find_paths(
+        path_patterns=path_patterns,
+        exclude_name_patterns=exclude_name_patterns,
+        cwd=cwd,
+    )
+    for path in paths:
         path.unlink()
         removed.append(path)
 
