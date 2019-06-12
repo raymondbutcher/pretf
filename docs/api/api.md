@@ -41,7 +41,7 @@ verbose:
     whether to print the command
 
 returns:
-    exit code from process
+    exit code from the process
 ```
 
 Example:

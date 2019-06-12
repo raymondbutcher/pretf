@@ -17,19 +17,24 @@ Returns the exit code from the command that is run.
 Signature:
 
 ```python
-execute(file, args, env=os.environ, verbose=True)
+def execute(
+    file: str,
+    args: Sequence[str],
+    env: Optional[dict] = None,
+    verbose: bool = True
+) -> int:
 
 file:
-    required str of binary to execute
+    binary to execute
 args:
-    required list of arguments
+    arguments
 env:
-    optional dict of environment variables, defaults to those of the current process
+    environment variables, defaults to those of the current process
 verbose:
-    optional bool for whether to log the command
+    whether to print the command
 
 returns:
-    int exit code from process
+    exit code from the process
 ```
 
 Example:
@@ -49,10 +54,10 @@ Imports a Python module from any local filesystem path. Temporarily alters sys.p
 Signature:
 
 ```python
-import_file(path)
+def import_file(path: Union[PurePath, str]) -> ModuleType:
 
 path:
-    required str of Python module path
+    file path of Python module to import
 
 returns:
     context object with the imported module
