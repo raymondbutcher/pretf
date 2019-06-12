@@ -1,12 +1,12 @@
 from functools import wraps
-from typing import Any, Generator, Sequence, Union
+from typing import Any, Generator, Iterable, Sequence, Union
 
 from .parser import get_outputs_from_block
 from .render import unwrap_yielded
 from .variables import VariableStore, VariableValue, get_variable_definitions_from_block
 
 
-class Collection:
+class Collection(Iterable):
     def __init__(self, blocks: Sequence[Union[dict, "Collection"]], outputs: dict):
         self.__blocks = blocks
         self.__outputs = outputs

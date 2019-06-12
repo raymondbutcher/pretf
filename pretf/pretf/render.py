@@ -1,4 +1,5 @@
-from pathlib import PurePath
+from pathlib import Path, PurePath
+from typing import Any, Dict, Generator, Iterable, List, Optional, Union
 
 from .util import import_file
 from .variables import (
@@ -8,13 +9,13 @@ from .variables import (
 )
 
 
-class Block:
-    def __init__(self, path, body=None):
+class Block(Iterable):
+    def __init__(self, path: str, body: Optional[dict] = None):
         self.__path = path
         self.__body = body or {}
 
-    def __iter__(self):
-        result = {}
+    def __iter__(self) -> Generator[tuple, None, None]:
+        result: dict = {}
         if "." in self.__path:
             here = result
             for part in self.__path.split("."):
@@ -26,7 +27,7 @@ class Block:
         for key, value in result.items():
             yield (key, value)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> Union["Interpolated", str]:
 
         parts = self.__path.split(".")
 
@@ -47,32 +48,32 @@ class Block:
 
     __getitem__ = __getattr__
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"tf({repr(self.__path)}, {repr(self.__body)})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__path
 
 
 class Interpolated:
-    def __init__(self, value):
+    def __init__(self, value: str):
         self.__value = value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return str(self) == other
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> "Interpolated":
         return type(self)(self.__value + "." + attr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Interpolated({repr(self.__value)})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "${" + self.__value + "}"
 
 
 class Renderer:
-    def __init__(self, files_to_create):
+    def __init__(self, files_to_create: Dict[str, Path]):
         # These are all of the files that will be created.
         self.files_to_create = files_to_create
 
@@ -84,15 +85,15 @@ class Renderer:
         )
 
         # These are all of the jobs to create files.
-        self.jobs = []
+        self.jobs: List[RenderJob] = []
         for file_path in self.files_to_create.values():
             job = RenderJob(path=file_path, variables=self.variables)
             self.jobs.append(job)
 
         # This will be populated with blocks from each file being created.
-        self.done = []
+        self.done: List[RenderJob] = []
 
-    def process_jobs(self, until=None):
+    def process_jobs(self, until=None) -> None:
         while self.jobs:
             if until and until in self.variables:
                 break
@@ -103,7 +104,7 @@ class Renderer:
             else:
                 self.jobs.append(job)
 
-    def render(self):
+    def render(self) -> Dict[Path, Union[dict, List[dict]]]:
         self.process_jobs()
         results = {}
         for job in self.done:
@@ -132,7 +133,7 @@ class RenderJob:
 
         self.blocks = []
 
-    def contents(self):
+    def contents(self) -> Union[dict, List[dict]]:
         if self.output_name.endswith(".tfvars.json"):
             merged = {}
             for block in self.blocks:
@@ -142,14 +143,14 @@ class RenderJob:
         else:
             return self.blocks
 
-    def process_tf_block(self, block):
+    def process_tf_block(self, block: dict) -> None:
         for var in get_variable_definitions_from_block(block, self.path.name):
             # Add the variable definition. This doesn't necessarily
             # make it available to use, because a tfvars file may
             # populate it later.
             self.variables.add(var)
 
-    def process_tfvars_block(self, block):
+    def process_tfvars_block(self, block: dict) -> None:
         # Only populate the variable store with values in this file
         # if it is waiting for this file. It is possible to generate
         # tfvars files that don't get used as a source for values.
@@ -160,7 +161,7 @@ class RenderJob:
                 # the old value and Terraform using the new one.
                 self.variables.add(var, allow_change=False)
 
-    def run(self):
+    def run(self) -> bool:
 
         try:
             yielded = self.gen.send(self.return_value)
@@ -182,13 +183,15 @@ class RenderJob:
         return False
 
 
-def json_default(obj):
+def json_default(obj: Any) -> Any:
     if isinstance(obj, (Interpolated, PurePath)):
         return str(obj)
     raise TypeError(repr(obj))
 
 
-def unwrap_yielded(yielded):
+def unwrap_yielded(
+    yielded: Union[Block, dict, Iterable]
+) -> Generator[dict, None, None]:
     if isinstance(yielded, Block):
         yield dict(iter(yielded))
     elif isinstance(yielded, dict):
