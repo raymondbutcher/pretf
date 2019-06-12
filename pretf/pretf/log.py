@@ -1,9 +1,10 @@
 from functools import wraps
+from typing import Any
 
 import colorama
 
 
-def uses_colorama(func, state={}):
+def colorama_init(func, state={}):
     @wraps(func)
     def wrapped(*args, **kwargs):
 
@@ -16,8 +17,8 @@ def uses_colorama(func, state={}):
     return wrapped
 
 
-@uses_colorama
-def accept(message):
+@colorama_init
+def accept(message: Any) -> bool:
     """
     Prompts the user to enter "yes" or "no". Returns True if the
     response was "yes", otherwise False. Ctrl-c counts as "no".
@@ -35,8 +36,8 @@ def accept(message):
     return response == "yes"
 
 
-@uses_colorama
-def bad(message):
+@colorama_init
+def bad(message: Any) -> None:
     """
     Displays a message prefixed with [pref] in red.
 
@@ -45,8 +46,8 @@ def bad(message):
     print(f"{colorama.Fore.RED}[pretf] {message}{colorama.Style.RESET_ALL}")
 
 
-@uses_colorama
-def ok(message):
+@colorama_init
+def ok(message: Any) -> None:
     """
     Displays a message prefixed with [pref] in cyan.
 
