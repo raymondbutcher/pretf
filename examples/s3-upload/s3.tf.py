@@ -5,7 +5,7 @@ from pretf.api import block, labels
 from pretf.collections import collect
 
 
-def pretf_blocks(var):
+def pretf_blocks():
     """
     This demonstrates recursively uploading files to an S3 bucket.
 

@@ -8,7 +8,7 @@ Start by creating a file named `animals.tf.py` in your Terraform project directo
 from pretf.api import block
 
 
-def pretf_blocks(var):
+def pretf_blocks():
     yield block("resource", "random_integer", "dog", {
         "min": 1,
         "max": 10,

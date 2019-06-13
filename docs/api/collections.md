@@ -18,7 +18,7 @@ from pretf.api import block
 from pretf.collections import collect
 
 
-def pretf_blocks(var):
+def pretf_blocks():
     web = yield security_group(
         name="web",
         type="ingress",

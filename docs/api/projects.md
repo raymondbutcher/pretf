@@ -4,7 +4,7 @@ Pretf finds and imports Python files from the current directory. Pretf calls spe
 
 By default, Pretf looks for `*.tf.py` files and creates matching `*.tf.json` files. For example, a file named `iam.tf.py` would create `iam.tf.json`.
 
-These files must contain a `pretf_blocks()` function. This function must accept a single argument `var` which provides access to Terraform variables. This function must be a generator that yields only blocks and/or dictionaries representing Terraform blocks.
+These files must contain a `pretf_blocks()` function. This function can optionally accept any of the arguments `path`, `terraform` and `var`, which provide access to the same values as in Terraform. This function must be a generator that yields only blocks and/or dictionaries representing Terraform blocks.
 
 Example:
 
@@ -32,7 +32,7 @@ def pretf_blocks(var):
 
 By default, Pretf looks for `*.tfvars.py` files and creates matching `*.tfvars.json` files. For example, a file named `terraform.tfvars.py` would create `terraform.tfvars.json`.
 
-These files must contain a `pretf_variables()` function. This function must accept a single argument `var` which provides access to Terraform variables. This function must be a generator that yields dictionaries containing variable values. Each dictionary can contain any number of variables.
+These files must contain a `pretf_variables()` function. This function can optionally accept any of the arguments `path`, `terraform` and `var`, which provide access to the same values as in Terraform. This function must be a generator that yields dictionaries containing variable values. Each dictionary can contain any number of variables.
 
 Example:
 
@@ -40,7 +40,7 @@ Example:
 # terraform.tfvars.py
 
 
-def pretf_variables(var):
+def pretf_variables():
     yield {"environment": "dev"}
     yield {
         "group_name": "admin",
@@ -50,7 +50,7 @@ def pretf_variables(var):
 
 ## pretf.py
 
-When Pretf runs, it looks for `pretf.py` in the current directory. If it exists, it will call the `pretf_workflow()` function without any arguments. If this file does not exist, then Pretf runs in default mode.
+When Pretf runs, it looks for `pretf.py` in the current directory. If it exists, it will call the `pretf_workflow()`. This function can optionally accept any of the arguments `path` and `terraform` which provide access to the same values as in Terraform. If this file does not exist, then Pretf runs in default mode.
 
 The following is a valid `pretf.py` file that implements performs the same functionality as default mode. It can be extended with custom logic. 
 
