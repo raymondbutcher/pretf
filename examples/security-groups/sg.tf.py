@@ -3,7 +3,7 @@ from ipaddress import IPv4Network
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
 
     private_label = "private"
     private = yield block(

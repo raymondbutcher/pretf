@@ -1,7 +1,7 @@
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
 
     group = yield block(
         "resource", "aws_iam_group", "pretf", {"name": "pretf-iam-users"}

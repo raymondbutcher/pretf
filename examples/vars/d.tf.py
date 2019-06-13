@@ -1,7 +1,7 @@
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     yield block("output", "five", {"value": var.five})
 
     yield block("output", "six", {"value": var.six})

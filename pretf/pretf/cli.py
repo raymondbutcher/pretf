@@ -2,7 +2,7 @@ import os
 import sys
 
 from . import log, workflow
-from .variables import VariableError
+from .exceptions import FunctionNotFoundError, VariableError
 from .version import __version__
 
 
@@ -27,12 +27,18 @@ def main() -> None:
         else:
             exit_code = workflow.default()
 
+    except FunctionNotFoundError as error:
+
+        log.bad(error)
+        exit_code = 1
+
     except VariableError as error:
+
         if hasattr(error, "errors"):
             for error in error.errors:
-                log.bad(str(error))
+                log.bad(error)
         else:
-            log.bad(str(error))
+            log.bad(error)
         exit_code = 1
 
     sys.exit(exit_code)

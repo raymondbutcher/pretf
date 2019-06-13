@@ -5,6 +5,14 @@ from pretf import workflow
 from pretf.api import log
 
 
+def pretf_workflow():
+    if requires_backend():
+        use_workspace_tfvars()
+        return workflow.default()
+    else:
+        return workflow.execute_terraform(verbose=False)
+
+
 def requires_backend():
     workspace_command = False
     for arg in sys.argv[1:]:
@@ -21,14 +29,6 @@ def requires_backend():
             else:
                 return True
     return False
-
-
-def run():
-    if requires_backend():
-        use_workspace_tfvars()
-        return workflow.default()
-    else:
-        return workflow.execute_terraform(verbose=False)
 
 
 def use_workspace_tfvars():

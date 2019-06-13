@@ -4,7 +4,7 @@ Pretf finds and imports Python files from the current directory. Pretf calls spe
 
 By default, Pretf looks for `*.tf.py` and `*.tfvars.py` files and creates matching `*.tf.json` and `*.tfvars.json` files respectively. For example, a file named `iam.tf.py` would create `iam.tf.json`, and `terraform.tfvars.py` would create `terraform.tfvars.json`.
 
-These files must contain a `terraform` function. This function must accept a single argument `var` which provides access to Terraform variables. This function must be a generator that yields only `tf` objects and/or dictionaries representing Terraform blocks.
+These files must contain a `pretf_blocks()` function. This function must accept a single argument `var` which provides access to Terraform variables. This function must be a generator that yields only blocks and/or dictionaries representing Terraform blocks.
 
 Example:
 
@@ -14,7 +14,7 @@ Example:
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     yield block("resource", "aws_iam_user", "peanut", {
         "name": "peanut",
     })
@@ -26,7 +26,7 @@ def terraform(var):
 
 ## pretf.py
 
-When Pretf runs, it looks for `pretf.py` in the current directory. If it exists, it will call the `run` function without any arguments. If it does not exist, then Pretf runs in default mode.
+When Pretf runs, it looks for `pretf.py` in the current directory. If it exists, it will call the `pretf_workflow()` function without any arguments. If this file does not exist, then Pretf runs in default mode.
 
 The following is a valid `pretf.py` file that implements performs the same functionality as default mode. It can be extended with custom logic. 
 
@@ -35,17 +35,17 @@ Example:
 ```python
 # pretf.py
 
-from pretf.api import create, execute, remove
+from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     # Delete *.tf.json and *.tfvars.json files.
-    remove()
+    workflow.delete_files()
 
     # Create *.tf.json and *.tfvars.json files
     # from *.tf.py and *.tfvars.py files.
-    create()
+    workflow.create_files()
 
     # Execute Terraform.
-    return execute()
+    return workflow.execute_terraform()
 ```

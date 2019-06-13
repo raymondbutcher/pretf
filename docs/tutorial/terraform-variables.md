@@ -8,7 +8,7 @@ Let's start by showing `animals.tf.py` from the previous pages, plus a new file 
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]  # hardcoded
     for name in animals:
         animal = yield block("resource", "random_integer", name, {
@@ -24,7 +24,7 @@ def terraform(var):
 from pretf.api import tf
 
 
-def terraform(var):
+def pretf_blocks(var):
     users = ["ray", "violet"]  # hardcoded
     for name in users:
         yield block("resource", "aws_iam_user", "name", {
@@ -34,7 +34,7 @@ def terraform(var):
 
 ## Terraform variables
 
-Terraform variables can be accessed using the `var` argument passed into `terraform()` functions. Let's use them instead of hardcoding the values:
+Terraform variables can be accessed using the `var` argument passed into `pretf_blocks()` functions. Let's use them instead of hardcoding the values:
 
 
 ```terraform
@@ -63,7 +63,7 @@ users = ["ray", "violet"]
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     for name in var.animals: # using terraform variables
         animal = yield block("resource", "random_integer", name, {
             "min": 1,
@@ -80,7 +80,7 @@ def terraform(var):
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     for name in var.users: # using terraform variables
         yield block("resource", "aws_iam_user", name, {
             "name": name

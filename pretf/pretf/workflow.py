@@ -5,6 +5,7 @@ from pathlib import Path, PurePath
 from typing import List, Optional, Sequence, Union
 
 from . import log, util
+from .exceptions import FunctionNotFoundError
 from .render import Renderer, json_default
 from .util import import_file
 
@@ -54,20 +55,20 @@ def create_files(*source_dirs: Union[Path, str], verbose: bool = True) -> List[P
     return created
 
 
-def custom(module_path: Union[PurePath, str]) -> int:
+def custom(path: Union[PurePath, str]) -> int:
     """
-    Calls the "run" function from the specified Python file.
-    This is useful for having a custom workflow that is used
-    by multiple pretf.py files in different directories.
+    Calls the pretf_workflow() function from the specified Python file.
+    This is useful for having a custom workflow that is used by multiple
+    pretf.py files in different directories.
 
     """
 
-    with import_file(module_path) as pretf:
-        if hasattr(pretf, "run"):
-            exit_code = pretf.run()  # type: ignore
-        else:
-            log.bad("workflow: {} must have a run function")
-            exit_code = 1
+    with import_file(path) as module:
+        if not hasattr(module, "pretf_workflow"):
+            raise FunctionNotFoundError(
+                f"workflow: {path} does not have a 'pretf_workflow' function"
+            )
+        exit_code = module.pretf_workflow()  # type: ignore
     return exit_code
 
 

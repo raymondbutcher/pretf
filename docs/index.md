@@ -37,7 +37,7 @@ For example, with `iam.tf.py`:
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
 
     group = yield block("resource", "aws_iam_group", "admins", {
         "name": "admins",
@@ -121,7 +121,7 @@ And then Terraform would manage those resources.
 
 Configuration is completely optional. By default, Pretf will delete `*.tf.json` and `*.tfvars.json` files, create `*.tf.json` and `*.tfvars.json` files from `*.tf.py` and `*.tfvars.py` files, and then execute Terraform.
 
-To make something else to happen when Pretf runs, simply create a `pretf.py` file containing a `run()` function. This could include:
+To make something else to happen when Pretf runs, simply create a `pretf.py` file containing a `pretf_workflow()` function. This could include:
 
 * Using files from outside of the current directory.
 * Not running `terraform` after generating files.

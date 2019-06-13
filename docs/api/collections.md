@@ -14,10 +14,19 @@ When using a collection, any required inputs defined by variable blocks must be 
 Example:
 
 ```python
-# security-groups.tf.py
-
 from pretf.api import block
 from pretf.collections import collect
+
+
+def pretf_blocks(var):
+    web = yield security_group(
+        name="web",
+        type="ingress",
+        cidrs=["10.0.0.0/24", "192.168.0.0/24"],
+        protocol="tcp",
+        ports=[80, 443],
+    )
+    yield block("output", "web_sg_id", {"value": web.group.id})
 
 
 @collect
@@ -53,15 +62,4 @@ def security_group(var):
 
     # Outputs.
     yield block(f"output", "group", {"value": group})
-
-
-def terraform(var):
-    web = yield security_group(
-        name="web",
-        type="ingress",
-        cidrs=["10.0.0.0/24", "192.168.0.0/24"],
-        protocol="tcp",
-        ports=[80, 443],
-    )
-    yield block("output", "web_sg_id", {"value": web.group.id})
 ```

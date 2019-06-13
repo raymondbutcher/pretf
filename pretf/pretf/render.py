@@ -1,6 +1,7 @@
 from pathlib import Path, PurePath
 from typing import Any, Dict, Generator, Iterable, List, Union
 
+from .exceptions import FunctionNotFoundError
 from .util import import_file
 from .variables import (
     TerraformVariableStore,
@@ -123,13 +124,17 @@ class RenderJob:
         self.path = path
         self.variables = variables
 
-        # Create a var object to pass into the file's terraform() generator.
+        # Create a var object to pass into the file's generator function.
         # This allows attribute and dict access to the variables.
         var = variables.proxy(path)
 
-        # Load the file and start the terraform() generator.
+        # Load the file and start the generator.
         with import_file(path) as module:
-            self.gen = module.terraform(var)
+            if not hasattr(module, "pretf_blocks"):
+                raise FunctionNotFoundError(
+                    f"create: {path} does not have a 'pretf_blocks' function"
+                )
+            self.gen = module.pretf_blocks(var)
 
         self.done = False
         self.output_path = path.with_suffix(".json")

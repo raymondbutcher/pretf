@@ -2,8 +2,8 @@ import unittest
 
 from pretf.api import block
 from pretf.collections import collect
+from pretf.exceptions import VariableNotPopulatedError
 from pretf.render import Block
-from pretf.variables import VariableNotPopulated
 
 
 @collect
@@ -83,7 +83,7 @@ class TestCollections(unittest.TestCase):
     def test_collect(self):
 
         # Create collection with bad inputs.
-        with self.assertRaises(VariableNotPopulated):
+        with self.assertRaises(VariableNotPopulatedError):
             iam_user()
 
         # Call collection with valid inputs.

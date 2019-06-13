@@ -8,7 +8,7 @@ Start by creating a file named `animals.tf.py` in your Terraform project directo
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     yield block("resource", "random_integer", "dog", {
         "min": 1,
         "max": 10,
@@ -25,7 +25,7 @@ def terraform(var):
     })
 ```
 
-The function must be named `terraform` for Pretf to find it.
+The function must be named `pretf_blocks()` for Pretf to find it.
 
 Now run `pretf validate`, which will generate a JSON file and run `terraform validate`:
 

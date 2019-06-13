@@ -1,6 +1,6 @@
 ## block
 
-This is used to create Terraform configuration blocks from within `terraform()` functions in `*.tf.py` files. Blocks must be yielded to be included in the generated JSON files.
+This is used to create Terraform configuration blocks from within `pretf_blocks()` functions in `*.tf.py` files. Blocks must be yielded to be included in the generated JSON files.
 
 Blocks are the most fundamental part of Terraform configuration. Read the [documentation](https://www.terraform.io/docs/configuration/syntax.html) to learn more about blocks.
 
@@ -26,7 +26,7 @@ Example:
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
 
     # The group resource is defined in another file,
     # but we want to reference it here, so we can
@@ -74,7 +74,7 @@ Example:
 from pretf.api import log
 
 
-def run():
+def pretf_workflow():
     if log.accept("do you wish to continue?"):
         print("user accepted the prompt")
     else:
@@ -103,7 +103,7 @@ Example:
 from pretf.api import log
 
 
-def run():
+def pretf_workflow():
     log.bad("something bad happened")
 ```
 
@@ -129,6 +129,6 @@ Example:
 from pretf.api import log
 
 
-def run():
+def pretf_workflow():
     log.bad("something normal happened")
 ```
