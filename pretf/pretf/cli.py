@@ -1,9 +1,7 @@
 import os
 import sys
 
-from . import log
-from .api import create, execute, remove
-from .util import import_file
+from . import log, workflow
 from .variables import VariableError
 from .version import __version__
 
@@ -19,17 +17,15 @@ def main() -> None:
     cmd = args[0] if args else None
     if cmd in ("version", "-v", "-version", "--version"):
         print(f"Pretf v{__version__}")
-        execute(verbose=False)
-        return
+        exit_code = workflow.execute_terraform(verbose=False)
+        sys.exit(exit_code)
 
     try:
 
-        # Call the custom or default run function.
         if os.path.exists("pretf.py"):
-            with import_file("pretf.py") as pretf:
-                exit_code = pretf.run()  # type: ignore
+            exit_code = workflow.custom("pretf.py")
         else:
-            exit_code = run()
+            exit_code = workflow.default()
 
     except VariableError as error:
         if hasattr(error, "errors"):
@@ -40,21 +36,3 @@ def main() -> None:
         exit_code = 1
 
     sys.exit(exit_code)
-
-
-def run() -> int:
-    """
-    This is the default run function to use if one hasn't been
-    defined in a pretf.py file in the current directory.
-
-    """
-
-    # Delete *.tf.json and *.tfvars.json files.
-    remove()
-
-    # Create *.tf.json and *.tfvars.json files
-    # from *.tf.py and *.tfvars.py files.
-    create()
-
-    # Execute Terraform.
-    return execute()

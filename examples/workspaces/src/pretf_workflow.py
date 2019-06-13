@@ -1,7 +1,8 @@
 import sys
 from pathlib import Path
 
-from pretf.api import create, execute, log, mirror, remove
+from pretf import workflow
+from pretf.api import log
 
 
 def requires_backend():
@@ -23,27 +24,11 @@ def requires_backend():
 
 
 def run():
-    # For some simple commands, just run Terraform.
-    if not requires_backend():
-        return execute(verbose=False)
-
-    # Delete *.tf.json and *.tfvars.json files.
-    remove()
-
-    # Mirror the workspace file into the working directory.
-    # This creates configuration for the AWS provider and S3 backend.
-    mirror("../src/workspace.tf.py")
-
-    # Create a symlink from "workspaces/{workspace}/terraform.tfvars"
-    # to "workspace.auto.tfvars" to automatically use those variables.
-    use_workspace_tfvars()
-
-    # Create *.tf.json and *.tfvars.json files
-    # from *.tf.py and *.tfvars.py files.
-    create()
-
-    # Execute Terraform.
-    return execute()
+    if requires_backend():
+        use_workspace_tfvars()
+        return workflow.default()
+    else:
+        return workflow.execute_terraform(verbose=False)
 
 
 def use_workspace_tfvars():

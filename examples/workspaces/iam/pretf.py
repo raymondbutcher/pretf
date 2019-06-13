@@ -1,6 +1,5 @@
-from pretf.util import import_file
+from pretf import workflow
 
 
 def run():
-    with import_file("../src/pretf_workflow.py") as workflow:
-        workflow.run()
+    return workflow.custom("../src/pretf_workflow.py")
