@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List, Optional, Tuple
 
 from . import log, workflow
 from .exceptions import FunctionNotFoundError, VariableError
@@ -12,11 +13,19 @@ def main() -> None:
 
     """
 
-    # Version command.
-    args = sys.argv[1:]
-    cmd = args[0] if args else None
-    if cmd in ("version", "-v", "-version", "--version"):
+    cmd, args, flags = parse_args()
+
+    if cmd == "version":
         print(f"Pretf v{__version__}")
+
+    if cmd in (None, "fmt", "help", "version"):
+        skip = True
+    elif cmd == "workspace" and args and args[0] == "show":
+        skip = True
+    else:
+        skip = False
+
+    if skip:
         exit_code = workflow.execute_terraform(verbose=False)
         sys.exit(exit_code)
 
@@ -42,3 +51,28 @@ def main() -> None:
         exit_code = 1
 
     sys.exit(exit_code)
+
+
+def parse_args() -> Tuple[Optional[str], List[str], List[str]]:
+
+    cmd = None
+    args = []
+    flags = []
+
+    help_flags = set(("-h", "-help", "--help"))
+    version_flags = set(("-v", "-version", "--version"))
+
+    for arg in sys.argv[1:]:
+        if arg.startswith("-"):
+            if not cmd and arg in help_flags:
+                cmd = "help"
+            elif not cmd and arg in version_flags:
+                cmd = "version"
+            else:
+                flags.append(arg)
+        elif not cmd:
+            cmd = arg
+        else:
+            args.append(arg)
+
+    return (cmd, args, flags)
