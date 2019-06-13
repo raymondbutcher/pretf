@@ -122,6 +122,35 @@ def pretf_workflow():
     return workflow.execute_terraform()
 ```
 
+## deny
+
+Displays an error message and shows any child directories containing a pretf.py file. This function can be used to disable Terraform in a project and then allow it to work only in child directories containing a pretf.py workflow file.
+
+Signature:
+
+```python
+def deny(message: str = "this directory is denied", show_possible: bool = True) -> int:
+
+message:
+    the error message to display
+
+show_possible:
+    whether to show child directories with pretf.py files
+
+returns:
+    an exit code of 1
+```
+
+Example:
+
+```python
+from pretf import workflow
+
+
+def pretf_workflow():
+    return workflow.deny()
+```
+
 ## execute_terraform
 
 Executes Terraform and waits for it to finish. Command line arguments are passed through to Terraform. Returns the exit code from Terraform.

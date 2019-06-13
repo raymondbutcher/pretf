@@ -97,41 +97,6 @@ def default(verbose: bool = True) -> int:
     return execute_terraform(verbose=verbose)
 
 
-def execute_terraform(verbose: bool = True) -> int:
-    """
-    Executes Terraform and waits for it to finish.
-    Command line arguments are passed through to Terraform.
-    Returns the exit code from Terraform.
-
-    """
-
-    # Find the Terraform executable in the PATH.
-    for path in os.environ["PATH"].split(os.pathsep):
-
-        terraform_path = os.path.join(path, "terraform")
-
-        # Skip if it doesn't exist here.
-        if not os.path.exists(terraform_path):
-            continue
-
-        # Skip if it's not executable.
-        if not os.access(terraform_path, os.X_OK):
-            continue
-
-        # Skip if it's a symlink to Pretf.
-        real_name = os.path.basename(os.path.realpath(terraform_path))
-        if real_name == "pretf":
-            continue
-
-        # This is a valid executable, run it.
-        return util.execute(
-            file=terraform_path, args=["terraform"] + sys.argv[1:], verbose=verbose
-        )
-
-    log.bad("terraform: command not found")
-    return 1
-
-
 def delete_files(
     path_patterns: Sequence[str] = ["*.tf.json", "*.tfvars.json"],
     exclude_name_patterns: Sequence[str] = [],
@@ -167,6 +132,66 @@ def delete_files(
         deleted.append(path)
 
     return deleted
+
+
+def deny(message: str = "this directory is denied", show_possible: bool = True) -> int:
+    """
+    Displays an error message and shows any child directories containing
+    a pretf.py file. This function can be used to disable Terraform
+    in a project and then allow it to work only in child directories
+    containing a pretf.py workflow file.
+
+    """
+
+    log.bad("this directory is denied")
+    allowed = []
+    cwd = Path.cwd()
+    for path in cwd.rglob("*/pretf.py"):
+        allowed.append(path.relative_to(cwd).parent)
+
+    if allowed:
+        log.bad("possible directories:")
+        for path in sorted(allowed):
+            log.bad(f"* {path}")
+    else:
+        log.bad("no pretf.py files found below current directory")
+
+    return 1
+
+
+def execute_terraform(verbose: bool = True) -> int:
+    """
+    Executes Terraform and waits for it to finish.
+    Command line arguments are passed through to Terraform.
+    Returns the exit code from Terraform.
+
+    """
+
+    # Find the Terraform executable in the PATH.
+    for path in os.environ["PATH"].split(os.pathsep):
+
+        terraform_path = os.path.join(path, "terraform")
+
+        # Skip if it doesn't exist here.
+        if not os.path.exists(terraform_path):
+            continue
+
+        # Skip if it's not executable.
+        if not os.access(terraform_path, os.X_OK):
+            continue
+
+        # Skip if it's a symlink to Pretf.
+        real_name = os.path.basename(os.path.realpath(terraform_path))
+        if real_name == "pretf":
+            continue
+
+        # This is a valid executable, run it.
+        return util.execute(
+            file=terraform_path, args=["terraform"] + sys.argv[1:], verbose=verbose
+        )
+
+    log.bad("terraform: command not found")
+    return 1
 
 
 def mirror_files(
@@ -211,6 +236,8 @@ def mirror_files(
         if not include_directories and real_path.is_dir():
             continue
         link_path = cwd / real_path.name
+        if link_path.exists():
+            continue
         link_path.symlink_to(real_path)
         created.append(link_path)
 
