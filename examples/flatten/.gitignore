@@ -1,3 +1,4 @@
 */*/*
 !*/*/*.*.auto.tfvars
 !*/*/pretf.py
+!/modules/**
