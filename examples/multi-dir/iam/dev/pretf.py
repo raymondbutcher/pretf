@@ -1,7 +1,6 @@
-import pretf.api
-import pretf.cli
+from pretf import workflow
 
 
 def run():
-    pretf.api.mirror("../src/*", "../../src/*")
-    return pretf.cli.run()
+    workflow.mirror_files("../src/*", "../../src/*")
+    return workflow.default()

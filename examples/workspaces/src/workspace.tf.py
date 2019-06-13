@@ -1,14 +1,14 @@
-from pretf.api import tf
+from pretf.api import block
 from pretf.aws import provider_aws, terraform_backend_s3
 
 
 def terraform(var):
     # Create variables needed by this file.
-    yield tf("variable.aws_account_id")
-    yield tf("variable.aws_profile")
-    yield tf("variable.aws_region", {"type": "string"})
-    yield tf("variable.stack", {"type": "string"})
-    yield tf("variable.terraform_required_version", {"type": "string"})
+    yield block("variable", "aws_account_id", {"type": "string"})
+    yield block("variable", "aws_profile", {"type": "string"})
+    yield block("variable", "aws_region", {"type": "string"})
+    yield block("variable", "stack", {"type": "string"})
+    yield block("variable", "terraform_required_version", {"type": "string"})
 
     # Create an AWS provider using the account ID and profile
     # from the workspace tfvars file.
@@ -36,4 +36,4 @@ def terraform(var):
 
     # Also set the required Terraform version.
 
-    yield tf("terraform", {"required_version": var.terraform_required_version})
+    yield block("terraform", {"required_version": var.terraform_required_version})

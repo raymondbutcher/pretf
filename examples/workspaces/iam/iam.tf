@@ -1,3 +1,3 @@
 resource "aws_iam_user" "pretf" {
-  name = "pretf-workspaces-test"
+  name = "pretf-workspaces-${terraform.workspace}"
 }

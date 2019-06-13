@@ -13,8 +13,7 @@ def terraform(var):
     # Create an AWS provider using details from the current directory's tfvars file.
 
     yield provider_aws(
-        profile=var.aws_profile,
-        allowed_account_ids=[var.aws_account_id],
+        profile=var.aws_profile, allowed_account_ids=[var.aws_account_id]
     )
 
     # Create a backend configuration using the environment details.
