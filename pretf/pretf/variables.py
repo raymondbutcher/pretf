@@ -3,6 +3,12 @@ import shlex
 import sys
 from pathlib import Path
 
+from .exceptions import (
+    VariableAlreadyDefinedError,
+    VariableNotConsistentError,
+    VariableNotDefinedError,
+    VariableNotPopulatedError,
+)
 from .parser import (
     parse_json_file_for_blocks,
     parse_tf_file_for_variables,
@@ -44,7 +50,7 @@ class VariableStore:
         if isinstance(var, VariableDefinition):
             if var.name in self._definitions:
                 old_var = self._definitions[var.name]
-                raise VariableAlreadyDefined(old_var=old_var, new_var=var)
+                raise VariableAlreadyDefinedError(old_var=old_var, new_var=var)
             self._definitions[var.name] = var
         elif isinstance(var, VariableValue):
             self._values[var.name] = var
@@ -64,8 +70,8 @@ class VariableStore:
             if self._allow_defaults:
                 if self._definitions[name].has_default:
                     return self._definitions[name].default
-            raise VariableNotPopulated(name, consumer)
-        raise VariableNotDefined(name, consumer)
+            raise VariableNotPopulatedError(name, consumer)
+        raise VariableNotDefinedError(name, consumer)
 
     def proxy(self, consumer):
         return VariableProxy(store=self, consumer=consumer)
@@ -90,7 +96,7 @@ class TerraformVariableStore(VariableStore):
         if not allow_change and var.name in self._values:
             old_var = self._values[var.name]
             if var.value != old_var.value:
-                raise VariableNotConsistent(old_var=old_var, new_var=var)
+                raise VariableNotConsistentError(old_var=old_var, new_var=var)
 
         super().add(var)
 
@@ -229,54 +235,6 @@ class VariableValue:
         yield ("name", self.name)
         yield ("value", self.value)
         yield ("source", self.source)
-
-
-class VariableError(Exception):
-    def __init__(self):
-        self.errors = []
-
-    def add(self, error):
-        self.errors.append(error)
-
-    def __str__(self):
-        errors = "\n".join(f"  {error}" for error in self.errors)
-        return f"\n{errors}"
-
-
-class VariableAlreadyDefined(VariableError):
-    def __init__(self, old_var, new_var):
-        self.old_var = old_var
-        self.new_var = new_var
-
-    def __str__(self):
-        return f"create: {self.new_var.source} cannot define var.{self.name} because {self.old_var.source} already defined it"
-
-
-class VariableNotConsistent(VariableError):
-    def __init__(self, old_var, new_var):
-        self.old_var = old_var
-        self.new_var = new_var
-
-    def __str__(self):
-        return f"create: {self.new_var.source} cannot set var.{self.new_var.name}={repr(self.new_var.value)} because {self.old_var.source} set var.{self.old_var.name}={repr(self.old_var.value)}"
-
-
-class VariableNotDefined(VariableError):
-    def __init__(self, name, consumer):
-        self.name = name
-        self.consumer = consumer
-
-    def __str__(self):
-        return f"create: {self.consumer} cannot access var.{self.name} because it has not been defined"
-
-
-class VariableNotPopulated(VariableError):
-    def __init__(self, name, consumer):
-        self.name = name
-        self.consumer = consumer
-
-    def __str__(self):
-        return f"create: {self.consumer} cannot access var.{self.name} because it has no value"
 
 
 def get_variable_definitions_from_block(block, source):

@@ -2,7 +2,7 @@ from pretf.api import block
 from pretf.aws import terraform_backend_s3
 
 
-def terraform(var):
+def pretf_blocks(var):
 
     backend_name = f"pretf-tfstate-{var.envtype}"
 

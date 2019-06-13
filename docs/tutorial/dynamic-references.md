@@ -8,7 +8,7 @@ This does not return the actual dynamic value of the resource managed by Terrafo
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]
     for name in animals:
         animal = yield block("resource", "random_integer", name, {

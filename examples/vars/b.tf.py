@@ -1,7 +1,7 @@
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
     yield block("output", "two_attr", {"value": var.two})
 
     yield block("output", "two_dict", {"value": var["two"]})

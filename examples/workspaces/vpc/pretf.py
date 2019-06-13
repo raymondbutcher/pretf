@@ -1,5 +1,5 @@
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     return workflow.custom("../src/pretf_workflow.py")

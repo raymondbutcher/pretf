@@ -24,7 +24,7 @@ Pretf can generate AWS provider blocks, with full support for MFA prompts.
 from pretf.aws import provider_aws
 
 
-def terraform(var):
+def pretf_blocks(var):
     yield provider_aws(
         profile=var.aws_profile,
         region=var.aws_region,
@@ -41,7 +41,7 @@ Pretf can dynamically generate the [S3 backend](https://www.terraform.io/docs/ba
 from pretf.aws import terraform_backend_s3
 
 
-def terraform(var):
+def pretf_blocks(var):
     # This will check for the existence of the specified S3 bucket
     # and DynamoDB table. If they do not exist, you will be prompted
     # to create them with a CloudFormation stack. The AWS credentials
@@ -67,9 +67,9 @@ It is easy to work with multiple AWS accounts from the same Terraform stack. Thi
 from pretf.aws import provider_aws
 
 
-def terraform(var):
+def pretf_blocks(var):
     for alias, profile in var.aws_profiles.items():
-        yield = provider_aws(
+        yield provider_aws(
             alias=alias,
             profile=profile,
             region=var.aws_region,

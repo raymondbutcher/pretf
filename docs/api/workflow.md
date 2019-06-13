@@ -26,14 +26,14 @@ Example:
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     workflow.create_files()
     return workflow.execute_terraform()
 ```
 
 ## custom
 
-Calls the `run` function from the specified Python file. This is useful for having a custom workflow that is used by multiple pretf.py files in different directories.
+Calls the `pretf_workflow()` function from the specified Python file. This is useful for having a custom workflow that is used by multiple pretf.py files in different directories.
 
 Signature:
 
@@ -41,7 +41,7 @@ Signature:
 def custom(module_path: Union[PurePath, str]) -> int:
 
 module_path:
-    file path for the Python module containing the run function to call
+    file path for the Python module
 
 returns:
     exit code for when pretf finishes
@@ -53,7 +53,7 @@ Example:
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     return workflow.custom("../src/pretf_workflow.py")
 ```
 
@@ -79,7 +79,7 @@ Example:
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     workflow.create_files()
     return workflow.default()
 ```
@@ -117,7 +117,7 @@ Example:
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     workflow.delete_files()
     return workflow.execute_terraform()
 ```
@@ -144,7 +144,7 @@ Example:
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     return workflow.execute_terraform()
 ```
 
@@ -181,7 +181,7 @@ Example:
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     mirror_files("../src/*")
     return workflow.execute_terraform()
 ```

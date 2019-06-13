@@ -22,10 +22,10 @@ Example:
 from pretf.aws import export_environment_variables
 
 
-def run():
+def pretf_workflow():
     export_environment_variables(profile_name="example")
 
-def terraform(var):
+def pretf_blocks(var):
     export_environment_variables(profile_name=var.aws_profile)
 ```
 
@@ -53,11 +53,11 @@ Example:
 from pretf.aws import get_account_id
 
 
-def run():
+def pretf_workflow():
     account_id = get_account_id(profile_name="example")
 
 
-def terraform(var):
+def pretf_blocks(var):
     account_id = get_account_id(profile_name=var.aws_profile)
 ```
 
@@ -85,11 +85,11 @@ Example:
 from pretf.aws import get_frozen_credentials
 
 
-def run():
+def pretf_workflow():
     creds = get_frozen_credentials(profile_name="example")
 
 
-def terraform(var):
+def pretf_blocks(var):
     creds = get_frozen_credentials(profile_name=var.aws_profile)
 ```
 
@@ -115,17 +115,17 @@ Example:
 from pretf.aws import get_session
 
 
-def run():
+def pretf_workflow():
     session = get_session(profile_name="example")
 
 
-def terraform(var):
+def pretf_blocks(var):
     session = get_session(profile_name=var.aws_profile)
 ```
 
 ## provider_aws
 
-Returns an [AWS provider block](https://www.terraform.io/docs/providers/aws/index.html). If provided, the `profile` option will be replaced with static credentials.
+Returns an [AWS provider](https://www.terraform.io/docs/providers/aws/index.html) block. If provided, the `profile` option will be replaced with static credentials.
 
 Signature:
 
@@ -145,7 +145,7 @@ Example:
 from pretf.aws import provider_aws
 
 
-def terraform(var):
+def pretf_blocks(var):
     yield provider_aws(
         profile=var.aws_profile,
         region=var.aws_region,
@@ -179,7 +179,7 @@ Example:
 from pretf.aws import terraform_backend_s3
 
 
-def terraform(var):
+def pretf_blocks(var):
     yield terraform_backend_s3(
         bucket="example-tfstate-bucket",
         dynamodb_table="example-tfstate-table",

@@ -1,6 +1,6 @@
 ## execute
 
-> Note: this is a lower level function than the simpler `pretf.api.execute` which is limited to executing only Terraform.
+> Note: this is a lower level function than the simpler `pretf.workflow.execute_terraform()` function which is limited to executing only Terraform.
 
 Executes a command and waits for it to finish.
 
@@ -43,11 +43,13 @@ Example:
 from pretf.util import execute
 
 
-def run():
+def pretf_workflow():
     execute("terraform", ["terraform", "plan"])
 ```
 
 ## import_file
+
+> Note: this is a lower level function than the simpler `pretf.workflow.custom()` function which is limited to calling custom workflows.
 
 Imports a Python module from any local filesystem path. Temporarily alters sys.path to allow the imported module to import other modules in the same directory.
 
@@ -68,7 +70,7 @@ Example:
 ```python
 from pretf.util import import_file
 
-def run():
-    with import_file("../src/pretf_env.py") as pretf_env:
-        pretf_env.run()
+def pretf_workflow():
+    with import_file("../src/pretf_workflow.py") as module:
+        return module.pretf_workflow()
 ```

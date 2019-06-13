@@ -1,6 +1,6 @@
 from pretf import workflow
 
 
-def run():
+def pretf_workflow():
     workflow.mirror_files("../src/*", "../../src/*")
     return workflow.default()

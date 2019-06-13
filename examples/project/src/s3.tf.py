@@ -1,7 +1,7 @@
 from pretf.api import block
 
 
-def terraform(var):
+def pretf_blocks(var):
 
     name = f"pretf-test-{var.envname}"
 

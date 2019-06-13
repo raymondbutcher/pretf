@@ -2,7 +2,7 @@ from pretf.api import block
 from pretf.aws import provider_aws, terraform_backend_s3
 
 
-def terraform(var):
+def pretf_blocks(var):
     # Create variables needed by this file.
     yield block("variable", "aws_account_id", {})
     yield block("variable", "aws_profile", {})

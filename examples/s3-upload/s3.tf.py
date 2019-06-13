@@ -5,6 +5,28 @@ from pretf.api import block, labels
 from pretf.collections import collect
 
 
+def pretf_blocks(var):
+    """
+    This demonstrates recursively uploading files to an S3 bucket.
+
+    """
+
+    # Create an S3 bucket.
+    bucket = yield block(
+        "resource",
+        "aws_s3_bucket",
+        "test",
+        {"bucket": "pretf-test-s3-upload", "acl": "private"},
+    )
+
+    # Upload all files from the "files" directory.
+    objects = yield aws_s3_bucket_objects(bucket=bucket, source="files")
+
+    # Output some stats.
+    yield block("output", "total_files", {"value": objects.total_files})
+    yield block("output", "total_bytes", {"value": objects.total_bytes})
+
+
 @collect
 def aws_s3_bucket_objects(var):
     """
@@ -42,25 +64,3 @@ def aws_s3_bucket_objects(var):
     # Outputs.
     yield block("output", "total_files", {"value": total_files})
     yield block("output", "total_bytes", {"value": total_bytes})
-
-
-def terraform(var):
-    """
-    This demonstrates recursively uploading files to an S3 bucket.
-
-    """
-
-    # Create an S3 bucket.
-    bucket = yield block(
-        "resource",
-        "aws_s3_bucket",
-        "test",
-        {"bucket": "pretf-test-s3-upload", "acl": "private"},
-    )
-
-    # Upload all files from the "files" directory.
-    objects = yield aws_s3_bucket_objects(bucket=bucket, source="files")
-
-    # Output some stats.
-    yield block("output", "total_files", {"value": objects.total_files})
-    yield block("output", "total_bytes", {"value": objects.total_bytes})

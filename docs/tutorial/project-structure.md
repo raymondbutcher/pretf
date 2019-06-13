@@ -34,67 +34,46 @@ Code:
 ```python
 # env/dev/pretf.py
 
-from pretf.api import create, execute, mirror, remove
+from pretf import workflow
 
 
-def run():
-    # Delete *.tf.json and *.tfvars.json files.
-    remove()
-
+def pretf_workflow():
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src/*")
+    workflow.mirror_files("../../src/*")
 
-    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
-    # symlinks that were just created.
-    create()
-
-    # Execute Terraform.
-    return execute()
+    # Run the standard Pretf workflow to create files and execute Terraform.
+    return workflow.default()
 ```
 
 ```python
 # env/stage/pretf.py
 
-from pretf.api import create, execute, mirror, remove
+from pretf import workflow
 
 
-def run():
-    # Delete *.tf.json and *.tfvars.json files.
-    remove()
-
+def pretf_workflow():
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src/*")
+    workflow.mirror_files("../../src/*")
 
-    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
-    # symlinks that were just created.
-    create()
-
-    # Execute Terraform.
-    return execute()
+    # Run the standard Pretf workflow to create files and execute Terraform.
+    return workflow.default()
 ```
 
 ```python
 # env/prod/pretf.py
 
-from pretf.api import create, execute, mirror, remove
+from pretf import workflow
 
 
-def run():
-    # Delete *.tf.json and *.tfvars.json files.
-    remove()
-
+def pretf_workflow():
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src/*")
+    workflow.mirror_files("../../src/*")
 
-    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
-    # symlinks that were just created.
-    create()
-
-    # Execute Terraform.
-    return execute()
+    # Run the standard Pretf workflow to create files and execute Terraform.
+    return workflow.default()
 ```
 
 ```ini
@@ -108,72 +87,55 @@ terraform/env/*/*
 !terraform/env/*/terraform.tfvars
 ```
 
-## The 'mirror' function
-
-The above code uses the `mirror()` function which creates symlinks in the current directory pointing to files and directories in other directories.
-
 ## Reuse logic
 
-The above example contains three `pretf.py` files with the same code. One way to avoid this duplicated logic is to move it into a separate `pretf_env.py` file and use it from each `pretf.py` file in the environment directories. For example:
+The above example contains three `pretf.py` files with the same code. Workflows could potentially contain more code than the above examples, and each `pretf.py` file would look identical or very similar. One way to avoid this duplicated logic is to move it into a separate `pretf_workflow.py` file and call it from each `pretf.py` file in the environment directories. The name `pretf_workflow.py` is used, rather than `pretf.py`, so that Pretf does not automatically run it. For example:
 
 ```python
-# env/pretf_env.py
+# env/pretf_workflow.py
 
-from pretf.api import create, execute, mirror, remove
+from pretf import workflow
 
 
-def run():
-    # Delete *.tf.json and *.tfvars.json files.
-    remove()
-
+def pretf_workflow():
     # Create symlinks in the current directory to everything in ../../src
     # This deletes any other symlinks in the current directory.
-    mirror("../../src/*")
+    workflow.mirror_files("../src/*")
 
-    # Create *.tf.json and *.tfvars.json files from *.tf.py and *.tfvars.py
-    # symlinks that were just created.
-    create()
-
-    # Execute Terraform.
-    return execute()
+    # Run the standard Pretf workflow to create files and execute Terraform.
+    return workflow.default()
 ```
 
 ```python
 # env/dev/pretf.py
 
-from pretf.util import import_file
+from pretf import workflow
 
 
-def run():
-    # Call the shared run() function.
-    with import_file("../pretf_env.py") as pretf_env:
-        pretf_env.run()
+def pretf_workflow():
+    return workflow.custom("../pretf_workflow.py")
 ```
 
 ```python
 # env/stage/pretf.py
 
-from pretf.util import import_file
+from pretf import workflow
 
 
-def run():
-    # Call the shared run() function.
-    with import_file("../pretf_env.py") as pretf_env:
-        pretf_env.run()
+def pretf_workflow():
+    return workflow.custom("../pretf_workflow.py")
 ```
 
 ```python
 # env/prod/pretf.py
 
-from pretf.util import import_file
+from pretf import workflow
 
 
-def run():
-    # Call the shared run() function.
-    with import_file("../pretf_env.py") as pretf_env:
-        pretf_env.run()
+def pretf_workflow():
+    return workflow.custom("../pretf_workflow.py")
 ```
 
-## The 'import_file' function
+## The 'workflow.custom()' function
 
-The above code uses the `import_file()` context manager which imports a module from any local filesystem path. It also temporarily adds the file's directory to `sys.path` so that the imported module is able to import other modules in the same directory.
+The above code uses the `workflow.custom()` function which imports a module from any local filesystem path and calls the `pretf_workflow()` function. This function can be found in the API documentation.

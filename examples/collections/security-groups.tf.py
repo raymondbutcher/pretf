@@ -2,6 +2,21 @@ from pretf.api import block
 from pretf.collections import collect
 
 
+def pretf_blocks(var):
+    egress = yield open_egress_security_group(name="pretf-egress")
+
+    web = yield cidr_security_group(
+        name="pretf-web",
+        type="ingress",
+        cidrs=["10.0.0.0/24", "192.168.0.0/24"],
+        protocol="tcp",
+        ports=[80, 443],
+    )
+
+    yield block("output", "egress_sg_id", {"value": egress.group.id})
+    yield block("output", "web_sg_id", {"value": web.group.id})
+
+
 @collect
 def cidr_security_group(var):
 
@@ -58,18 +73,3 @@ def open_egress_security_group(var):
 
     # Outputs.
     yield block("output", "group", {"value": egress.group})
-
-
-def terraform(var):
-    egress = yield open_egress_security_group(name="pretf-egress")
-
-    web = yield cidr_security_group(
-        name="pretf-web",
-        type="ingress",
-        cidrs=["10.0.0.0/24", "192.168.0.0/24"],
-        protocol="tcp",
-        ports=[80, 443],
-    )
-
-    yield block("output", "egress_sg_id", {"value": egress.group.id})
-    yield block("output", "web_sg_id", {"value": web.group.id})

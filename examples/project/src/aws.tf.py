@@ -1,7 +1,7 @@
 from pretf.aws import provider_aws
 
 
-def terraform(var):
+def pretf_blocks(var):
     """
     This shows how to use pretf_aws for multiple AWS providers.
     This allows for a single Terraform stack to manage resources
