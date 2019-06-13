@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Any, Generator, Iterable, Sequence, Union
 
 from .parser import get_outputs_from_block
-from .render import unwrap_yielded
+from .render import call_pretf_function, unwrap_yielded
 from .variables import VariableStore, VariableValue, get_variable_definitions_from_block
 
 
@@ -54,10 +54,8 @@ def collect(func):
             var = VariableValue(name=key, value=value, source="kwargs")
             var_store.add(var)
 
-        # Create a proxy for accessing variable values.
-        var_proxy = var_store.proxy(func.__name__)
-
-        gen = func(var_proxy)
+        # Call the collection function, passing in "path", "terraform" and "var" if required.
+        gen = call_pretf_function(func=func, var=var_store.proxy(func.__name__))
 
         blocks = []
         outputs = {}

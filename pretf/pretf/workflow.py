@@ -6,7 +6,7 @@ from typing import List, Optional, Sequence, Union
 
 from . import log, util
 from .exceptions import FunctionNotFoundError
-from .render import Renderer, json_default
+from .render import Renderer, call_pretf_function, json_default
 from .util import import_file
 
 
@@ -64,11 +64,16 @@ def custom(path: Union[PurePath, str]) -> int:
     """
 
     with import_file(path) as module:
+
         if not hasattr(module, "pretf_workflow"):
             raise FunctionNotFoundError(
                 f"workflow: {path} does not have a 'pretf_workflow' function"
             )
-        exit_code = module.pretf_workflow()  # type: ignore
+
+        # Call the pretf_workflow() function,
+        # passing in "path" and "terraform" if required.
+        exit_code = call_pretf_function(func=module.pretf_workflow)  # type: ignore
+
     return exit_code
 
 

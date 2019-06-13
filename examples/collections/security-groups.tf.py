@@ -2,7 +2,7 @@ from pretf.api import block
 from pretf.collections import collect
 
 
-def pretf_blocks(var):
+def pretf_blocks():
     egress = yield open_egress_security_group(name="pretf-egress")
 
     web = yield cidr_security_group(

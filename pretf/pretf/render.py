@@ -1,12 +1,17 @@
+import inspect
+import os
 from collections.abc import Iterable
+from functools import lru_cache
 from pathlib import Path, PurePath
-from typing import Any, Dict, Generator, List, Union
+from types import FunctionType
+from typing import Any, Dict, Generator, List, Optional, Union
 
 from . import log
 from .exceptions import FunctionNotFoundError
 from .util import import_file
 from .variables import (
     TerraformVariableStore,
+    VariableProxy,
     VariableValue,
     get_variable_definitions_from_block,
 )
@@ -80,6 +85,13 @@ class Interpolated:
         return "${" + self.__value + "}"
 
 
+class PathProxy:
+    def __init__(self):
+        self.cwd = str(Path.cwd())
+        self.module = "."
+        self.root = "."
+
+
 class Renderer:
     def __init__(self, files_to_create: Dict[str, Path]):
         # These are all of the files that will be created.
@@ -136,21 +148,23 @@ class RenderJob:
         self.is_tfvars = self.output_name.endswith(".tfvars.json")
         self.return_value = None
 
-        # Create a var object to pass into the file's generator function.
-        # This allows attribute and dict access to the variables.
-        var = variables.proxy(path)
-
         # Load the file and start the generator.
         with import_file(path) as module:
+
             if self.is_tfvars:
                 func_name = "pretf_variables"
             else:
                 func_name = "pretf_blocks"
+
             if not hasattr(module, func_name):
                 raise FunctionNotFoundError(
                     f"create: {path} does not have a {repr(func_name)} function"
                 )
-            self.gen = getattr(module, func_name)(var)
+
+            # Call the pretf_* function, passing in "path", "terraform" and "var" if required.
+            self.gen = call_pretf_function(
+                func=getattr(module, func_name), var=variables.proxy(path)
+            )
 
         self.blocks = []
 
@@ -201,6 +215,32 @@ class RenderJob:
                 self.blocks.append(block)
 
         return False
+
+
+class TerraformProxy:
+    @property  # type: ignore
+    @lru_cache(maxsize=None)
+    def workspace(self):
+        workspace = os.getenv("TF_WORKSPACE")
+        if not workspace:
+            cwd = Path.cwd()
+            try:
+                workspace = (cwd / ".terraform" / "environment").read_text()
+            except FileNotFoundError:
+                workspace = "default"
+        return workspace
+
+
+def call_pretf_function(func: FunctionType, var: Optional[VariableProxy] = None):
+    kwargs: Dict[str, Any] = {}
+    sig = inspect.signature(func)
+    if "path" in sig.parameters:
+        kwargs["path"] = PathProxy()
+    if "terraform" in sig.parameters:
+        kwargs["terraform"] = TerraformProxy()
+    if "var" in sig.parameters and var is not None:
+        kwargs["var"] = var
+    return func(**kwargs)
 
 
 def json_default(obj: Any) -> Any:

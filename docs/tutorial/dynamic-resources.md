@@ -6,7 +6,7 @@ There is too much duplication on the previous page, and what if we want to add m
 from pretf.api import block
 
 
-def pretf_blocks(var):
+def pretf_blocks():
     animals = ["dog", "cat", "buffalo", "rabbit", "badger"]
     for name in animals:  # loop over list
         yield block("resource", "random_integer", name, {  # dynamic resource name

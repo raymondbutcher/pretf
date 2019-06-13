@@ -26,7 +26,7 @@ Example:
 from pretf.api import block
 
 
-def pretf_blocks(var):
+def pretf_blocks():
 
     # The group resource is defined in another file,
     # but we want to reference it here, so we can
