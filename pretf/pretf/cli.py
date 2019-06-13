@@ -1,5 +1,5 @@
-import os
 import sys
+from pathlib import Path
 from typing import List, Optional, Tuple
 
 from . import log, workflow
@@ -29,10 +29,12 @@ def main() -> None:
         exit_code = workflow.execute_terraform(verbose=False)
         sys.exit(exit_code)
 
+    workflow_path = find_workflow_path()
+
     try:
 
-        if os.path.exists("pretf.py"):
-            exit_code = workflow.custom("pretf.py")
+        if workflow_path:
+            exit_code = workflow.custom(workflow_path)
         else:
             exit_code = workflow.default()
 
@@ -51,6 +53,21 @@ def main() -> None:
         exit_code = 1
 
     sys.exit(exit_code)
+
+
+def find_workflow_path() -> Optional[Path]:
+
+    name = "pretf.py"
+    path = Path.cwd() / name
+    if path.exists():
+        return path
+
+    for dir_path in path.parents:
+        path = dir_path / name
+        if path.exists():
+            return path
+
+    return None
 
 
 def parse_args() -> Tuple[Optional[str], List[str], List[str]]:
