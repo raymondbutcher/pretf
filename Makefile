@@ -9,6 +9,11 @@ all:
 	cd examples; terraform fmt -recursive
 	python -m unittest discover tests
 
+.PHONY: clean
 clean:
 	cd pretf; make clean
 	cd pretf.aws; make clean
+
+.PHONY: docs
+docs:
+	mkdocs serve
