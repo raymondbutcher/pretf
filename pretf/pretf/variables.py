@@ -244,10 +244,16 @@ def get_variable_definitions_from_block(block, source):
 
     variable = block["variable"]
 
-    if isinstance(variable, dict):
-        variables = [variable]
-    else:
+    if isinstance(variable, list):
         variables = variable
+    elif isinstance(variable, dict):
+        variables = [variable]
+    elif isinstance(variable, str):
+        raise ValueError(
+            f"invalid variable, possibly missing body in block() call: {repr(block)}"
+        )
+    else:
+        raise ValueError(f"invalid variable: {repr(block)}")
 
     for variable in variables:
         for name, block in variable.items():
