@@ -1,12 +1,14 @@
+from collections.abc import Iterable
 from pathlib import Path, PurePath
-from typing import Any, Dict, Generator, Iterable, List, Union
+from typing import Any, Dict, Generator, List, Union
 
+from . import log
 from .exceptions import FunctionNotFoundError
 from .util import import_file
 from .variables import (
     TerraformVariableStore,
+    VariableValue,
     get_variable_definitions_from_block,
-    get_variable_values_from_block,
 )
 
 
@@ -54,7 +56,7 @@ class Block(Iterable):
         parts = [self._block_type]
         parts.extend(self._labels)
         if self._body is not None:
-            parts.extend(self._body)
+            parts.append(self._body)
         return f"block({', '.join(repr(part) for part in parts)})"
 
     def __str__(self) -> str:
@@ -104,7 +106,11 @@ class Renderer:
             if until and until in self.variables:
                 break
             job = self.jobs.pop()
-            done = job.run()
+            try:
+                done = job.run()
+            except Exception:
+                log.bad(f"create: {job.path.name} could not be processed")
+                raise
             if done:
                 self.done.append(job)
             else:
@@ -124,27 +130,32 @@ class RenderJob:
         self.path = path
         self.variables = variables
 
+        self.done = False
+        self.output_path = path.with_suffix(".json")
+        self.output_name = self.output_path.name
+        self.is_tfvars = self.output_name.endswith(".tfvars.json")
+        self.return_value = None
+
         # Create a var object to pass into the file's generator function.
         # This allows attribute and dict access to the variables.
         var = variables.proxy(path)
 
         # Load the file and start the generator.
         with import_file(path) as module:
-            if not hasattr(module, "pretf_blocks"):
+            if self.is_tfvars:
+                func_name = "pretf_variables"
+            else:
+                func_name = "pretf_blocks"
+            if not hasattr(module, func_name):
                 raise FunctionNotFoundError(
-                    f"create: {path} does not have a 'pretf_blocks' function"
+                    f"create: {path} does not have a {repr(func_name)} function"
                 )
-            self.gen = module.pretf_blocks(var)
-
-        self.done = False
-        self.output_path = path.with_suffix(".json")
-        self.output_name = self.output_path.name
-        self.return_value = None
+            self.gen = getattr(module, func_name)(var)
 
         self.blocks = []
 
     def contents(self) -> Union[dict, List[dict]]:
-        if self.output_name.endswith(".tfvars.json"):
+        if self.is_tfvars:
             merged = {}
             for block in self.blocks:
                 for name, value in block.items():
@@ -160,19 +171,16 @@ class RenderJob:
             # populate it later.
             self.variables.add(var)
 
-    def process_tfvars_block(self, block: dict) -> None:
+    def process_tfvars_dict(self, values: dict) -> None:
         # Only populate the variable store with values in this file
         # if it is waiting for this file. It is possible to generate
         # tfvars files that don't get used as a source for values.
         if self.variables.tfvars_waiting_for(self.output_name):
-            for var in get_variable_values_from_block(block, source=self.path.name):
-                # Add the variable value. Raise an error if it changes
-                # the value, because it could result in Pretf using
-                # the old value and Terraform using the new one.
-                self.variables.add(var, allow_change=False)
+            for name, value in values.items():
+                var = VariableValue(name=name, value=value, source=self.path.name)
+                self.variables.add(var)
 
     def run(self) -> bool:
-
         try:
             yielded = self.gen.send(self.return_value)
         except StopIteration:
@@ -181,14 +189,16 @@ class RenderJob:
 
         self.return_value = yielded
 
-        for block in unwrap_yielded(yielded):
+        if self.is_tfvars:
+            if not isinstance(yielded, dict):
+                raise TypeError(f"expected dict to be yielded but got {repr(yielded)}")
+            self.process_tfvars_dict(yielded)
+            self.blocks.append(yielded)
+        else:
+            for block in unwrap_yielded(yielded):
 
-            if self.output_name.endswith(".tfvars.json"):
-                self.process_tfvars_block(block)
-            else:
                 self.process_tf_block(block)
-
-            self.blocks.append(block)
+                self.blocks.append(block)
 
         return False
 
@@ -200,11 +210,19 @@ def json_default(obj: Any) -> Any:
 
 
 def unwrap_yielded(
-    yielded: Union[Block, dict, Iterable]
+    yielded: Union[Block, dict, Iterable], **kwargs
 ) -> Generator[dict, None, None]:
     if isinstance(yielded, Block):
         yield dict(iter(yielded))
     elif isinstance(yielded, dict):
         yield yielded
     else:
-        yield from yielded
+        root = kwargs.get("root", yielded)
+        parent = kwargs.get("parent", object())
+        if isinstance(yielded, Iterable) and yielded != parent:
+            for nested in yielded:
+                yield from unwrap_yielded(nested, parent=yielded, root=root)
+        else:
+            raise TypeError(
+                f"expected block to be yielded but got {repr(kwargs.get('root', yielded))}"
+            )

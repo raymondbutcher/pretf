@@ -1,8 +1,8 @@
 Pretf finds and imports Python files from the current directory. Pretf calls specific functions in those files. This page explains the files and functions that you must have in your project for Pretf to work.
 
-## \*.tf.py and \*.tfvars.py
+## \*.tf.py
 
-By default, Pretf looks for `*.tf.py` and `*.tfvars.py` files and creates matching `*.tf.json` and `*.tfvars.json` files respectively. For example, a file named `iam.tf.py` would create `iam.tf.json`, and `terraform.tfvars.py` would create `terraform.tfvars.json`.
+By default, Pretf looks for `*.tf.py` files and creates matching `*.tf.json` files. For example, a file named `iam.tf.py` would create `iam.tf.json`.
 
 These files must contain a `pretf_blocks()` function. This function must accept a single argument `var` which provides access to Terraform variables. This function must be a generator that yields only blocks and/or dictionaries representing Terraform blocks.
 
@@ -15,13 +15,37 @@ from pretf.api import block
 
 
 def pretf_blocks(var):
-    yield block("resource", "aws_iam_user", "peanut", {
-        "name": "peanut",
-    })
+    for user_name in var.user_names:
 
-    yield block("resource", "aws_iam_user", "cornelius", {
-        "name": "cornelius",
-    })
+        yield block("resource", "aws_iam_user", user_name, {
+            "name": user_name,
+        })
+
+        label = f"{user_name}_in_{var.group_name}"
+        yield block("resource", "aws_iam_user_group_membership",label, {
+            "user": user.name,
+            "groups": [var.group_name],
+        })
+```
+
+## \*.tfvars.py
+
+By default, Pretf looks for `*.tfvars.py` files and creates matching `*.tfvars.json` files. For example, a file named `terraform.tfvars.py` would create `terraform.tfvars.json`.
+
+These files must contain a `pretf_variables()` function. This function must accept a single argument `var` which provides access to Terraform variables. This function must be a generator that yields dictionaries containing variable values. Each dictionary can contain any number of variables.
+
+Example:
+
+```python
+# terraform.tfvars.py
+
+
+def pretf_variables(var):
+    yield {"environment": "dev"}
+    yield {
+        "group_name": "admin",
+        "user_names": ["peanut", "cornelius"],
+    }
 ```
 
 ## pretf.py

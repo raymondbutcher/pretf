@@ -1,7 +1,3 @@
-from pretf.api import block
-
-
-def pretf_blocks(var):
-    yield block("three", 3)
-
-    yield block("four", 4)
+def pretf_variables(var):
+    yield {"three": 3}
+    yield {"four": 4}
