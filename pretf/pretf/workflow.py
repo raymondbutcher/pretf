@@ -172,6 +172,7 @@ def delete_files(
 def mirror_files(
     *path_patterns: str,
     exclude_name_patterns: Sequence[str] = [".*", "_*"],
+    include_directories: bool = True,
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
 ) -> List[Path]:
@@ -199,12 +200,16 @@ def mirror_files(
 
     # Delete old symlinks.
     for path in cwd.iterdir():
+        if not include_directories and path.is_dir():
+            continue
         if path.is_symlink():
             path.unlink()
 
     # Create new symlinks.
     created = []
     for real_path in paths:
+        if not include_directories and real_path.is_dir():
+            continue
         link_path = cwd / real_path.name
         link_path.symlink_to(real_path)
         created.append(link_path)

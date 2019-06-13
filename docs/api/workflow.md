@@ -158,6 +158,7 @@ Signature:
 def mirror_files(
     *path_patterns: str,
     exclude_name_patterns: Sequence[str] = [".*", "_*"],
+    include_directories: bool = True,
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
 ) -> List[Path]:
