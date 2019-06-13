@@ -1,0 +1,1 @@
+# Example: flattened directory structure
