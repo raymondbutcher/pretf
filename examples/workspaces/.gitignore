@@ -1,5 +1,6 @@
-.terraform*
+*/stack.tf.py
+*/*.*.auto.tfvars
+!modules/stack.tf.py
+!params/*
+.terraform
 *.tf.json
-workspace.auto.tfvars
-workspace.tf.py
-!src/workspace.tf.py
