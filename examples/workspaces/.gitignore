@@ -1,6 +1,7 @@
-*/stack.tf.py
-*/*.*.auto.tfvars
-!modules/stack.tf.py
-!params/*
 .terraform
 *.tf.json
+stacks/*/*.*.auto.tfvars
+stacks/*/stack.tf.py
+
+# Check with this command:
+# find . -type f | git check-ignore --no-index --non-matching --verbose --stdin | grep -P '^.*:.*:[\s!]' | cut -f 2 | sort

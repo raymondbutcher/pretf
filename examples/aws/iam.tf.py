@@ -3,9 +3,7 @@ from pretf.api import block
 
 def pretf_blocks(var):
 
-    group = yield block(
-        "resource", "aws_iam_group", "pretf", {"name": "pretf-aws"}
-    )
+    group = yield block("resource", "aws_iam_group", "pretf", {"name": "pretf-aws"})
 
     for name in var.user_names:
 

@@ -3,6 +3,6 @@ resource "aws_iam_user" "pretf" {
 }
 
 module "disable_user" {
-  source    = "../modules/iam-disable-user"
+  source    = "../../modules/iam-disable-user"
   user_name = aws_iam_user.pretf.name
 }
