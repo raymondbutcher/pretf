@@ -1,6 +1,0 @@
-# Ignore everything in the env directories except for pretf.py
-# and terraform.tfvars because Pretf and Terraform create symlinks,
-# *.tf.json files, backend state files, etc.
-env/*/*
-!env/*/pretf.py
-!env/*/terraform.tfvars
