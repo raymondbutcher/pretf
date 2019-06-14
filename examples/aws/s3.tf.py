@@ -16,22 +16,28 @@ def pretf_blocks():
         "resource",
         "aws_s3_bucket",
         "test",
-        {"bucket": "pretf-test-s3-upload", "acl": "private"},
+        {"bucket": "pretf-example-aws-files", "acl": "private"},
     )
 
-    # Upload all files from the "files" directory.
-    objects = yield aws_s3_bucket_objects(bucket=bucket, source="files")
+    # Upload all files from the "files" and "more-files" directories.
+    total_files = 0
+    total_bytes = 0
+    for source in ("files", "more-files"):
+        objects = yield aws_s3_bucket_objects(bucket=bucket, source=source)
+        total_files += objects.total_files
+        total_bytes += objects.total_bytes
 
     # Output some stats.
-    yield block("output", "total_files", {"value": objects.total_files})
-    yield block("output", "total_bytes", {"value": objects.total_bytes})
+    yield block("output", "total_files", {"value": total_files})
+    yield block("output", "total_bytes", {"value": total_bytes})
 
 
 @collect
 def aws_s3_bucket_objects(var):
     """
-    Creates aws_s3_bucket_object resources
-    for all files in the given source directory.
+    Creates aws_s3_bucket_object resources for all files in the given
+    source directory. This is using the "collections" API to create
+    a reusable function that generates resources.
 
     """
 
