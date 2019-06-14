@@ -1,4 +1,0 @@
-*/*/*
-!modules/*/*
-!*/*/pretf.py
-!*/*/*.*.auto.tfvars
