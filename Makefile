@@ -1,13 +1,7 @@
 SOURCES = pretf/pretf pretf.aws/pretf examples tests
 
 .PHONY: all
-all:
-	isort --recursive $(SOURCES)
-	black $(SOURCES)
-	flake8 --ignore E501 $(SOURCES)
-	mypy -m pretf.api -m pretf.cli -m pretf.collections -m pretf.log -m pretf.parser -m pretf.render
-	cd examples; terraform fmt -recursive
-	python -m unittest discover tests
+all: tidy test
 
 .PHONY: clean
 clean:
@@ -17,3 +11,15 @@ clean:
 .PHONY: docs
 docs:
 	mkdocs serve
+
+.PHONY: test
+test:
+	mypy -m pretf.api -m pretf.aws -m pretf.cli -m pretf.collections -m pretf.exceptions -m pretf.log -m pretf.parser -m pretf.render -m pretf.util -m pretf.variables -m pretf.workflow
+	flake8 --ignore E501 $(SOURCES)
+	python -m unittest discover tests
+
+.PHONY: tidy
+tidy:
+	isort --recursive $(SOURCES)
+	black $(SOURCES)
+	cd examples; terraform fmt -recursive

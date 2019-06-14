@@ -4,3 +4,5 @@ class Fore:
 
 class Style:
     RESET_ALL: str
+
+def init() -> None: ...

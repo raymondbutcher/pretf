@@ -2,16 +2,20 @@ import json
 import os
 from functools import lru_cache
 from time import sleep
+from typing import Any, Optional
 
 from pretf.api import block, log
+from pretf.render import Block
 
 try:
-    from boto_source_profile_mfa import get_session as Session
+    from boto_source_profile_mfa import get_session as Session  # type: ignore
 except ImportError:
-    from boto3 import Session
+    from boto3 import Session  # type: ignore
 
 
-def _create_s3_backend(session, bucket, table, region_name):
+def _create_s3_backend(
+    session: Session, bucket: str, table: str, region_name: str
+) -> None:
 
     # Prompt before creating anything.
     account_id = get_account_id(session)
@@ -81,19 +85,23 @@ def _create_s3_backend(session, bucket, table, region_name):
                 log.bad(f"backend: {stack['StackStatusReason']}")
 
 
-def _get_cloudformation_stack_arn(region_name, account_id, stack_name):
+def _get_cloudformation_stack_arn(
+    region_name: str, account_id: str, stack_name: str
+) -> str:
     return f"arn:aws:cloudformation:{region_name}:{account_id}:stack/{stack_name}"
 
 
-def _get_dynamodb_table_arn(region_name, account_id, table):
+def _get_dynamodb_table_arn(region_name: str, account_id: str, table: str) -> str:
     return f"arn:aws:dynamodb:{region_name}:{account_id}:{table}"
 
 
-def _get_s3_bucket_arn(region_name, account_id, bucket):
+def _get_s3_bucket_arn(region_name: str, account_id: str, bucket: str) -> str:
     return f"arn:aws:s3:{region_name}:{account_id}:{bucket}"
 
 
-def _get_s3_backend_status(session, region_name, bucket, table):
+def _get_s3_backend_status(
+    session: Session, region_name: str, bucket: str, table: str
+) -> dict:
 
     s3_client = session.client("s3")
 
@@ -122,7 +130,9 @@ def _get_s3_backend_status(session, region_name, bucket, table):
     }
 
 
-def export_environment_variables(session=None, **kwargs):
+def export_environment_variables(
+    session: Optional[Session] = None, region_name: Optional[str] = None, **kwargs: dict
+) -> None:
     """
     Exports AWS credentials as environment variables.
 
@@ -131,7 +141,7 @@ def export_environment_variables(session=None, **kwargs):
     if session is None:
         session = get_session(**kwargs)
 
-    creds = session.get_credentials().get_frozen_credentials()
+    creds = get_frozen_credentials(session)
 
     if creds.access_key:
         os.environ["AWS_ACCESS_KEY_ID"] = creds.access_key
@@ -143,14 +153,15 @@ def export_environment_variables(session=None, **kwargs):
         os.environ["AWS_SECURITY_TOKEN"] = creds.token
         os.environ["AWS_SESSION_TOKEN"] = creds.token
 
-    region_name = kwargs.get("region_name") or session.region_name
+    if not region_name:
+        region_name = session.region_name
     if region_name:
         os.environ["AWS_REGION"] = region_name
         os.environ["AWS_DEFAULT_REGION"] = region_name
 
 
 @lru_cache()
-def get_account_id(session=None, **kwargs):
+def get_account_id(session: Optional[Session] = None, **kwargs: dict) -> str:
     if session is None:
         session = get_session(**kwargs)
     sts_client = session.client("sts")
@@ -158,18 +169,18 @@ def get_account_id(session=None, **kwargs):
     return account_id
 
 
-def get_frozen_credentials(session=None, **kwargs):
+def get_frozen_credentials(session: Optional[Session] = None, **kwargs: dict) -> Any:
     if session is None:
         session = get_session(**kwargs)
     return session.get_credentials().get_frozen_credentials()
 
 
 @lru_cache()
-def get_session(**kwargs):
+def get_session(**kwargs: dict) -> Session:
     return Session(**kwargs)
 
 
-def provider_aws(**body):
+def provider_aws(**body: dict) -> Block:
     """
     Returns an AWS provider block. If provided, the `profile` option
     will be replaced with static credentials.
@@ -191,7 +202,7 @@ def provider_aws(**body):
     return block("provider", "aws", body)
 
 
-def terraform_backend_s3(bucket, dynamodb_table, **config):
+def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Block:
     """
     This ensures that the S3 backend exists, prompting to create it
     if necessary, sets the credentials as environment variables,

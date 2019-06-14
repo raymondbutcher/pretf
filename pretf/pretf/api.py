@@ -4,7 +4,7 @@ from . import labels, log
 from .render import Block
 
 
-def block(block_type, *args: Any) -> Block:
+def block(block_type: str, *args: Any) -> Block:
     if args:
         body = args[-1]
         labels = list(args[:-1])
