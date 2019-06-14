@@ -14,7 +14,7 @@ docs:
 
 .PHONY: test
 test:
-	mypy -m pretf.api -m pretf.aws -m pretf.cli -m pretf.collections -m pretf.exceptions -m pretf.log -m pretf.parser -m pretf.render -m pretf.util -m pretf.variables -m pretf.workflow
+	mypy $(shell python -c 'import pathlib; print(" ".join(sorted(f"-m pretf.{p.stem}" for p in pathlib.Path().glob("pretf*/pretf/*.py"))))')
 	flake8 --ignore E501 $(SOURCES)
 	python -m unittest discover tests
 
