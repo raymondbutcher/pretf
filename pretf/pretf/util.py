@@ -11,7 +11,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path, PurePath
 from threading import Lock
 from types import ModuleType
-from typing import Generator, Optional, Sequence, Union
+from typing import Any, Callable, Generator, Optional, Sequence, Union
 
 from . import log
 
@@ -119,16 +119,16 @@ def import_file(path: Union[PurePath, str]) -> Generator[ModuleType, None, None]
             sys.path.remove(pathdir)
 
 
-def once(func):
+def once(func: Callable) -> Callable:
 
-    locks = defaultdict(Lock)
+    locks: defaultdict = defaultdict(Lock)
 
     @lru_cache(maxsize=None)
-    def get_key(*args, **kwargs):
+    def get_key(*args: Any, **kwargs: dict) -> object:
         return object()
 
     @wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: dict) -> Any:
         key = get_key(*args, **kwargs)
         if locks[key].acquire(blocking=False):
             return func(*args, **kwargs)

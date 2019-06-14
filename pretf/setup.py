@@ -20,5 +20,6 @@ setup(
     packages=["pretf"],
     entry_points={"console_scripts": ("pretf=pretf.cli:main",)},
     install_requires=["colorama", "pyhcl"],
+    extras_require={"aws": ["pretf.aws"]},
     zip_safe=False,
 )

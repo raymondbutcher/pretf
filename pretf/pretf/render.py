@@ -3,8 +3,7 @@ import os
 from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path, PurePath
-from types import FunctionType
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 from . import log
 from .exceptions import FunctionNotFoundError
@@ -35,7 +34,7 @@ class Block(Iterable):
             result = self._body
         yield (self._block_type, result)
 
-    def __getattr__(self, name) -> Union["Interpolated", str]:
+    def __getattr__(self, name: str) -> Union["Interpolated", str]:
         if self._block_type == "resource":
             parts = list(self._labels)
         elif self._block_type == "variable":
@@ -86,7 +85,7 @@ class Interpolated:
 
 
 class PathProxy:
-    def __init__(self):
+    def __init__(self) -> None:
         self.cwd = Path.cwd()
         self.module = Path(".")
         self.root = Path(".")
@@ -113,7 +112,7 @@ class Renderer:
         # This will be populated with blocks from each file being created.
         self.done: List[RenderJob] = []
 
-    def process_jobs(self, until=None) -> None:
+    def process_jobs(self, until: Optional[str] = None) -> None:
         while self.jobs:
             if until and until in self.variables:
                 break
@@ -137,7 +136,7 @@ class Renderer:
 
 
 class RenderJob:
-    def __init__(self, path, variables):
+    def __init__(self, path: Path, variables: TerraformVariableStore):
 
         self.path = path
         self.variables = variables
@@ -163,10 +162,10 @@ class RenderJob:
 
             # Call the pretf_* function, passing in "path", "terraform" and "var" if required.
             self.gen = call_pretf_function(
-                func=getattr(module, func_name), var=variables.proxy(path)
+                func=getattr(module, func_name), var=variables.proxy(str(path))
             )
 
-        self.blocks = []
+        self.blocks: List[dict] = []
 
     def contents(self) -> Union[dict, List[dict]]:
         if self.is_tfvars:
@@ -220,7 +219,7 @@ class RenderJob:
 class TerraformProxy:
     @property  # type: ignore
     @lru_cache(maxsize=None)
-    def workspace(self):
+    def workspace(self) -> str:
         workspace = os.getenv("TF_WORKSPACE")
         if not workspace:
             cwd = Path.cwd()
@@ -231,7 +230,7 @@ class TerraformProxy:
         return workspace
 
 
-def call_pretf_function(func: FunctionType, var: Optional[VariableProxy] = None):
+def call_pretf_function(func: Callable, var: Optional[VariableProxy] = None) -> Any:
     kwargs: Dict[str, Any] = {}
     sig = inspect.signature(func)
     if "path" in sig.parameters:
@@ -250,7 +249,7 @@ def json_default(obj: Any) -> Any:
 
 
 def unwrap_yielded(
-    yielded: Union[Block, dict, Iterable], **kwargs
+    yielded: Union[Block, dict, Iterable], **kwargs: Any
 ) -> Generator[dict, None, None]:
     if isinstance(yielded, Block):
         yield dict(iter(yielded))

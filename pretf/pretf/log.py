@@ -1,12 +1,12 @@
 from functools import wraps
-from typing import Any
+from typing import Any, Callable
 
 import colorama
 
 
-def colorama_init(func, state={}):
+def colorama_init(func: Callable, state: dict = {}) -> Callable:
     @wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: dict) -> Any:
 
         if not state:
             colorama.init()

@@ -2,6 +2,7 @@ import os
 import shlex
 import sys
 from pathlib import Path
+from typing import Any, Callable, Generator, Set, Union
 
 from .exceptions import (
     VariableAlreadyDefinedError,
@@ -18,26 +19,26 @@ from .util import once
 
 
 class VariableProxy:
-    def __init__(self, store, consumer):
+    def __init__(self, store: "VariableStore", consumer: str):
         self._store = store
         self._consumer = consumer
 
-    def __contains__(self, name):
+    def __contains__(self, name: str) -> bool:
         return name in self._store
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return self._store.get(name, self._consumer)
 
     __getitem__ = __getattr__
 
 
 class VariableStore:
-    def __init__(self):
+    def __init__(self) -> None:
         self._allow_defaults = True
-        self._definitions = {}
-        self._values = {}
+        self._definitions: dict = {}
+        self._values: dict = {}
 
-    def __contains__(self, name):
+    def __contains__(self, name: str) -> bool:
         if name in self._definitions:
             if name in self._values:
                 return True
@@ -46,7 +47,7 @@ class VariableStore:
                     return True
         return False
 
-    def add(self, var):
+    def add(self, var: Union["VariableDefinition", "VariableValue"]) -> None:
         if isinstance(var, VariableDefinition):
             if var.name in self._definitions:
                 old_var = self._definitions[var.name]
@@ -57,13 +58,13 @@ class VariableStore:
         else:
             raise TypeError(var)
 
-    def enable_defaults(self):
+    def enable_defaults(self) -> None:
         self._allow_defaults = True
 
-    def disable_defaults(self):
+    def disable_defaults(self) -> None:
         self._allow_defaults = False
 
-    def get(self, name, consumer):
+    def get(self, name: str, consumer: str) -> Any:
         if name in self._definitions:
             if name in self._values:
                 return self._values[name].value
@@ -73,19 +74,23 @@ class VariableStore:
             raise VariableNotPopulatedError(name, consumer)
         raise VariableNotDefinedError(name, consumer)
 
-    def proxy(self, consumer):
+    def proxy(self, consumer: str) -> VariableProxy:
         return VariableProxy(store=self, consumer=consumer)
 
 
 class TerraformVariableStore(VariableStore):
-    def __init__(self, files_to_create, process_jobs):
-        super().__init__()
+    def __init__(self, files_to_create: dict, process_jobs: Callable) -> None:
+        super().__init__()  # type: ignore
         self._files_to_create = files_to_create
-        self._files_created = set()
-        self._tfvars_waiting = set()
+        self._files_created: Set[str] = set()
+        self._tfvars_waiting: Set[str] = set()
         self._process_jobs = process_jobs
 
-    def add(self, var, allow_change=True):
+    def add(
+        self,
+        var: Union["VariableDefinition", "VariableValue"],
+        allow_change: bool = True,
+    ) -> None:
         # Ensure Terraform variables are loaded before anything from Pretf,
         # because there is a loading order that needs to be followed,
         # and Pretf values come afterwards.
@@ -93,35 +98,36 @@ class TerraformVariableStore(VariableStore):
 
         # This check is used to prevent changing variables values in Pretf,
         # to ensure that Pretf and Terraform always have consistent values.
-        if not allow_change and var.name in self._values:
-            old_var = self._values[var.name]
-            if var.value != old_var.value:
-                raise VariableNotConsistentError(old_var=old_var, new_var=var)
+        if isinstance(var, VariableValue):
+            if not allow_change and var.name in self._values:
+                old_var = self._values[var.name]
+                if var.value != old_var.value:
+                    raise VariableNotConsistentError(old_var=old_var, new_var=var)
 
         super().add(var)
 
-    def file_created(self, name):
+    def file_created(self, name: str) -> None:
         self._files_created.add(name)
         self._tfvars_waiting.discard(name)
         if not self._tfvars_waiting:
             self.enable_defaults()
 
-    def tfvars_wait_for(self, name):
+    def tfvars_wait_for(self, name: str) -> None:
         if name not in self._files_created:
             self._tfvars_waiting.add(name)
             self.disable_defaults()
 
-    def tfvars_waiting_for(self, name):
+    def tfvars_waiting_for(self, name: str) -> bool:
         self.load()
         return name in self._tfvars_waiting
 
-    def get(self, name, consumer):
+    def get(self, name: str, consumer: str) -> Any:
         self.load()
         self._process_jobs(until=name)
         return super().get(name, consumer)
 
     @once
-    def load(self):
+    def load(self) -> None:
         """
         Load Terraform variables from various sources.
 
@@ -205,7 +211,7 @@ class TerraformVariableStore(VariableStore):
 
 
 class VariableDefinition:
-    def __init__(self, name, source, **kwargs):
+    def __init__(self, name: str, source: str, **kwargs: dict) -> None:
         self.name = name
         self.source = source
         self.has_default = False
@@ -218,7 +224,7 @@ class VariableDefinition:
                     f"{self.__class__.__name__}() got an unexpected keyword argument {repr(key)}"
                 )
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[tuple, None, None]:
         yield ("name", self.name)
         if hasattr(self, "default"):
             yield ("default", self.default)
@@ -226,18 +232,20 @@ class VariableDefinition:
 
 
 class VariableValue:
-    def __init__(self, name, value, source):
+    def __init__(self, name: str, value: Any, source: str) -> None:
         self.name = name
         self.value = value
         self.source = source
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[tuple, None, None]:
         yield ("name", self.name)
         yield ("value", self.value)
         yield ("source", self.source)
 
 
-def get_variable_definitions_from_block(block, source):
+def get_variable_definitions_from_block(
+    block: dict, source: str
+) -> Generator[VariableDefinition, None, None]:
 
     if "variable" not in block:
         return
@@ -263,12 +271,16 @@ def get_variable_definitions_from_block(block, source):
             yield VariableDefinition(**kwargs)
 
 
-def get_variable_values_from_block(block, source):
+def get_variable_values_from_block(
+    block: dict, source: str
+) -> Generator[VariableValue, None, None]:
     for name, value in block.items():
         yield VariableValue(name=name, value=value, source=source)
 
 
-def get_variables_from_file(path):
+def get_variables_from_file(
+    path: Path
+) -> Generator[Union[VariableDefinition, VariableValue], None, None]:
     if path.name.endswith(".tf"):
         yield from get_variables_from_tf_file(path)
     elif path.name.endswith(".tfvars"):
@@ -281,25 +293,29 @@ def get_variables_from_file(path):
         raise ValueError(path.name)
 
 
-def get_variables_from_tf_file(path):
+def get_variables_from_tf_file(path: Path) -> Generator[VariableDefinition, None, None]:
     blocks = parse_tf_file_for_variables(path)
     for block in blocks:
         yield from get_variable_definitions_from_block(block, path.name)
 
 
-def get_variables_from_tfvars_file(path):
+def get_variables_from_tfvars_file(path: Path) -> Generator[VariableValue, None, None]:
     blocks = parse_tfvars_file_for_variables(path)
     for block in blocks:
         yield from get_variable_values_from_block(block, path.name)
 
 
-def get_variables_from_tf_json_file(path):
+def get_variables_from_tf_json_file(
+    path: Path
+) -> Generator[VariableDefinition, None, None]:
     blocks = parse_json_file_for_blocks(path)
     for block in blocks:
         yield from get_variable_definitions_from_block(block, path.name)
 
 
-def get_variables_from_tfvars_json_file(path):
+def get_variables_from_tfvars_json_file(
+    path: Path
+) -> Generator[VariableValue, None, None]:
     blocks = parse_json_file_for_blocks(path)
     for block in blocks:
         yield from get_variable_values_from_block(block, path.name)
