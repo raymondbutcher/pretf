@@ -189,15 +189,27 @@ def provider_aws(**body: dict) -> Block:
 
     if "profile" in body:
 
-        session = get_session(profile_name=body.pop("profile"))
+        session = get_session(profile_name=body["profile"])
 
-        if session.region_name:
-            body.setdefault("region", session.region_name)
+        creds = session.get_credentials()
 
-        creds = get_frozen_credentials(session)
-        body["access_key"] = creds.access_key
-        body["secret_key"] = creds.secret_key
-        body["token"] = creds.token
+        if creds.method in ("config-file", "shared-credentials-file"):
+            # The credentials were in the config file, so Terraform will
+            # have no trouble finding these credentials using the profile.
+            # Do nothing to the configuration body.
+            pass
+        else:
+            # The credentials were more complicated, probably using the
+            # assume-role provider, custom-process provider, or anything
+            # else. In case Terraform is unable to handle these credentials
+            # (e.g. it can't do MFA prompts), replace the "profile" in the
+            # the configuration body with actual credentials.
+            frozen_creds = creds.get_frozen_credentials()
+            body["access_key"] = frozen_creds.access_key
+            body["secret_key"] = frozen_creds.secret_key
+            if creds.token:
+                body["token"] = frozen_creds.token
+            del body["profile"]
 
     return block("provider", "aws", body)
 
