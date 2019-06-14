@@ -11,7 +11,6 @@ nav:
   - Dynamic references: tutorial/dynamic-references.md
   - Terraform variables: tutorial/terraform-variables.md
   - Custom workflows: tutorial/custom-workflows.md
-  - Project structure: tutorial/project-structure.md
   - AWS projects: tutorial/aws-projects.md
   - direnv and asdf-vm: tutorial/direnv-and-asdf-vm.md
 - API:
