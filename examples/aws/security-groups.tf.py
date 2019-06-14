@@ -10,7 +10,7 @@ def pretf_blocks(var):
         "resource",
         "aws_security_group",
         private_label,
-        {"name": "pretf-security-groups-private"},
+        {"name": "pretf-example-aws-private"},
     )
 
     public_label = "public"
@@ -18,12 +18,12 @@ def pretf_blocks(var):
         "resource",
         "aws_security_group",
         public_label,
-        {"name": "pretf-security-groups-public"},
+        {"name": "pretf-example-aws-public"},
     )
 
-    for cidr in sorted(set(var.access_list)):
+    for cidr in sorted(set(var.security_group_allowed_cidrs)):
 
-        cidr_name = cidr.replace(".", "_").replace("/", "_")
+        cidr_label = cidr.replace(".", "_").replace("/", "_")
 
         if IPv4Network(cidr).is_global:
             group = public
@@ -33,7 +33,7 @@ def pretf_blocks(var):
             group_label = private_label
 
         for port in (80, 443):
-            rule_label = f"{group_label}_{port}_from_{cidr_name}"
+            rule_label = f"{group_label}_{port}_from_{cidr_label}"
             yield block(
                 "resource",
                 "aws_security_group_rule",

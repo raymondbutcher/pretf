@@ -4,12 +4,10 @@ from pretf.aws import terraform_backend_s3
 
 def pretf_blocks(var):
 
-    backend_name = f"pretf-tfstate-{var.envtype}"
-
     yield terraform_backend_s3(
-        bucket=backend_name,
-        dynamodb_table=backend_name,
-        key="security-groups.tfstate",
+        bucket=f"pretf-tfstate-example-aws-{var.aws_account_id}",
+        dynamodb_table="pretf-tfstate-example-aws",
+        key="terraform.tfstate",
         profile=var.aws_profile,
         region=var.aws_region,
     )
