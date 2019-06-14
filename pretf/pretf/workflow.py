@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import sys
@@ -5,7 +6,7 @@ from pathlib import Path, PurePath
 from typing import List, Optional, Sequence, Union
 
 from . import log, util
-from .exceptions import FunctionNotFoundError
+from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError
 from .render import Renderer, call_pretf_function, json_default
 from .util import import_file
 
@@ -134,31 +135,6 @@ def delete_files(
     return deleted
 
 
-def deny(message: str = "this directory is denied", show_possible: bool = True) -> int:
-    """
-    Displays an error message and shows any child directories containing
-    a pretf.py file. This function can be used to disable Terraform
-    in a project and then allow it to work only in child directories
-    containing a pretf.py workflow file.
-
-    """
-
-    log.bad("this directory is denied")
-    allowed = []
-    cwd = Path.cwd()
-    for path in cwd.rglob("*/pretf.py"):
-        allowed.append(path.relative_to(cwd).parent)
-
-    if allowed:
-        log.bad("possible directories:")
-        for path in sorted(allowed):
-            log.bad(f"* {path}")
-    else:
-        log.bad("no pretf.py files found below current directory")
-
-    return 1
-
-
 def execute_terraform(verbose: bool = True) -> int:
     """
     Executes Terraform and waits for it to finish.
@@ -244,11 +220,45 @@ def mirror_files(
     return created
 
 
+def require_files(*name_patterns: str, verbose: bool = True) -> None:
+    """
+    Raises an exception if the specified files are not found in the current
+    directory. Pretf will catch this exception, display an error message,
+    and show other directories that do contain the files.
+
+    This can be used to restrict where Pretf/Terraform can run,
+    while informing users where it can run if they make a mistake.
+
+    If multiple patterns are provided, the directory must contain
+    files that match all patterns (performing an AND search).
+
+    """
+
+    cwd = Path.cwd()
+
+    matches = 0
+    for pattern in name_patterns:
+        if list(cwd.glob(pattern)):
+            matches += 1
+
+    if matches == len(name_patterns):
+        return
+
+    caller_frame = inspect.currentframe().f_back  # type: ignore
+    caller_info = inspect.getframeinfo(caller_frame)
+    caller_file = caller_info.filename
+    caller_directory = Path(caller_file).parent
+
+    raise RequiredFilesNotFoundError(name_patterns=name_patterns, root=caller_directory)
+
+
 __all__ = [
     "create_files",
     "custom",
     "default",
+    "delete_files",
     "execute_terraform",
     "delete_files",
     "mirror_files",
+    "require_files",
 ]

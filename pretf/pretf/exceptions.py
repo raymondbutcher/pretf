@@ -1,5 +1,35 @@
+from collections import defaultdict
+from os.path import relpath
+from pathlib import Path
+from typing import Dict, List, Sequence
+
+
 class FunctionNotFoundError(Exception):
     pass
+
+
+class RequiredFilesNotFoundError(Exception):
+    def __init__(self, name_patterns: Sequence[str], root: Path):
+        self.name_patterns = name_patterns
+        self.root = root
+
+    def get_candidates(self) -> List[str]:
+
+        dirs: Dict[Path, List[str]] = defaultdict(list)
+        for pattern in self.name_patterns:
+            for path in self.root.rglob(pattern):
+                dirs[path.parent].append(pattern)
+
+        matching_dirs = []
+        for path, patterns in dirs.items():
+            if len(patterns) == len(self.name_patterns):
+                matching_dirs.append(path)
+
+        relative_paths = []
+        for path in sorted(matching_dirs):
+            relative_paths.append(relpath(path))
+
+        return relative_paths
 
 
 class VariableError(Exception):

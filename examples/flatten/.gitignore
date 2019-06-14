@@ -1,4 +1,5 @@
-*/*/*
-!*/*/*.*.auto.tfvars
-!*/*/pretf.py
-!/modules/**
+stacks/*/*/*
+!*.tfvars
+
+# Check with this command:
+# find . -type f | git check-ignore --no-index --non-matching --verbose --stdin | grep -P '^.*:.*:[\s!]' | cut -f 2 | sort

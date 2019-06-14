@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from . import log, workflow
-from .exceptions import FunctionNotFoundError, VariableError
+from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError, VariableError
 from .version import __version__
 
 
@@ -31,6 +31,8 @@ def main() -> None:
 
     workflow_path = find_workflow_path()
 
+    exit_code = 1
+
     try:
 
         if workflow_path:
@@ -41,7 +43,15 @@ def main() -> None:
     except FunctionNotFoundError as error:
 
         log.bad(error)
-        exit_code = 1
+
+    except RequiredFilesNotFoundError as error:
+
+        log.bad(f"required: {' '.join(error.name_patterns)}")
+        candidates = error.get_candidates()
+        if candidates:
+            log.bad("found in:")
+            for path in candidates:
+                log.bad(f"* {path}")
 
     except VariableError as error:
 
@@ -50,7 +60,6 @@ def main() -> None:
                 log.bad(error)
         else:
             log.bad(error)
-        exit_code = 1
 
     sys.exit(exit_code)
 

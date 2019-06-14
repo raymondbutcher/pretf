@@ -87,9 +87,9 @@ class Interpolated:
 
 class PathProxy:
     def __init__(self):
-        self.cwd = str(Path.cwd())
-        self.module = "."
-        self.root = "."
+        self.cwd = Path.cwd()
+        self.module = Path(".")
+        self.root = Path(".")
 
 
 class Renderer:
