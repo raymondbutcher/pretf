@@ -8,6 +8,6 @@ resource "aws_iam_user" "pretf" {
 # other directory, Terraform runs there and uses the symlink.
 
 module "disable_user" {
-  source    = "../../modules/iam-disable-user"
+  source    = "../../../modules/iam-disable-user"
   user_name = aws_iam_user.pretf.name
 }
