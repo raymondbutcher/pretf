@@ -1,7 +1,7 @@
 import os
 import re
 
-from setuptools import find_namespace_packages, setup
+from setuptools import setup
 
 
 def get_version():
@@ -17,7 +17,7 @@ setup(
     author="Raymond Butcher",
     author_email="randomy@gmail.com",
     license="MIT License",
-    packages=find_namespace_packages("pretf.*"),
+    packages=["pretf"],
     install_requires=["boto3", "pretf"],
     zip_safe=False,
 )
