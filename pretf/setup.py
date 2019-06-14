@@ -1,7 +1,7 @@
 import os
 import re
 
-from setuptools import find_namespace_packages, setup
+from setuptools import setup
 
 
 def get_version():
@@ -11,14 +11,13 @@ def get_version():
     match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", contents, re.MULTILINE)
     return match.group(1)
 
-
 setup(
     name="pretf",
     version=get_version(),
     author="Raymond Butcher",
     author_email="ray.butcher@claranet.uk",
     license="MIT License",
-    packages=find_namespace_packages("pretf.*"),
+    packages=["pretf"],
     entry_points={"console_scripts": ("pretf=pretf.cli:main",)},
     install_requires=["colorama", "pyhcl"],
     zip_safe=False,
