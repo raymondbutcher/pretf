@@ -12,6 +12,14 @@ def pretf_workflow(path):
     # containing this pretf.py workflow file.
     workflow.mirror_files("../../*", "../*", include_directories=False)
 
+    # Create a symlink to the modules directory
+    # to make module source paths simpler.
+    modules_dir = path.top / "modules"
+    modules_link = path.root / "modules"
+    if modules_link.exists():
+        modules_link.unlink()
+    modules_link.symlink_to(modules_dir)
+
     # Now run the standard Pretf workflow which generates files
     # and then executes Terraform.
     return workflow.default()
