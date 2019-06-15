@@ -23,3 +23,7 @@ tidy:
 	isort --recursive $(SOURCES)
 	black $(SOURCES)
 	cd examples; terraform fmt -recursive
+
+.PHONY: testall
+testall: tidy tests
+	for name in $(shell ls examples); do python -m unittest discover examples.$$name.tests; done

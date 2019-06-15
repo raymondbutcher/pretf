@@ -17,3 +17,5 @@ def pretf_blocks(var):
             name_label,
             {"user": user.name, "groups": [group.name]},
         )
+
+        yield block("output", f"user_{name_label}", {"value": user.name})
