@@ -90,7 +90,7 @@ class PathProxy:
         self.module = Path(".")
         self.root = Path(".")
 
-    @property
+    @property  # type: ignore
     @lru_cache(maxsize=None)
     def top(self) -> Path:
         """

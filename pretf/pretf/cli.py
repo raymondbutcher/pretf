@@ -8,6 +8,10 @@ from .version import __version__
 
 
 def main() -> None:
+    sys.exit(run())
+
+
+def run() -> int:
     """
     This is the pretf CLI tool entrypoint.
 
@@ -18,7 +22,7 @@ def main() -> None:
     if cmd == "version":
         print(f"Pretf v{__version__}")
 
-    if cmd in (None, "fmt", "help", "version"):
+    if cmd in ("", "fmt", "help", "version"):
         skip = True
     elif cmd == "workspace" and args and args[0] == "show":
         skip = True
@@ -27,13 +31,13 @@ def main() -> None:
 
     if skip:
         exit_code = workflow.execute_terraform(verbose=False)
-        sys.exit(exit_code)
-
-    workflow_path = find_workflow_path()
+        return exit_code
 
     exit_code = 1
 
     try:
+
+        workflow_path = find_workflow_path()
 
         if workflow_path:
             exit_code = workflow.custom(workflow_path)
@@ -61,7 +65,7 @@ def main() -> None:
         else:
             log.bad(error)
 
-    sys.exit(exit_code)
+    return exit_code
 
 
 def find_workflow_path() -> Optional[Path]:
@@ -81,7 +85,7 @@ def find_workflow_path() -> Optional[Path]:
 
 def parse_args() -> Tuple[Optional[str], List[str], List[str]]:
 
-    cmd = None
+    cmd = ""
     args = []
     flags = []
 
