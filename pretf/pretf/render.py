@@ -90,6 +90,25 @@ class PathProxy:
         self.module = Path(".")
         self.root = Path(".")
 
+    @property
+    @lru_cache(maxsize=None)
+    def top(self) -> Path:
+        """
+        Returns the directory containing the pretf.py workflow file,
+        or the current directory if there is none.
+
+        """
+
+        name = "pretf.py"
+        if (self.cwd / name).exists():
+            return self.cwd
+
+        for parent in self.cwd.parents:
+            if (parent / name).exists():
+                return parent
+
+        return self.cwd
+
 
 class Renderer:
     def __init__(self, files_to_create: Dict[str, Path]):
