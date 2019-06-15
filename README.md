@@ -1,6 +1,6 @@
 # Pretf
 
-**Note: This is in early development. Things are not yet implemented. The API may change.**
+[![Documentation Status](https://readthedocs.org/projects/pretf/badge/?version=latest)](http://pretf.readthedocs.io/) [![Build Status](https://dev.azure.com/raymondbutcher/Pretf/_apis/build/status/raymondbutcher.pretf?branchName=master)](https://dev.azure.com/raymondbutcher/Pretf/_build/latest?definitionId=1&branchName=master)
 
 Pretf is a completely transparent, drop-in Terraform wrapper that generates Terraform configuration with Python. It requires no configuration and no changes to standard Terraform projects to start using it.
 
