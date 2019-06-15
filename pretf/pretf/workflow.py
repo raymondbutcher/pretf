@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from pathlib import Path, PurePath
+from subprocess import CompletedProcess
 from typing import List, Optional, Sequence, Union
 
 from . import log, util
@@ -56,7 +57,7 @@ def create_files(*source_dirs: Union[Path, str], verbose: bool = True) -> List[P
     return created
 
 
-def custom(path: Union[PurePath, str]) -> int:
+def custom(path: Union[PurePath, str]) -> CompletedProcess:
     """
     Calls the pretf_workflow() function from the specified Python file.
     This is useful for having a custom workflow that is used by multiple
@@ -73,12 +74,16 @@ def custom(path: Union[PurePath, str]) -> int:
 
         # Call the pretf_workflow() function,
         # passing in "path" and "terraform" if required.
-        exit_code = call_pretf_function(func=module.pretf_workflow)  # type: ignore
+        result = call_pretf_function(func=module.pretf_workflow)  # type: ignore
 
-    return exit_code
+    if not isinstance(result, CompletedProcess):
+
+        result = CompletedProcess(args=[str(path)], returncode=1)
+
+    return result
 
 
-def default(verbose: bool = True) -> int:
+def default(verbose: bool = True) -> CompletedProcess:
     """
     This is the default Pretf workflow. This is automatically used when there
     is no pretf.py file in the current directory, or it can be called directly
@@ -135,13 +140,15 @@ def delete_files(
     return deleted
 
 
-def execute_terraform(verbose: bool = True) -> int:
+def execute_terraform(verbose: bool = True) -> CompletedProcess:
     """
     Executes Terraform and waits for it to finish.
     Command line arguments are passed through to Terraform.
     Returns the exit code from Terraform.
 
     """
+
+    args = ["terraform"] + sys.argv[1:]
 
     # Find the Terraform executable in the PATH.
     for path in os.environ["PATH"].split(os.pathsep):
@@ -162,12 +169,10 @@ def execute_terraform(verbose: bool = True) -> int:
             continue
 
         # This is a valid executable, run it.
-        return util.execute(
-            file=terraform_path, args=["terraform"] + sys.argv[1:], verbose=verbose
-        )
+        return util.execute(file=terraform_path, args=args, verbose=verbose)
 
     log.bad("terraform: command not found")
-    return 1
+    return CompletedProcess(args=args, returncode=1)
 
 
 def mirror_files(

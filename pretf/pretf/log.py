@@ -1,3 +1,4 @@
+import sys
 from functools import wraps
 from typing import Any, Callable
 
@@ -43,7 +44,10 @@ def bad(message: Any) -> None:
 
     """
 
-    print(f"{colorama.Fore.RED}[pretf] {message}{colorama.Style.RESET_ALL}")
+    print(
+        f"{colorama.Fore.RED}[pretf] {message}{colorama.Style.RESET_ALL}",
+        file=sys.stderr,
+    )
 
 
 @colorama_init
@@ -53,4 +57,7 @@ def ok(message: Any) -> None:
 
     """
 
-    print(f"{colorama.Fore.CYAN}[pretf] {message}{colorama.Style.RESET_ALL}")
+    print(
+        f"{colorama.Fore.CYAN}[pretf] {message}{colorama.Style.RESET_ALL}",
+        file=sys.stderr,
+    )
