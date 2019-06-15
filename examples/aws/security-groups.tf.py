@@ -47,3 +47,6 @@ def pretf_blocks(var):
                     "cidr_blocks": [cidr],
                 },
             )
+
+    yield block("output", "private_sg_id", {"value": private.id})
+    yield block("output", "public_sg_id", {"value": public.id})
