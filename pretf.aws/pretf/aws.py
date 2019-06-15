@@ -36,7 +36,7 @@ def _create_s3_backend(
     log.ok(f"backend: creating {stack_arn}")
 
     # Create the stack.
-    cloudformation_client = session.client("cloudformation")
+    cloudformation_client = session.client("cloudformation", region_name=region_name)
     cloudformation_client.create_stack(
         StackName=stack_name,
         ResourceTypes=["AWS::DynamoDB::Table", "AWS::S3::Bucket"],
