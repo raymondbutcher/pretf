@@ -1,5 +1,5 @@
 resource "aws_iam_user" "pretf" {
-  name = "pretf-workspaces-flatten-${var.stack}"
+  name = "pretf-flatten-${var.environment}"
 }
 
 # Example of including a local module.

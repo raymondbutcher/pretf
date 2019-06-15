@@ -8,17 +8,19 @@ from fnmatch import fnmatch
 from functools import lru_cache, wraps
 from importlib.abc import Loader
 from importlib.util import module_from_spec, spec_from_file_location
+from io import StringIO
 from pathlib import Path, PurePath
-from threading import Lock
+from subprocess import PIPE, CompletedProcess, Popen
+from threading import Lock, Thread
 from types import ModuleType
-from typing import Any, Callable, Generator, Optional, Sequence, Union
+from typing import Any, BinaryIO, Callable, Generator, Optional, Sequence, TextIO, Union
 
 from . import log
 
 
 def execute(
     file: str, args: Sequence[str], env: Optional[dict] = None, verbose: bool = True
-) -> int:
+) -> CompletedProcess:
     """
     Executes a command and waits for it to finish.
 
@@ -40,6 +42,14 @@ def execute(
     if verbose:
         log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
 
+    if env.get("PRETF_CAPTURE_OUTPUT"):
+        return _execute_subprocess(file, args, env)
+    else:
+        return _execute_fork(file, args, env)
+
+
+def _execute_fork(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
+    returncode = 1
     child_pid = os.fork()
     if child_pid == 0:
         os.execvpe(file, list(args), env)
@@ -62,9 +72,52 @@ def execute(
                     # An actual error occurred.
                     raise
             else:
-                exit_code = exit_status >> 8
-                return exit_code
-    return 1
+                returncode = exit_status >> 8
+                break
+    return CompletedProcess(args=args, returncode=returncode)
+
+
+def _execute_subprocess(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
+
+    stdout_buffer = StringIO()
+    stderr_buffer = StringIO()
+
+    proc = Popen(args, executable=file, stdout=PIPE, stderr=PIPE, env=env)
+
+    stdout_thread = Thread(
+        target=_fan_out, args=(proc.stdout, sys.stdout, stdout_buffer)
+    )
+    stdout_thread.start()
+
+    stderr_thread = Thread(
+        target=_fan_out, args=(proc.stderr, sys.stderr, stderr_buffer)
+    )
+    stderr_thread.start()
+
+    returncode = proc.wait()
+
+    stdout_thread.join()
+    stderr_thread.join()
+
+    stdout_buffer.seek(0)
+    stderr_buffer.seek(0)
+
+    return CompletedProcess(
+        args=args,
+        returncode=returncode,
+        stdout=stdout_buffer.read(),
+        stderr=stderr_buffer.read(),
+    )
+
+
+def _fan_out(input_steam: BinaryIO, *output_streams: TextIO) -> None:
+    while True:
+        char = input_steam.read(1).decode()
+        if char:
+            for output_stream in output_streams:
+                output_stream.write(char)
+        else:
+            break
 
 
 def find_paths(

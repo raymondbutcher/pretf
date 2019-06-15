@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from subprocess import CompletedProcess
 from typing import List, Optional, Tuple
 
 from . import log, workflow
@@ -8,10 +9,11 @@ from .version import __version__
 
 
 def main() -> None:
-    sys.exit(run())
+    proc = run()
+    sys.exit(proc.returncode)
 
 
-def run() -> int:
+def run() -> CompletedProcess:
     """
     This is the pretf CLI tool entrypoint.
 
@@ -30,19 +32,16 @@ def run() -> int:
         skip = False
 
     if skip:
-        exit_code = workflow.execute_terraform(verbose=False)
-        return exit_code
-
-    exit_code = 1
+        return workflow.execute_terraform(verbose=False)
 
     try:
 
         workflow_path = find_workflow_path()
 
         if workflow_path:
-            exit_code = workflow.custom(workflow_path)
+            return workflow.custom(workflow_path)
         else:
-            exit_code = workflow.default()
+            return workflow.default()
 
     except FunctionNotFoundError as error:
 
@@ -65,7 +64,7 @@ def run() -> int:
         else:
             log.bad(error)
 
-    return exit_code
+    return CompletedProcess(args=sys.argv, returncode=1)
 
 
 def find_workflow_path() -> Optional[Path]:

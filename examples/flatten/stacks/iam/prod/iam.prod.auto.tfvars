@@ -4,6 +4,8 @@ aws_profile = "rbutcher"
 
 aws_region = "eu-west-1"
 
+environment = "prod"
+
 stack = "iam-prod"
 
 terraform_required_version = "0.12.1"
