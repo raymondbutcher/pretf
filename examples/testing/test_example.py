@@ -24,7 +24,7 @@ class TestExample(SimpleTest):
         self.init()
         outputs = self.apply()
 
-        assert outputs == {"one": "true"}
+        assert outputs == {"one": True}
 
     def test_change(self):
 
@@ -33,12 +33,12 @@ class TestExample(SimpleTest):
             yield block("output", "one", {"value": one})
 
         with self.create("two.tf.json"):
-            two = yield block("variable", "two", {"default": True})
+            two = yield block("variable", "two", {"default": {"x": [1, 2, 3], "y": 4}})
             yield block("output", "two", {"value": two})
 
         outputs = self.apply()
 
-        assert outputs == {"one": "false", "two": "true"}
+        assert outputs == {"one": False, "two": {"x": [1, 2, 3], "y": 4}}
 
     def test_destroy(self):
         self.destroy()
