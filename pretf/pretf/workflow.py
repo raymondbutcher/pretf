@@ -104,7 +104,7 @@ def default(verbose: bool = True) -> CompletedProcess:
 
 
 def delete_files(
-    path_patterns: Sequence[str] = ["*.tf.json", "*.tfvars.json"],
+    *path_patterns: str,
     exclude_name_patterns: Sequence[str] = [],
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
@@ -115,6 +115,9 @@ def delete_files(
     Optionally exclude files matching a specified pattern.
 
     """
+
+    if not path_patterns:
+        path_patterns = ("*.tf.json", "*.tfvars.json")
 
     if cwd is None:
         cwd = Path.cwd()
@@ -134,8 +137,9 @@ def delete_files(
     # Delete files.
     deleted = []
     for path in paths:
-        path.unlink()
-        deleted.append(path)
+        if not path.is_dir():
+            path.unlink()
+            deleted.append(path)
 
     return deleted
 
@@ -263,7 +267,6 @@ __all__ = [
     "default",
     "delete_files",
     "execute_terraform",
-    "delete_files",
     "mirror_files",
     "require_files",
 ]
