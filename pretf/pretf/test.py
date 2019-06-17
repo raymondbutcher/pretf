@@ -10,10 +10,9 @@ from json import loads as json_loads
 from subprocess import CompletedProcess
 from typing import Any, Callable, Dict, Generator, List, Union
 
-import hcl
 import pytest
 
-from pretf import render, workflow
+from pretf import parser, render, workflow
 
 
 class SimpleTestMeta(type):
@@ -125,24 +124,19 @@ class SimpleTest(metaclass=SimpleTestMeta):
         proc = self.terraform(
             "apply", "-input=false", "-auto-approve=true", "-no-color"
         )
-        try:
-            outputs_string = proc.stdout.split("Outputs:\n", 1)[1]
-        except IndexError:
-            outputs: dict = {}
-        else:
-            outputs = hcl.loads(outputs_string)
-        return outputs
+        return parser.parse_apply_outputs(proc.stdout)
 
-    def destroy(self) -> None:
-        self.terraform("destroy", "-input=false", "-auto-approve=true")
+    def destroy(self) -> str:
+        return self.terraform("destroy", "-input=false", "-auto-approve=true").stdout
 
-    def init(self) -> None:
-        self.terraform("init", "-input=false")
+    def init(self) -> str:
+        return self.terraform("init", "-input=false").stdout
 
     def output(self, json: bool = True) -> Union[CompletedProcess, dict]:
         if json:
-            proc = self.terraform("output", "-json")
-            return json_loads(proc.stdout)
+            return json_loads(self.terraform("output", "-json").stdout)
         else:
-            proc = self.terraform("output")
-            return proc.stdout
+            return self.terraform("output").stdout
+
+    def plan(self) -> str:
+        return self.terraform("plan", "-input=false").stdout
