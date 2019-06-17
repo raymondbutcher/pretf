@@ -5,11 +5,8 @@ from pretf.workflow import delete_files
 
 class TestExample(SimpleTest):
     """
-    This test class shows how to create Terraform configuration,
-    run Terraform, and then make assertions about its output.
-
     Each test_* method runs in the order they are defined here.
-    If any of them fail then testing is stopped automatically.
+    If any of them fail then subsequent tests do not run.
 
     """
 
