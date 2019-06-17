@@ -92,7 +92,7 @@ Signature:
 
 ```python
 def delete_files(
-    path_patterns: Sequence[str] = ["*.tf.json", "*.tfvars.json"],
+    *path_patterns: str,
     exclude_name_patterns: Sequence[str] = [],
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
@@ -100,6 +100,7 @@ def delete_files(
 
 path_patterns:
     path glob patterns to mirror into the current directory
+    defaults to ("*.tf.json", "*.tfvars.json")
 exclude_name_patterns:
     name glob patterns to exclude
 cwd:
