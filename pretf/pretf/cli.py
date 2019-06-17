@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from subprocess import CompletedProcess
+from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Optional, Tuple
 
 from . import log, workflow
@@ -9,8 +9,13 @@ from .version import __version__
 
 
 def main() -> None:
-    proc = run()
-    sys.exit(proc.returncode)
+    try:
+        proc = run()
+    except CalledProcessError as error:
+        returncode = error.returncode
+    else:
+        returncode = proc.returncode
+    sys.exit(returncode)
 
 
 def run() -> CompletedProcess:
