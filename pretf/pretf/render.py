@@ -38,7 +38,7 @@ class Block(Iterable):
         if self._block_type == "resource":
             parts = list(self._labels)
         elif self._block_type == "variable":
-            parts = ["var"]
+            parts = ["var"] + self._labels
         elif self._block_type == "provider":
             parts = list(self._labels)
             if name == "alias":
@@ -46,6 +46,8 @@ class Block(Iterable):
                     alias = self._body.get("alias")
                     if alias:
                         parts.append(alias)
+                else:
+                    parts.append("default")
                 return ".".join(parts)
         elif self._block_type == "locals":
             parts = ["local"]
@@ -64,7 +66,11 @@ class Block(Iterable):
         return f"block({', '.join(repr(part) for part in parts)})"
 
     def __str__(self) -> str:
-        return ".".join([self._block_type] + self._labels)
+        if self._block_type == "variable":
+            parts = ["var"] + self._labels
+            return str(Interpolated(".".join(parts)))
+        else:
+            return ".".join([self._block_type] + self._labels)
 
 
 class Interpolated:
@@ -262,7 +268,7 @@ def call_pretf_function(func: Callable, var: Optional[VariableProxy] = None) -> 
 
 
 def json_default(obj: Any) -> Any:
-    if isinstance(obj, (Interpolated, PurePath)):
+    if isinstance(obj, (Block, Interpolated, PurePath)):
         return str(obj)
     raise TypeError(repr(obj))
 
