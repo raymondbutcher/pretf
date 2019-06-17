@@ -22,11 +22,9 @@ class TestExample(SimpleTest):
             yield block("output", "one", {"value": one})
 
         self.init()
-        self.apply()
+        outputs = self.apply()
 
-        output = self.output(json=True)
-
-        assert output == {"one": {"sensitive": False, "type": "bool", "value": True}}
+        assert outputs == {"one": "true"}
 
     def test_change(self):
 
@@ -38,14 +36,9 @@ class TestExample(SimpleTest):
             two = yield block("variable", "two", {"default": True})
             yield block("output", "two", {"value": two})
 
-        self.apply()
+        outputs = self.apply()
 
-        output = self.output(json=True)
-
-        assert output == {
-            "one": {"sensitive": False, "type": "bool", "value": False},
-            "two": {"sensitive": False, "type": "bool", "value": True},
-        }
+        assert outputs == {"one": "false", "two": "true"}
 
     def test_destroy(self):
         self.destroy()

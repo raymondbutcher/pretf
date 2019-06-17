@@ -10,7 +10,7 @@ from importlib.abc import Loader
 from importlib.util import module_from_spec, spec_from_file_location
 from io import StringIO
 from pathlib import Path, PurePath
-from subprocess import PIPE, CompletedProcess, Popen
+from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen
 from threading import Lock, Thread
 from types import ModuleType
 from typing import Any, BinaryIO, Callable, Generator, Optional, Sequence, TextIO, Union
@@ -74,6 +74,12 @@ def _execute_fork(file: str, args: Sequence[str], env: dict) -> CompletedProcess
             else:
                 returncode = exit_status >> 8
                 break
+
+    if returncode != 0:
+        raise CalledProcessError(
+            returncode=returncode, cmd=" ".join(shlex.quote(arg) for arg in args)
+        )
+
     return CompletedProcess(args=args, returncode=returncode)
 
 
@@ -101,6 +107,14 @@ def _execute_subprocess(file: str, args: Sequence[str], env: dict) -> CompletedP
 
     stdout_buffer.seek(0)
     stderr_buffer.seek(0)
+
+    if returncode != 0:
+        raise CalledProcessError(
+            returncode=returncode,
+            cmd=" ".join(shlex.quote(arg) for arg in args),
+            output=stdout_buffer.read(),
+            stderr=stderr_buffer.read(),
+        )
 
     return CompletedProcess(
         args=args,

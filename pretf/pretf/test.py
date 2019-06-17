@@ -91,7 +91,7 @@ class SimpleTest(metaclass=SimpleTestMeta):
 
     # Terraform command.
 
-    def terraform(self, *args: str, returncode: int = 0) -> CompletedProcess:
+    def terraform(self, *args: str) -> CompletedProcess:
 
         # Ignore "Boto3 ResourceWarning: unclosed <ssl.SSLSocket ...>"
         # because it is just HTTP connections that get reused or closed
@@ -110,33 +110,39 @@ class SimpleTest(metaclass=SimpleTestMeta):
         finally:
             sys.argv = argv
 
-        if returncode is not None and proc.returncode != returncode:
-            raise AssertionError(
-                f"process return code {proc.returncode} != {returncode}"
-            )
-
         return proc
 
     # Terraform shortcuts.
 
-    def apply(self, returncode: int = 0) -> CompletedProcess:
-        return self.terraform(
-            "apply", "-input=false", "-auto-approve=true", returncode=returncode
+    def apply(self) -> dict:
+        """
+        Runs terraform apply, parses the text output for output values,
+        and returns them as a dictionary. The outputs will all be strings,
+        use the output() function if correct output types are required.
+
+        """
+
+        proc = self.terraform(
+            "apply", "-input=false", "-auto-approve=true", "-no-color"
         )
+        outputs = {}
+        for line in proc.stdout.split("Outputs:\n", 1)[1].splitlines():
+            line = line.strip()
+            if line:
+                name, value = line.split("=", 1)
+                outputs[name.strip()] = value.strip()
+        return outputs
 
-    def destroy(self, returncode: int = 0) -> CompletedProcess:
-        return self.terraform(
-            "destroy", "-input=false", "-auto-approve=true", returncode=returncode
-        )
+    def destroy(self) -> None:
+        self.terraform("destroy", "-input=false", "-auto-approve=true")
 
-    def init(self, returncode: int = 0) -> CompletedProcess:
-        return self.terraform("init", "-input=false", returncode=returncode)
+    def init(self) -> None:
+        self.terraform("init", "-input=false")
 
-    def output(
-        self, json: bool = False, returncode: int = 0
-    ) -> Union[CompletedProcess, dict]:
-        proc = self.terraform("output", "-json", returncode=returncode)
+    def output(self, json: bool = True) -> Union[CompletedProcess, dict]:
         if json:
+            proc = self.terraform("output", "-json")
             return json_loads(proc.stdout)
         else:
-            return proc
+            proc = self.terraform("output")
+            return proc.stdout
