@@ -39,7 +39,7 @@ def clean_block_string(block_string: str) -> str:
     # Add quotes around bare expressions
     # because the parser doesn't support them.
     block_string = re.sub(
-        r'^(\s*[a-z_-]+\s*=\s*)([^[{\s"][^"\r\n]+)$',
+        r'^(\s*[a-zA-Z0-9_-]+\s*=\s*)([^[{\s"][^"\r\n]+)$',
         r'\1"\2"',
         block_string,
         flags=re.MULTILINE,
@@ -63,6 +63,20 @@ def get_outputs_from_block(block: dict) -> Generator[dict, None, None]:
     for output in outputs:
         for name, block in output.items():
             yield {"name": name, "value": block["value"]}
+
+
+def parse_apply_outputs(stdout: str) -> dict:
+
+    try:
+        outputs_string = stdout.split("Outputs:\n", 1)[1]
+    except IndexError:
+        return {}
+
+    cleaned = clean_block_string(outputs_string)
+    if not cleaned:
+        return {}
+
+    return hcl.loads(cleaned)
 
 
 def parse_tf_file_for_block_strings(path: Path) -> Generator[str, None, None]:
