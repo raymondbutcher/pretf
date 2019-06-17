@@ -6,7 +6,7 @@ from pretf.workflow import delete_files
 class TestExample(SimpleTest):
     """
     This test class shows how to create Terraform configuration,
-    run terraform, and then make assertions about the output.
+    run Terraform, and then make assertions about its output.
 
     Each test_* method runs in the order they are defined here.
     If any of them fail then testing is stopped automatically.
@@ -14,46 +14,38 @@ class TestExample(SimpleTest):
     """
 
     def test_create(self):
-        """
-        Create the Terraform configuration.
-
-        """
 
         delete_files("*.json")
 
         with self.create("one.tf.json"):
-            test = yield block("variable", "test", {"default": True})
-            yield block("output", "test", {"value": test})
-
-    def test_init(self):
-        """
-        Run 'terraform init'.
-
-        """
+            one = yield block("variable", "one", {"default": True})
+            yield block("output", "one", {"value": one})
 
         self.init()
+        self.apply()
 
-    def test_apply(self):
-        """
-        Run 'terraform apply'.
+        output = self.output(json=True)
 
-        """
+        assert output == {"one": {"sensitive": False, "type": "bool", "value": True}}
+
+    def test_change(self):
+
+        with self.create("one.tf.json"):
+            one = yield block("variable", "one", {"default": False})
+            yield block("output", "one", {"value": one})
+
+        with self.create("two.tf.json"):
+            two = yield block("variable", "two", {"default": True})
+            yield block("output", "two", {"value": two})
 
         self.apply()
 
-    def test_output(self):
-        """
-        Run 'terraform output' and check that it is as expected.
-
-        """
-
         output = self.output(json=True)
-        assert output == {"test": {"sensitive": False, "type": "bool", "value": True}}
+
+        assert output == {
+            "one": {"sensitive": False, "type": "bool", "value": False},
+            "two": {"sensitive": False, "type": "bool", "value": True},
+        }
 
     def test_destroy(self):
-        """
-        Run 'terraform destroy'.
-
-        """
-
         self.destroy()
