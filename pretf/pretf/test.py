@@ -10,6 +10,7 @@ from json import loads as json_loads
 from subprocess import CompletedProcess
 from typing import Any, Callable, Dict, Generator, List, Union
 
+import hcl
 import pytest
 
 from pretf import render, workflow
@@ -116,21 +117,20 @@ class SimpleTest(metaclass=SimpleTestMeta):
 
     def apply(self) -> dict:
         """
-        Runs terraform apply, parses the text output for output values,
-        and returns them as a dictionary. The outputs will all be strings,
-        use the output() function if correct output types are required.
+        Runs terraform apply, parses the output for output values,
+        and returns them as a dictionary.
 
         """
 
         proc = self.terraform(
             "apply", "-input=false", "-auto-approve=true", "-no-color"
         )
-        outputs = {}
-        for line in proc.stdout.split("Outputs:\n", 1)[1].splitlines():
-            line = line.strip()
-            if line:
-                name, value = line.split("=", 1)
-                outputs[name.strip()] = value.strip()
+        try:
+            outputs_string = proc.stdout.split("Outputs:\n", 1)[1]
+        except IndexError:
+            outputs: dict = {}
+        else:
+            outputs = hcl.loads(outputs_string)
         return outputs
 
     def destroy(self) -> None:
