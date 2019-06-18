@@ -11,15 +11,17 @@ def get_version():
     match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", contents, re.MULTILINE)
     return match.group(1)
 
+version = get_version()
+
 setup(
     name="pretf",
-    version=get_version(),
+    version=version,
     author="Raymond Butcher",
     author_email="ray.butcher@claranet.uk",
     license="MIT License",
     packages=["pretf"],
     entry_points={"console_scripts": ("pretf=pretf.cli:main",)},
     install_requires=["colorama", "pyhcl"],
-    extras_require={"aws": ["pretf.aws"]},
+    extras_require={"aws": ["pretf.aws=={}".format(version)]},
     zip_safe=False,
 )
