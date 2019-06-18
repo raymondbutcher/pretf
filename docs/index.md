@@ -17,10 +17,16 @@ For core functionality:
 pip install pretf
 ```
 
-For extensions:
+For AWS functionality:
 
 ```shell
 pip install pretf.aws
+```
+
+Install them both:
+
+```shell
+pip install pretf[aws]
 ```
 
 ## Overview
