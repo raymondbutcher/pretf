@@ -1,7 +1,7 @@
-from pretf.test import SimpleTest
+from pretf import test, workflow
 
 
-class TestSimpleTest(SimpleTest):
+class TestSimpleTest(test.SimpleTest):
     """
     This shows how to use SimpleTest to write your own tests.
     It runs Terraform with the different configuration files
@@ -64,6 +64,11 @@ class TestSimpleTest(SimpleTest):
         resource was created.
 
         """
+
+        # It is possible to generate dynamic configuration here,
+        # if the test needs to be more complicated.
+        workflow.delete_files("v2/*.json")
+        workflow.create_files("v2")
 
         outputs = self.apply("v2")
 

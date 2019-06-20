@@ -12,14 +12,20 @@ from .render import Renderer, call_pretf_function, json_default
 from .util import import_file
 
 
-def create_files(*source_dirs: Union[Path, str], verbose: bool = True) -> List[Path]:
+def create_files(
+    target_dir: Union[Path, str] = "",
+    source_dirs: Sequence[Union[Path, str]] = [],
+    verbose: bool = True,
+) -> List[Path]:
     """
-    Creates *.tf.json and *.tfvars.json files in the current directory
-    from *.tf.py and *.tfvars.py files in the source directories.
+    Creates *.tf.json and *.tfvars.json files in target_dir
+    from *.tf.py and *.tfvars.py in source_dirs.
 
-    Uses the current directory as a source directory if none are specified.
-    If multiple directories are specified, and there are duplicate file names,
-    the files in the latter directories take precedence.
+    target_dir defaults to the current working directory and
+    source_dirs defaults to a list containing target_dir.
+
+    If multiple source_dirs are specified, and there are duplicate
+    file names, the files in the latter directories take precedence.
 
     It is recommended to call create() only once. Pass in multiple
     source_dirs rather than calling it multiple times. Pretf parses
@@ -30,20 +36,28 @@ def create_files(*source_dirs: Union[Path, str], verbose: bool = True) -> List[P
 
     """
 
+    if isinstance(target_dir, str):
+        target_dir = Path(target_dir)
+
+    if not source_dirs:
+        source_dirs = [target_dir]
+
     # Find all files in the specified source directories.
     files_to_create = {}
     for source_dir in source_dirs or ["."]:
         if isinstance(source_dir, str):
             source_dir = Path(source_dir)
-        for path in source_dir.iterdir():
-            name = path.name
-            if name.endswith(".tf.py") or name.endswith(".tfvars.py"):
-                output_name = path.with_suffix(".json").name
-                files_to_create[output_name] = path
+        for source_path in source_dir.iterdir():
+            file_name = source_path.name
+            if file_name.endswith(".tf.py") or file_name.endswith(".tfvars.py"):
+                target_path = (target_dir / file_name).with_suffix(".json")
+                files_to_create[target_path] = source_path
 
     # Render the JSON data from *.tf.py and *.tfvars.py files.
-    file_renderer = Renderer(files_to_create)
-    file_contents = file_renderer.render()
+    if files_to_create:
+        file_contents = Renderer(files_to_create).render()
+    else:
+        file_contents = {}
 
     # Write JSON files.
     created = []

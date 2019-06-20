@@ -1,23 +1,21 @@
 ## create_files
 
-Creates `*.tf.json` and `*.tfvars.json` files in the current directory from `*.tf.py` and `*.tfvars.py` files in the source directories.
+Creates `*.tf.json` and `*.tfvars.json` files in `target_dir` from `*.tf.py` and `*.tfvars.py` in source_dirs.
 
-Uses the current directory as a source directory if none are specified. If multiple directories are specified, and there are duplicate file names, the files in the latter directories take precedence.
+`target_dir` defaults to the current working directory and `source_dirs` defaults to a list containing `target_dir`.
+
+If multiple source_dirs are specified, and there are duplicate file names, the files in the latter directories take precedence.
 
 It is recommended to call create() only once. Pass in multiple source_dirs rather than calling it multiple times. Pretf parses variables from files in the current directory and the source_dirs. Calling it multiple times with different source_dirs could give Pretf a different set of files to parse each time it is called, resulting in different variables each time.
 
 Signature:
 
 ```python
-def create_files(*source_dirs: Union[Path, str], verbose: bool = True) -> List[Path]:
-
-source_dirs:
-    directories to use for source files
-verbose:
-    whether to print information
-
-returns:
-    created files
+def create_files(
+    target_dir: Union[Path, str] = "",
+    source_dirs: Sequence[Union[Path, str]] = [],
+    verbose: bool = True,
+) -> List[Path]:
 ```
 
 Example:

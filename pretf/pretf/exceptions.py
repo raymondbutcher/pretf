@@ -1,7 +1,7 @@
 from collections import defaultdict
 from os.path import relpath
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 
 if TYPE_CHECKING:
     from pretf.variables import VariableDefinition, VariableValue  # noqa: F401
@@ -68,7 +68,7 @@ class VariableNotConsistentError(VariableError):
 
 
 class VariableNotDefinedError(VariableError):
-    def __init__(self, name: str, consumer: str):
+    def __init__(self, name: str, consumer: Any):
         self.name = name
         self.consumer = consumer
 
@@ -77,7 +77,7 @@ class VariableNotDefinedError(VariableError):
 
 
 class VariableNotPopulatedError(VariableError):
-    def __init__(self, name: str, consumer: str):
+    def __init__(self, name: str, consumer: Any):
         self.name = name
         self.consumer = consumer
 
