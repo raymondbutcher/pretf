@@ -1,9 +1,5 @@
-variable "aws_account_id" {
-  default = "923130578326"
-}
-
 variable "aws_profile" {
-  default = "rbutcher"
+  default = "pretf"
 }
 
 variable "aws_region" {
