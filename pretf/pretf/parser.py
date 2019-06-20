@@ -36,16 +36,11 @@ def clean_block_string(block_string: str) -> str:
             lines.append(line)
     block_string = "\n".join(lines)
 
-    # Add empty quotes to handle empty strings.
-    block_string = re.sub(
-        r"^(\s*[a-zA-Z0-9_-]+\s*=\s*)$", r'\1""', block_string, flags=re.MULTILINE
-    )
-
     # Add quotes around bare expressions
     # because the parser doesn't support them.
     block_string = re.sub(
-        r'^(\s*[a-zA-Z0-9_-]+\s*=\s*)([^[{\s"][^"\r\n]+)$',
-        r'\1"\2"',
+        r'^ *([a-zA-Z0-9_-]+) *= *(?!\d+$)(?!\d+\.\d+$)([^"[{\s]+|$)',
+        r'\1 = "\2"',
         block_string,
         flags=re.MULTILINE,
     )
