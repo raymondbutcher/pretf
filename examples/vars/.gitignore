@@ -1,4 +1,3 @@
-.terraform*
-*.tf.json
-*.tfvars.json
+.terraform
+*.json
 terraform.tfstate*
