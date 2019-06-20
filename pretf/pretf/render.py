@@ -117,7 +117,7 @@ class PathProxy:
 
 
 class Renderer:
-    def __init__(self, files_to_create: Dict[str, Path]):
+    def __init__(self, files_to_create: Dict[Path, Path]):
         # These are all of the files that will be created.
         self.files_to_create = files_to_create
 
@@ -130,8 +130,12 @@ class Renderer:
 
         # These are all of the jobs to create files.
         self.jobs: List[RenderJob] = []
-        for file_path in self.files_to_create.values():
-            job = RenderJob(path=file_path, variables=self.variables)
+        for target_path, source_path in self.files_to_create.items():
+            job = RenderJob(
+                source_path=source_path,
+                target_path=target_path,
+                variables=self.variables,
+            )
             self.jobs.append(job)
 
         # This will be populated with blocks from each file being created.
@@ -145,7 +149,7 @@ class Renderer:
             try:
                 done = job.run()
             except Exception:
-                log.bad(f"create: {job.path.name} could not be processed")
+                log.bad(f"create: {job.target_name} could not be processed")
                 raise
             if done:
                 self.done.append(job)
@@ -156,24 +160,26 @@ class Renderer:
         self.process_jobs()
         results = {}
         for job in self.done:
-            results[job.output_path] = job.contents()
+            results[job.target_path] = job.contents()
         return results
 
 
 class RenderJob:
-    def __init__(self, path: Path, variables: TerraformVariableStore):
+    def __init__(
+        self, source_path: Path, target_path: Path, variables: TerraformVariableStore
+    ):
 
-        self.path = path
+        self.source_path = source_path
+        self.target_path = target_path
+        self.target_name = target_path.name
         self.variables = variables
 
         self.done = False
-        self.output_path = path.with_suffix(".json")
-        self.output_name = self.output_path.name
-        self.is_tfvars = self.output_name.endswith(".tfvars.json")
+        self.is_tfvars = self.target_name.endswith(".tfvars.json")
         self.return_value = None
 
         # Load the file and start the generator.
-        with import_file(path) as module:
+        with import_file(source_path) as module:
 
             if self.is_tfvars:
                 func_name = "pretf_variables"
@@ -182,12 +188,13 @@ class RenderJob:
 
             if not hasattr(module, func_name):
                 raise FunctionNotFoundError(
-                    f"create: {path} does not have a {repr(func_name)} function"
+                    f"create: {source_path} does not have a {repr(func_name)} function"
                 )
 
             # Call the pretf_* function, passing in "path", "terraform" and "var" if required.
+            var_proxy = variables.proxy(consumer=self.source_path)
             self.gen = call_pretf_function(
-                func=getattr(module, func_name), var=variables.proxy(str(path))
+                func=getattr(module, func_name), var=var_proxy
             )
 
         self.blocks: List[dict] = []
@@ -203,7 +210,7 @@ class RenderJob:
             return self.blocks
 
     def process_tf_block(self, block: dict) -> None:
-        for var in get_variable_definitions_from_block(block, self.path.name):
+        for var in get_variable_definitions_from_block(block, source=self.source_path):
             # Add the variable definition. This doesn't necessarily
             # make it available to use, because a tfvars file may
             # populate it later.
@@ -213,16 +220,16 @@ class RenderJob:
         # Only populate the variable store with values in this file
         # if it is waiting for this file. It is possible to generate
         # tfvars files that don't get used as a source for values.
-        if self.variables.tfvars_waiting_for(self.output_name):
+        if self.variables.tfvars_waiting_for(self.target_path):
             for name, value in values.items():
-                var = VariableValue(name=name, value=value, source=self.path.name)
+                var = VariableValue(name=name, value=value, source=self.source_path)
                 self.variables.add(var)
 
     def run(self) -> bool:
         try:
             yielded = self.gen.send(self.return_value)
         except StopIteration:
-            self.variables.file_created(self.output_name)
+            self.variables.file_created(self.target_path)
             return True
 
         self.return_value = yielded

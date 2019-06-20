@@ -13,8 +13,5 @@ def pretf_blocks(var):
 
     for alias, profile in var.aws_profiles.items():
         yield provider_aws(
-            alias=alias,
-            profile=profile,
-            region=var.aws_region,
-            version=var.aws_version,
+            alias=alias, profile=profile, region=var.aws_region, version=var.aws_version
         )

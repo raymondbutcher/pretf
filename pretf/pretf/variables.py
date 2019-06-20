@@ -19,7 +19,7 @@ from .util import once
 
 
 class VariableProxy:
-    def __init__(self, store: "VariableStore", consumer: str):
+    def __init__(self, store: "VariableStore", consumer: Any):
         self._store = store
         self._consumer = consumer
 
@@ -64,7 +64,7 @@ class VariableStore:
     def disable_defaults(self) -> None:
         self._allow_defaults = False
 
-    def get(self, name: str, consumer: str) -> Any:
+    def get(self, name: str, consumer: Any) -> Any:
         if name in self._definitions:
             if name in self._values:
                 return self._values[name].value
@@ -74,7 +74,7 @@ class VariableStore:
             raise VariableNotPopulatedError(name, consumer)
         raise VariableNotDefinedError(name, consumer)
 
-    def proxy(self, consumer: str) -> VariableProxy:
+    def proxy(self, consumer: Any) -> VariableProxy:
         return VariableProxy(store=self, consumer=consumer)
 
 
@@ -82,8 +82,8 @@ class TerraformVariableStore(VariableStore):
     def __init__(self, files_to_create: dict, process_jobs: Callable) -> None:
         super().__init__()  # type: ignore
         self._files_to_create = files_to_create
-        self._files_created: Set[str] = set()
-        self._tfvars_waiting: Set[str] = set()
+        self._files_created: Set[Path] = set()
+        self._tfvars_waiting: Set[Path] = set()
         self._process_jobs = process_jobs
 
     def add(
@@ -106,20 +106,20 @@ class TerraformVariableStore(VariableStore):
 
         super().add(var)
 
-    def file_created(self, name: str) -> None:
-        self._files_created.add(name)
-        self._tfvars_waiting.discard(name)
+    def file_created(self, path: Path) -> None:
+        self._files_created.add(path)
+        self._tfvars_waiting.discard(path)
         if not self._tfvars_waiting:
             self.enable_defaults()
 
-    def tfvars_wait_for(self, name: str) -> None:
-        if name not in self._files_created:
-            self._tfvars_waiting.add(name)
+    def tfvars_wait_for(self, path: Path) -> None:
+        if path not in self._files_created:
+            self._tfvars_waiting.add(path)
             self.disable_defaults()
 
-    def tfvars_waiting_for(self, name: str) -> bool:
+    def tfvars_waiting_for(self, path: Path) -> bool:
         self.load()
-        return name in self._tfvars_waiting
+        return path in self._tfvars_waiting
 
     def get(self, name: str, consumer: str) -> Any:
         self.load()
@@ -144,24 +144,28 @@ class TerraformVariableStore(VariableStore):
 
         """
 
-        auto_tfvars_file_names = set()
-        default_tfvars_file_names = set()
-        tf_file_names = set()
+        auto_tfvars_files = set()
+        default_tfvars_files = set()
+        tf_files = set()
 
-        future_names = list(os.listdir()) + list(self._files_to_create.keys())
-        for name in future_names:
+        target_dir = next(iter(self._files_to_create.keys())).parent
 
+        future_files: Set[Path] = set()
+        future_files.update(target_dir.iterdir())
+        future_files.update(self._files_to_create.keys())
+        for path in future_files:
+            name = path.name
             if name.endswith(".auto.tfvars") or name.endswith(".auto.tfvars.json"):
-                auto_tfvars_file_names.add(name)
+                auto_tfvars_files.add(path)
             elif name in ("terraform.tfvars", "terraform.tfvars.json"):
-                default_tfvars_file_names.add(name)
+                default_tfvars_files.add(path)
             elif name.endswith(".tf") or name.endswith(".tf.json"):
-                tf_file_names.add(name)
+                tf_files.add(path)
 
         # Load variable definitions.
-        for name in tf_file_names:
-            if name not in self._files_to_create:
-                for var in get_variables_from_file(Path(name)):
+        for path in tf_files:
+            if path not in self._files_to_create:
+                for var in get_variables_from_file(path):
                     self.add(var)
 
         # Load variable values.
@@ -173,20 +177,20 @@ class TerraformVariableStore(VariableStore):
 
         # 2. The terraform.tfvars file, if present.
         # 3. The terraform.tfvars.json file, if present.
-        for name in sorted(default_tfvars_file_names):
-            if name in self._files_to_create:
-                self.tfvars_wait_for(name)
+        for path in sorted(default_tfvars_files):
+            if path in self._files_to_create:
+                self.tfvars_wait_for(path)
             else:
-                for var in get_variables_from_file(Path(name)):
+                for var in get_variables_from_file(path):
                     self.add(var)
 
         # 4. Any *.auto.tfvars or *.auto.tfvars.json files,
         #    processed in lexical order of their filenames.
-        for name in sorted(auto_tfvars_file_names):
-            if name in self._files_to_create:
-                self.tfvars_wait_for(name)
+        for path in sorted(auto_tfvars_files):
+            if path in self._files_to_create:
+                self.tfvars_wait_for(path)
             else:
-                for var in get_variables_from_file(Path(name)):
+                for var in get_variables_from_file(path):
                     self.add(var)
 
         # 5. Any -var and -var-file options on the command line,
@@ -198,22 +202,20 @@ class TerraformVariableStore(VariableStore):
                 var = VariableValue(name=name, value=value, source=arg)
                 self.add(var)
             elif arg.startswith("-var-file="):
-                path = Path(os.path.abspath(arg[10:]))
-                will_create = False
-                if os.path.abspath(path.parent) == os.path.abspath("."):
-                    if path.name in self._files_to_create:
-                        will_create = True
-                if will_create:
-                    self.tfvars_wait_for(name)
+                var_file = Path(os.path.abspath(arg[10:])).resolve()
+                for target_path in self._files_to_create.keys():
+                    if target_path.resolve() == var_file:
+                        self.tfvars_wait_for(target_path)
+                        break
                 else:
                     for var in get_variables_from_file(path):
                         self.add(var)
 
 
 class VariableDefinition:
-    def __init__(self, name: str, source: str, **kwargs: dict) -> None:
+    def __init__(self, name: str, source: Any, **kwargs: dict) -> None:
         self.name = name
-        self.source = source
+        self.source = str(source)
         self.has_default = False
         for key, value in kwargs.items():
             if key == "default":
@@ -232,10 +234,10 @@ class VariableDefinition:
 
 
 class VariableValue:
-    def __init__(self, name: str, value: Any, source: str) -> None:
+    def __init__(self, name: str, value: Any, source: Any) -> None:
         self.name = name
         self.value = value
-        self.source = source
+        self.source = str(source)
 
     def __iter__(self) -> Generator[tuple, None, None]:
         yield ("name", self.name)
@@ -244,7 +246,7 @@ class VariableValue:
 
 
 def get_variable_definitions_from_block(
-    block: dict, source: str
+    block: dict, source: Any
 ) -> Generator[VariableDefinition, None, None]:
 
     if "variable" not in block:
@@ -272,7 +274,7 @@ def get_variable_definitions_from_block(
 
 
 def get_variable_values_from_block(
-    block: dict, source: str
+    block: dict, source: Any
 ) -> Generator[VariableValue, None, None]:
     for name, value in block.items():
         yield VariableValue(name=name, value=value, source=source)
