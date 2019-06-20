@@ -8,7 +8,7 @@ import warnings
 from json import dump as json_dump
 from json import loads as json_loads
 from subprocess import CompletedProcess
-from typing import Any, Callable, Dict, Generator, List, Union
+from typing import Any, Callable, Dict, Generator, List
 
 import pytest
 
@@ -33,6 +33,12 @@ def pretf_test_function(func: Callable) -> Callable:
             pytest.xfail(f"{self.__class__} failed")
 
         try:
+
+            # Change the working directory to the test file.
+            cwd_before = os.getcwd()
+            func_file = inspect.getfile(func)
+            func_dir = os.path.dirname(func_file)
+            os.chdir(func_dir)
 
             if inspect.isgeneratorfunction(func):
 
@@ -59,7 +65,11 @@ def pretf_test_function(func: Callable) -> Callable:
                 return func(self, *args, **kwargs)
 
         except Exception:
+
             self.__class__._failed = func.__name__
+
+            os.chdir(cwd_before)
+
             raise
 
     return wrapped
@@ -114,29 +124,63 @@ class SimpleTest(metaclass=SimpleTestMeta):
 
     # Terraform shortcuts.
 
-    def apply(self) -> dict:
+    def apply(self, *args: str) -> dict:
         """
         Runs terraform apply, parses the output for output values,
         and returns them as a dictionary.
 
         """
 
-        proc = self.terraform(
-            "apply", "-input=false", "-auto-approve=true", "-no-color"
-        )
-        return parser.parse_apply_outputs(proc.stdout)
+        apply_args = ["apply", "-input=false", "-auto-approve=true", "-no-color"]
+        for arg in args:
+            if arg not in apply_args:
+                apply_args.append(arg)
+        return parser.parse_apply_outputs(self.terraform(*apply_args).stdout)
 
-    def destroy(self) -> str:
-        return self.terraform("destroy", "-input=false", "-auto-approve=true").stdout
+    def destroy(self, *args: str) -> str:
+        """
+        Runs terraform destroy and returns the stdout.
 
-    def init(self) -> str:
-        return self.terraform("init", "-input=false").stdout
+        """
 
-    def output(self, json: bool = True) -> Union[CompletedProcess, dict]:
-        if json:
-            return json_loads(self.terraform("output", "-json").stdout)
-        else:
-            return self.terraform("output").stdout
+        destroy_args = ["destroy", "-input=false", "-auto-approve=true"]
+        for arg in args:
+            if arg not in destroy_args:
+                destroy_args.append(arg)
+        return self.terraform(*destroy_args).stdout
 
-    def plan(self) -> str:
-        return self.terraform("plan", "-input=false").stdout
+    def init(self, *args: str) -> str:
+        """
+        Runs terraform init and returns the stdout.
+
+        """
+
+        init_args = ["init", "-input=false"]
+        for arg in args:
+            if arg not in init_args:
+                init_args.append(arg)
+        return self.terraform(*init_args).stdout
+
+    def output(self, *args: str) -> dict:
+        """
+        Runs terraform output and returns the JSON.
+
+        """
+
+        output_args = ["output", "-json"]
+        for arg in args:
+            if arg not in output_args:
+                output_args.append(arg)
+        return json_loads(self.terraform(*output_args).stdout)
+
+    def plan(self, *args: str) -> str:
+        """
+        Runs terraform plan and returns the stdout.
+
+        """
+
+        plan_args = ["plan", "-input=false"]
+        for arg in args:
+            if arg not in plan_args:
+                plan_args.append(arg)
+        return self.terraform(*plan_args).stdout
