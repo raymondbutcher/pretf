@@ -18,9 +18,9 @@ class TestExample(SimpleTest):
             one = yield block("variable", "one", {"default": True})
             yield block("output", "one", {"value": one})
 
-        self.init()
-        outputs = self.apply()
+        self.tf.init()
 
+        outputs = self.tf.apply()
         assert outputs == {"one": True}
 
     def test_change(self):
@@ -33,9 +33,8 @@ class TestExample(SimpleTest):
             two = yield block("variable", "two", {"default": {"x": [1, 2, 3], "y": 4}})
             yield block("output", "two", {"value": two})
 
-        outputs = self.apply()
-
+        outputs = self.tf.apply()
         assert outputs == {"one": False, "two": {"x": [1, 2, 3], "y": 4}}
 
     def test_destroy(self):
-        self.destroy()
+        self.tf.destroy()

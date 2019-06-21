@@ -7,11 +7,11 @@ class TestAWS(test.SimpleTest):
     def test_init(self):
         workflow.delete_files()
         workflow.create_files()
-        self.init()
+        self.tf.init()
 
     def test_outputs(self):
 
-        outputs = self.apply()
+        outputs = self.tf.apply()
 
         assert outputs == {
             "private_sg_id": ANY,
@@ -23,4 +23,4 @@ class TestAWS(test.SimpleTest):
         }
 
     def test_destroy(self):
-        self.destroy()
+        self.tf.destroy()

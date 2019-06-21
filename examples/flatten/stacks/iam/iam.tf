@@ -4,7 +4,7 @@ resource "aws_iam_user" "pretf" {
 
 # Example of including a local module.
 # Note that it is using the "modules" symlink
-# created by the pretf.py workflow.
+# created by the pretf.workflow.py file.
 
 module "disable_user" {
   source    = "./modules/iam-disable-user"
