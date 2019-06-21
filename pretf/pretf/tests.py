@@ -1,3 +1,5 @@
+# TODO: remove this file and use test.py with pytest instead
+
 import inspect
 import json
 import os
@@ -31,7 +33,9 @@ class TerraformTestCase(TestCase):
 
         os.chdir(caller_directory / path)
 
-    def terraform(self, *args: str, returncode: int = 0) -> CompletedProcess:
+    def terraform(
+        self, *args: str, returncode: int = 0
+    ) -> CompletedProcess:  # type: ignore
 
         # Ignore "Boto3 ResourceWarning: unclosed <ssl.SSLSocket ...>"
         # because it is just HTTP connections that get reused or closed
@@ -50,12 +54,12 @@ class TerraformTestCase(TestCase):
         finally:
             sys.argv = argv
 
-        if returncode is not None and proc.returncode != returncode:
+        if returncode is not None and proc.returncode != returncode:  # type: ignore
             raise AssertionError(
-                f"process return code {proc.returncode} != {returncode}"
+                f"process return code {proc.returncode} != {returncode}"  # type: ignore
             )
 
-        return proc
+        return proc  # type: ignore
 
     def terraform_apply(self, returncode: int = 0) -> CompletedProcess:
         return self.terraform(

@@ -50,9 +50,11 @@ def pretf_variables():
 
 ## pretf.workflow.py
 
-When Pretf runs, it looks for `pretf.workflow.py` in the current directory. If it exists, it will call the `pretf_workflow()`. This function can optionally accept any of the arguments `path` and `terraform` which provide access to the same values as in Terraform. If this file does not exist, then Pretf runs in default mode.
+When Pretf runs, it looks for a `pretf.workflow.py` file in the current or parent directories. If found, Pretf will call the `pretf_workflow()` function from that file. If this file does not exist, then Pretf runs in default mode.
 
-The following is a valid `pretf.workflow.py` file that implements performs the same functionality as default mode. It can be extended with custom logic. 
+This function can optionally accept the arguments `path` and `terraform` which provide access to the same values as in Terraform (e.g. `path.module`, `terraform.workspace`). It must return an exit status (e.g. 0 for success, 1 for error) or a `subprocess.CompletedProcess` object.
+
+The following is a valid `pretf.workflow.py` file that performs the same functionality as default mode. It can be extended with custom logic, or changed entirely.
 
 Example:
 
@@ -68,8 +70,13 @@ def pretf_workflow():
 
     # Create *.tf.json and *.tfvars.json files
     # from *.tf.py and *.tfvars.py files.
-    workflow.create_files()
+    created = workflow.create_files()
 
-    # Execute Terraform.
-    return workflow.execute_terraform()
+    # Execute Terraform, raising an exception if it fails.
+    proc = workflow.execute_terraform()
+
+    # Clean up created files if successful.
+    workflow.clean_files(created)
+
+    return proc
 ```

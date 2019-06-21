@@ -1,5 +1,6 @@
 import sys
 from subprocess import CalledProcessError, CompletedProcess
+from typing import Union
 
 from . import log, util, workflow
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError, VariableError
@@ -8,15 +9,17 @@ from .version import __version__
 
 def main() -> None:
     try:
-        proc = run()
+        result = run()
     except CalledProcessError as error:
-        returncode = error.returncode
-    else:
-        returncode = proc.returncode
-    sys.exit(returncode)
+        sys.exit(error.returncode)
+    if isinstance(result, CompletedProcess):
+        sys.exit(result.returncode)
+    elif isinstance(result, int):
+        sys.exit(result)
+    raise TypeError(result)
 
 
-def run() -> CompletedProcess:
+def run() -> Union[CompletedProcess, int]:
     """
     This is the pretf CLI tool entrypoint.
 
