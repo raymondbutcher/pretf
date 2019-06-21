@@ -1,3 +1,32 @@
+## clean_files
+
+Deletes the specified files. Intended for use after `create_files()`. Use `delete_files()` if wildcards are required.
+
+Signature:
+
+```python
+def clean_files(paths: Sequence[Path], verbose:bool=True) -> None:
+
+paths:
+    files to delete
+
+verbose:
+    whether to print information
+```
+
+Example:
+
+```python
+from pretf import workflow
+
+
+def pretf_workflow():
+    created = workflow.create_files()
+    proc = workflow.execute_terraform()
+    workflow.clean_files(created)
+    return proc
+```
+
 ## create_files
 
 Creates `*.tf.json` and `*.tfvars.json` files in `target_dir` from `*.tf.py` and `*.tfvars.py` in source_dirs.

@@ -32,10 +32,10 @@ Pretf sends yielded values back to generators. This allows functions assign bloc
 
 ## Reference without yielding
 
-If something is defined in another file, but you still want to reference it, then create a block object with no body. Do not `yield` it, because that would include it in the `*.tf.json` output.
+If something is defined in another file, but you still want to reference it, then create a block object with an empty body. Do not `yield` it, because that would include it in the `*.tf.json` output.
 
 ```python
 yield block("output", name, {
-    "value": block("resource", "random_integer", name).result,
+    "value": block("resource", "random_integer", name, {}).result,
 })
 ```

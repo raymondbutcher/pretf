@@ -33,9 +33,10 @@ pip install pretf[aws]
 
 Here is what happens when you run `pretf`:
 
-1. It deletes `*.tf.json` and `*.tfvars.json` files from the current directory.
-1. It creates `*.tf.json` and `*.tfvars.json` files from `*.tf.py` and `*.tfvars.py` files in the current directory.
-1. It executes `terraform`, passing along any provided command line arguments.
+1. `*.tf.json` and `*.tfvars.json` files are deleted.
+2. `*.tf.json` and `*.tfvars.json` files are created from `*.tf.py` and `*.tfvars.py` files.
+3. Terraform is executed, passing through any command line arguments.
+4. Created files are cleaned up.
 
 For example, with `iam.tf.py`:
 

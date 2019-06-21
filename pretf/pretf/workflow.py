@@ -12,6 +12,23 @@ from .render import Renderer, call_pretf_function, json_default
 from .util import import_file
 
 
+def clean_files(paths: Sequence[Path], verbose: bool = True) -> None:
+    """
+    Deletes the specified files. Intended for use after `create_files()`.
+    Use `delete_files()` if wildcards are required.
+
+    """
+
+    if verbose:
+        log.ok(f"delete: {' '.join(path.name for path in paths)}")
+
+    for path in paths:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+
+
 def create_files(
     target_dir: Union[Path, str] = "",
     source_dirs: Sequence[Union[Path, str]] = [],
@@ -69,9 +86,10 @@ def create_files(
     for output_path, contents in sorted(file_contents.items()):
         with output_path.open("w") as open_file:
             json.dump(contents, open_file, indent=2, default=json_default)
-        if verbose:
-            log.ok(f"create: {output_path.name}")
         created.append(output_path)
+
+    if verbose:
+        log.ok(f"create: {' '.join(path.name for path in created)}")
 
     return created
 
@@ -102,7 +120,7 @@ def custom(path: Union[PurePath, str]) -> CompletedProcess:
     return result
 
 
-def default(verbose: bool = True) -> CompletedProcess:
+def default(clean: bool = True, verbose: bool = True) -> CompletedProcess:
     """
     This is the default Pretf workflow. This is automatically used when there
     is no pretf.workflow.py file in the current directory, or it can be called
@@ -116,10 +134,22 @@ def default(verbose: bool = True) -> CompletedProcess:
 
     # Create *.tf.json and *.tfvars.json files
     # from *.tf.py and *.tfvars.py files.
-    create_files(verbose=verbose)
+    created = create_files(verbose=verbose)
 
-    # Execute Terraform.
-    return execute_terraform(verbose=verbose)
+    # Execute Terraform, raising an exception if it fails.
+    proc = execute_terraform(verbose=verbose)
+
+    # Clean up created files.
+    if clean and created:
+        if verbose:
+            log.ok(f"delete: {' '.join(path.name for path in created)}")
+        for path in created:
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
+
+    return proc
 
 
 def delete_files(
