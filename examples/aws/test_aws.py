@@ -8,9 +8,7 @@ class TestAWS(test.SimpleTest):
         self.pretf.init()
 
     def test_outputs(self):
-
         outputs = self.pretf.apply()
-
         assert outputs == {
             "private_sg_id": ANY,
             "public_sg_id": ANY,
@@ -20,5 +18,6 @@ class TestAWS(test.SimpleTest):
             "user_pretf_iam_user_2": "pretf-iam-user-2",
         }
 
+    @test.always
     def test_destroy(self):
         self.pretf.destroy()

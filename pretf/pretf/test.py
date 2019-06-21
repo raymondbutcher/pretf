@@ -137,6 +137,10 @@ class PretfProxy(TerraformProxy):
 
 class SimpleTestMeta(type):
     def __new__(cls, name, bases, dct):  # type: ignore
+        """
+        Wraps all test methods with the pretf_test_function() decorator.
+
+        """
 
         for name, value in list(dct.items()):
             if name.startswith("test_") and callable(value):
@@ -144,21 +148,37 @@ class SimpleTestMeta(type):
 
         return super().__new__(cls, name, bases, dct)
 
+    def __init__(self, name, bases, dct):  # type: ignore
+        """
+        Adds any test method using the @always decorator to cls._always
+        so the pretf_test_function() can run it even when previous tests
+        have failed.
+
+        """
+
+        super().__init__(name, bases, dct)
+
+        self._always = set()
+        for name, value in list(dct.items()):
+            if hasattr(value, "_always"):
+                self._always.add(value.__name__)
+
 
 def pretf_test_function(func: Callable) -> Callable:
     @functools.wraps(func)
     def wrapped(self: Any, *args: tuple, **kwargs: dict) -> Any:
 
         if hasattr(self.__class__, "_failed"):
-            pytest.xfail(f"{self.__class__} failed")
+            if func.__name__ not in self._always:
+                pytest.xfail(f"{self.__class__} failed")
+
+        # Change the working directory to the test file.
+        cwd_before = os.getcwd()
+        func_file = inspect.getfile(func)
+        func_dir = os.path.dirname(func_file)
+        os.chdir(func_dir)
 
         try:
-
-            # Change the working directory to the test file.
-            cwd_before = os.getcwd()
-            func_file = inspect.getfile(func)
-            func_dir = os.path.dirname(func_file)
-            os.chdir(func_dir)
 
             if inspect.isgeneratorfunction(func):
 
@@ -187,10 +207,11 @@ def pretf_test_function(func: Callable) -> Callable:
         except Exception:
 
             self.__class__._failed = func.__name__
+            raise
+
+        finally:
 
             os.chdir(cwd_before)
-
-            raise
 
     return wrapped
 
@@ -222,3 +243,13 @@ class SimpleTest(metaclass=SimpleTestMeta):
 
         with open(file_name, "w") as open_file:
             json_dump(contents, open_file, indent=2, default=render.json_default)
+
+
+def always(func: Callable) -> Callable:
+    """
+    Marks a test method to run even when previous tests have failed.
+
+    """
+
+    func._always = True  # type: ignore
+    return func
