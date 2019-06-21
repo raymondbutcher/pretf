@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Optional, Tuple
 

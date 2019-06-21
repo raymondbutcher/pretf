@@ -1,6 +1,7 @@
 import enum
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Generator, List
 
@@ -38,8 +39,18 @@ def clean_block_string(block_string: str) -> str:
 
     # Add quotes around bare expressions
     # because the parser doesn't support them.
+
+    space = r" *"
+    identifier = r"[a-zA-Z0-9_-]+"
+    not_number = r"(?!\d+$|\d+\.\d+$)"
+    not_boolean = r"(?!true$|false$)"
+    not_list = r"(?!\[)"
+    not_map = r"(?!{)"
+    not_string = r'(?!")'
+    value = r"(\S.*$|$)"
+
     block_string = re.sub(
-        r'^ *([a-zA-Z0-9_-]+) *= *(?!\d+$)(?!\d+\.\d+$)([^"[{\s]+|$)',
+        f"^{space}({identifier}){space}={space}{not_number}{not_boolean}{not_list}{not_map}{not_string}({value})$",
         r'\1 = "\2"',
         block_string,
         flags=re.MULTILINE,
@@ -76,7 +87,14 @@ def parse_apply_outputs(stdout: str) -> dict:
     if not cleaned:
         return {}
 
-    return hcl.loads(cleaned)
+    try:
+        return hcl.loads(cleaned)
+    except ValueError as error:
+        print(file=sys.stderr)
+        log.bad("Error parsing:")
+        print(stdout, file=sys.stderr)
+        log.bad(f"Raising: {error.__class__.__name__}")
+        raise
 
 
 def parse_tf_file_for_block_strings(path: Path) -> Generator[str, None, None]:
