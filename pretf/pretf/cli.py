@@ -1,6 +1,5 @@
 import sys
 from subprocess import CalledProcessError, CompletedProcess
-from typing import List, Optional, Tuple
 
 from . import log, util, workflow
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError, VariableError
@@ -23,12 +22,12 @@ def run() -> CompletedProcess:
 
     """
 
-    cmd, args, flags = parse_args()
+    cmd, args, _, _ = util.parse_args()
 
     if cmd == "version":
         print(f"Pretf v{__version__}")
 
-    if cmd in ("", "fmt", "help", "version"):
+    if cmd in {"", "0.12upgrade", "fmt", "help", "version"}:
         skip = True
     elif cmd == "workspace" and args and args[0] == "show":
         skip = True
@@ -73,28 +72,3 @@ def run() -> CompletedProcess:
             log.bad(error)
 
     return CompletedProcess(args=sys.argv, returncode=1)
-
-
-def parse_args() -> Tuple[Optional[str], List[str], List[str]]:
-
-    cmd = ""
-    args = []
-    flags = []
-
-    help_flags = set(("-h", "-help", "--help"))
-    version_flags = set(("-v", "-version", "--version"))
-
-    for arg in sys.argv[1:]:
-        if arg.startswith("-"):
-            if not cmd and arg in help_flags:
-                cmd = "help"
-            elif not cmd and arg in version_flags:
-                cmd = "version"
-            else:
-                flags.append(arg)
-        elif not cmd:
-            cmd = arg
-        else:
-            args.append(arg)
-
-    return (cmd, args, flags)

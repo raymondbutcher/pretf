@@ -1,6 +1,6 @@
 from unittest.mock import ANY
 
-from pretf import test, workflow
+from pretf import test
 
 
 class TestAWS(test.SimpleTest):
