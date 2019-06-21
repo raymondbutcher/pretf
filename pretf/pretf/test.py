@@ -7,12 +7,132 @@ import sys
 import warnings
 from json import dump as json_dump
 from json import loads as json_loads
+from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Callable, Dict, Generator, List
+from typing import Any, Callable, Dict, Generator, List, Union
 
 import pytest
 
-from pretf import parser, render, workflow
+from pretf import cli, parser, render, workflow
+
+
+class TerraformProxy:
+
+    __execute__ = staticmethod(workflow.execute_terraform)
+
+    def __init__(self, cwd: Union[Path, str] = ""):
+        if not isinstance(cwd, Path):
+            cwd = Path(cwd)
+        self.cwd = cwd
+
+    # Calling the object just returns another object with the specified path.
+
+    def __call__(self, cwd: Union[Path, str] = "") -> "TerraformProxy":
+        return self.__class__(cwd or self.cwd)
+
+    # Context manager.
+    # It doesn't do anything but can make the test code easier to follow.
+
+    def __enter__(self) -> "TerraformProxy":
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
+        return None
+
+    # Terraform command.
+
+    def execute(self, *args: str) -> CompletedProcess:
+
+        # Ignore "Boto3 ResourceWarning: unclosed <ssl.SSLSocket ...>"
+        # because it is just HTTP connections that get reused or closed
+        # as necessary.
+        warnings.simplefilter("ignore", ResourceWarning)
+
+        # Make Terraform output more suitable for tests.
+        os.environ["TF_IN_AUTOMATION"] = "1"
+        os.environ["PRETF_CAPTURE_OUTPUT"] = "1"
+
+        argv_before = sys.argv
+        sys.argv = ["terraform", *args]
+
+        cwd_before = os.getcwd()
+        os.chdir(self.cwd)
+
+        try:
+            proc = self.__execute__()
+        finally:
+            sys.argv = argv_before
+            os.chdir(cwd_before)
+
+        return proc
+
+    # Terraform shortcuts.
+
+    def apply(self, *args: str) -> dict:
+        """
+        Runs terraform apply, parses the output for output values,
+        and returns them as a dictionary.
+
+        """
+
+        apply_args = ["apply", "-input=false", "-auto-approve=true", "-no-color"]
+        for arg in args:
+            if arg not in apply_args:
+                apply_args.append(arg)
+        return parser.parse_apply_outputs(self.execute(*apply_args).stdout)
+
+    def destroy(self, *args: str) -> str:
+        """
+        Runs terraform destroy and returns the stdout.
+
+        """
+
+        destroy_args = ["destroy", "-input=false", "-auto-approve=true"]
+        for arg in args:
+            if arg not in destroy_args:
+                destroy_args.append(arg)
+        return self.execute(*destroy_args).stdout
+
+    def init(self, *args: str) -> str:
+        """
+        Runs terraform init and returns the stdout.
+
+        """
+
+        init_args = ["init", "-input=false"]
+        for arg in args:
+            if arg not in init_args:
+                init_args.append(arg)
+        return self.execute(*init_args).stdout
+
+    def output(self, *args: str) -> dict:
+        """
+        Runs terraform output and returns the JSON.
+
+        """
+
+        output_args = ["output", "-json"]
+        for arg in args:
+            if arg not in output_args:
+                output_args.append(arg)
+        return json_loads(self.execute(*output_args).stdout)
+
+    def plan(self, *args: str) -> str:
+        """
+        Runs terraform plan and returns the stdout.
+
+        """
+
+        plan_args = ["plan", "-input=false"]
+        for arg in args:
+            if arg not in plan_args:
+                plan_args.append(arg)
+        return self.execute(*plan_args).stdout
+
+
+class PretfProxy(TerraformProxy):
+
+    __execute__ = staticmethod(cli.run)
 
 
 class SimpleTestMeta(type):
@@ -76,6 +196,10 @@ def pretf_test_function(func: Callable) -> Callable:
 
 
 class SimpleTest(metaclass=SimpleTestMeta):
+
+    pretf = PretfProxy()
+    tf = TerraformProxy()
+
     @contextlib.contextmanager
     def create(self, file_name: str) -> Generator[None, None, None]:
 
@@ -98,89 +222,3 @@ class SimpleTest(metaclass=SimpleTestMeta):
 
         with open(file_name, "w") as open_file:
             json_dump(contents, open_file, indent=2, default=render.json_default)
-
-    # Terraform command.
-
-    def terraform(self, *args: str) -> CompletedProcess:
-
-        # Ignore "Boto3 ResourceWarning: unclosed <ssl.SSLSocket ...>"
-        # because it is just HTTP connections that get reused or closed
-        # as necessary.
-        warnings.simplefilter("ignore", ResourceWarning)
-
-        # Make Terraform output more suitable for tests.
-        os.environ["TF_IN_AUTOMATION"] = "1"
-        os.environ["PRETF_CAPTURE_OUTPUT"] = "1"
-
-        argv = sys.argv
-        sys.argv = ["terraform", *args]
-
-        try:
-            proc = workflow.execute_terraform()
-        finally:
-            sys.argv = argv
-
-        return proc
-
-    # Terraform shortcuts.
-
-    def apply(self, *args: str) -> dict:
-        """
-        Runs terraform apply, parses the output for output values,
-        and returns them as a dictionary.
-
-        """
-
-        apply_args = ["apply", "-input=false", "-auto-approve=true", "-no-color"]
-        for arg in args:
-            if arg not in apply_args:
-                apply_args.append(arg)
-        return parser.parse_apply_outputs(self.terraform(*apply_args).stdout)
-
-    def destroy(self, *args: str) -> str:
-        """
-        Runs terraform destroy and returns the stdout.
-
-        """
-
-        destroy_args = ["destroy", "-input=false", "-auto-approve=true"]
-        for arg in args:
-            if arg not in destroy_args:
-                destroy_args.append(arg)
-        return self.terraform(*destroy_args).stdout
-
-    def init(self, *args: str) -> str:
-        """
-        Runs terraform init and returns the stdout.
-
-        """
-
-        init_args = ["init", "-input=false"]
-        for arg in args:
-            if arg not in init_args:
-                init_args.append(arg)
-        return self.terraform(*init_args).stdout
-
-    def output(self, *args: str) -> dict:
-        """
-        Runs terraform output and returns the JSON.
-
-        """
-
-        output_args = ["output", "-json"]
-        for arg in args:
-            if arg not in output_args:
-                output_args.append(arg)
-        return json_loads(self.terraform(*output_args).stdout)
-
-    def plan(self, *args: str) -> str:
-        """
-        Runs terraform plan and returns the stdout.
-
-        """
-
-        plan_args = ["plan", "-input=false"]
-        for arg in args:
-            if arg not in plan_args:
-                plan_args.append(arg)
-        return self.terraform(*plan_args).stdout

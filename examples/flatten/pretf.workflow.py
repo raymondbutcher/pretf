@@ -9,7 +9,7 @@ def pretf_workflow(path):
     # Flatten the directory structure by creating symlinks from the 2 parent
     # directories into the current directory. Note that the current directory
     # will be one of the stack-environment directories and not the directory
-    # containing this pretf.py workflow file.
+    # containing this pretf.workflow.py file.
     workflow.mirror_files("../../*", "../*", include_directories=False)
 
     # Create a symlink to the modules directory

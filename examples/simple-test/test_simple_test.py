@@ -40,8 +40,8 @@ class TestSimpleTest(test.SimpleTest):
 
         """
 
-        self.init("v1")
-        self.destroy("v1")
+        self.tf.init("v1")
+        self.tf.destroy("v1")
 
     def test_v1(self):
         """
@@ -49,7 +49,7 @@ class TestSimpleTest(test.SimpleTest):
 
         """
 
-        outputs = self.apply("v1")
+        outputs = self.tf.apply("v1")
 
         assert "original" in outputs
         assert outputs["original"].startswith("original-")
@@ -70,7 +70,7 @@ class TestSimpleTest(test.SimpleTest):
         workflow.delete_files("v2/*.json")
         workflow.create_files("v2")
 
-        outputs = self.apply("v2")
+        outputs = self.tf.apply("v2")
 
         assert "original" in outputs
         assert outputs["original"] == self.state["original"]
@@ -86,7 +86,7 @@ class TestSimpleTest(test.SimpleTest):
 
         """
 
-        outputs = self.apply("v1")
+        outputs = self.tf.apply("v1")
 
         assert "original" in outputs
         assert outputs["original"] == self.state["original"]
@@ -99,4 +99,4 @@ class TestSimpleTest(test.SimpleTest):
 
         """
 
-        self.destroy()
+        self.tf.destroy()
