@@ -3,7 +3,7 @@ from pathlib import Path
 from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Optional, Tuple
 
-from . import log, workflow
+from . import log, util, workflow
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError, VariableError
 from .version import __version__
 
@@ -41,9 +41,13 @@ def run() -> CompletedProcess:
 
     try:
 
-        workflow_path = find_workflow_path()
+        workflow_path = util.find_workflow_path()
 
         if workflow_path:
+            if workflow_path.name == "pretf.py":
+                log.bad(
+                    "workflow: pretf.py is deprecated, rename it to pretf.workflow.py"
+                )
             return workflow.custom(workflow_path)
         else:
             return workflow.default()
@@ -70,21 +74,6 @@ def run() -> CompletedProcess:
             log.bad(error)
 
     return CompletedProcess(args=sys.argv, returncode=1)
-
-
-def find_workflow_path() -> Optional[Path]:
-
-    name = "pretf.py"
-    path = Path.cwd() / name
-    if path.exists():
-        return path
-
-    for dir_path in path.parents:
-        path = dir_path / name
-        if path.exists():
-            return path
-
-    return None
 
 
 def parse_args() -> Tuple[Optional[str], List[str], List[str]]:

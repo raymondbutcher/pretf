@@ -154,6 +154,21 @@ def find_paths(
                 yield path
 
 
+def find_workflow_path() -> Optional[Path]:
+    for name in ("pretf.workflow.py", "pretf.py"):
+
+        path = Path.cwd() / name
+        if path.exists():
+            return path
+
+        for dir_path in path.parents:
+            path = dir_path / name
+            if path.exists():
+                return path
+
+    return None
+
+
 @contextmanager
 def import_file(path: Union[PurePath, str]) -> Generator[ModuleType, None, None]:
     """

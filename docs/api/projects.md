@@ -48,16 +48,16 @@ def pretf_variables():
     }
 ```
 
-## pretf.py
+## pretf.workflow.py
 
-When Pretf runs, it looks for `pretf.py` in the current directory. If it exists, it will call the `pretf_workflow()`. This function can optionally accept any of the arguments `path` and `terraform` which provide access to the same values as in Terraform. If this file does not exist, then Pretf runs in default mode.
+When Pretf runs, it looks for `pretf.workflow.py` in the current directory. If it exists, it will call the `pretf_workflow()`. This function can optionally accept any of the arguments `path` and `terraform` which provide access to the same values as in Terraform. If this file does not exist, then Pretf runs in default mode.
 
-The following is a valid `pretf.py` file that implements performs the same functionality as default mode. It can be extended with custom logic. 
+The following is a valid `pretf.workflow.py` file that implements performs the same functionality as default mode. It can be extended with custom logic. 
 
 Example:
 
 ```python
-# pretf.py
+# pretf.workflow.py
 
 from pretf import workflow
 

@@ -15,7 +15,7 @@ Pretf avoids working within the confines of `*.tf` files or supplied functions, 
 
 Pretf has fewer conventions and should be easier for newcomers to understand. The extra `*.tf.py` files in projects using Pretf should be fairly self-explanatory to anyone that can read Python code.
 
-The most complicated part of Pretf projects will be when a `pretf.py` file is added to customise the workflow. However, this file contains the logic of the customised workflow, so it should again be fairly self-explanatory.
+The most complicated part of Pretf projects will be when a `pretf.workflow.py` file is added to customise the workflow. However, this file is completely optional and contains the logic of the customised workflow, so it should again be fairly self-explanatory.
 
 Pretf is more flexible and more obvious than Terragrunt, as long as you are familiar with Python.
 

@@ -31,7 +31,7 @@ def pretf_workflow():
 
 ## custom
 
-Calls the `pretf_workflow()` function from the specified Python file. This is useful for having a custom workflow that is used by multiple pretf.py files in different directories.
+Calls the `pretf_workflow()` function from the specified Python file. This is useful for having a custom workflow that is used by multiple `pretf.workflow.py` files in different directories.
 
 Signature:
 
@@ -57,7 +57,7 @@ def pretf_workflow():
 
 ## default
 
-This is the default Pretf workflow. This is automatically used when there is no pretf.py file in the current directory, or it can be called directly from a custom workflow function if it just needs to do something before or after the default workflow.
+This is the default Pretf workflow. This is automatically used when there is no `pretf.workflow.py` file in the current directory, or it can be called directly from a custom workflow function if it just needs to do something before or after the default workflow.
 
 Signature:
 

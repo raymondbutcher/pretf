@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 from . import log
 from .exceptions import FunctionNotFoundError
-from .util import import_file
+from .util import find_workflow_path, import_file
 from .variables import (
     TerraformVariableStore,
     VariableProxy,
@@ -100,20 +100,16 @@ class PathProxy:
     @lru_cache(maxsize=None)
     def top(self) -> Path:
         """
-        Returns the directory containing the pretf.py workflow file,
+        Returns the directory containing the pretf.workflow.py file,
         or the current directory if there is none.
 
         """
 
-        name = "pretf.py"
-        if (self.cwd / name).exists():
+        workflow_path = find_workflow_path()
+        if workflow_path:
+            return workflow_path.parent
+        else:
             return self.cwd
-
-        for parent in self.cwd.parents:
-            if (parent / name).exists():
-                return parent
-
-        return self.cwd
 
 
 class Renderer:
