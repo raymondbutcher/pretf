@@ -2,73 +2,55 @@ import unittest
 
 from pretf import parser
 
-apply_stdout = """
+apply_stdout_strings = """
 Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-lambda_role_combination_1 = lambda_role_combination_1
-lambda_role_combination_2 = lambda_role_combination_2
+one = one
+two =
+three = three
 """
 
-apply_empty_string_stdout = """
+apply_stdout_numbers = """
 Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-lambda_role_combination_1 = lambda_role_combination_1
-lambda_role_combination_2 =
-lambda_role_combination_3 = lambda_role_combination_3
+one = 1
+two = 22
+three = 3.3
+four = 4 string
 """
 
-apply_numbers_stdout = """
+apply_stdout_bools = """
 Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-private_sg_id = sg-0d70579dc16c2ff31
-public_sg_id = sg-071862b91dc0a15f1
-total_bytes = 63
-total_files = 5
-user_pretf_iam_user_1 = pretf-iam-user-1
-user_pretf_iam_user_2 = pretf-iam-user-2
+one = true
+two = false
+three = true string
+four = false string
 """
 
 
 class TestParser(unittest.TestCase):
     def test_apply_outputs_parser(self):
 
-        outputs = parser.parse_apply_outputs(apply_stdout)
+        outputs = parser.parse_apply_outputs(apply_stdout_strings)
+
+        self.assertEqual(outputs, {"one": "one", "two": "", "three": "three"})
+
+        outputs = parser.parse_apply_outputs(apply_stdout_numbers)
 
         self.assertEqual(
-            outputs,
-            {
-                "lambda_role_combination_1": "lambda_role_combination_1",
-                "lambda_role_combination_2": "lambda_role_combination_2",
-            },
+            outputs, {"one": 1, "two": 22, "three": 3.3, "four": "4 string"}
         )
 
-        outputs = parser.parse_apply_outputs(apply_empty_string_stdout)
+        outputs = parser.parse_apply_outputs(apply_stdout_bools)
 
         self.assertEqual(
             outputs,
-            {
-                "lambda_role_combination_1": "lambda_role_combination_1",
-                "lambda_role_combination_2": "",
-                "lambda_role_combination_3": "lambda_role_combination_3",
-            },
-        )
-
-        outputs = parser.parse_apply_outputs(apply_numbers_stdout)
-
-        self.assertEqual(
-            outputs,
-            {
-                "private_sg_id": "sg-0d70579dc16c2ff31",
-                "public_sg_id": "sg-071862b91dc0a15f1",
-                "total_bytes": 63,
-                "total_files": 5,
-                "user_pretf_iam_user_1": "pretf-iam-user-1",
-                "user_pretf_iam_user_2": "pretf-iam-user-2",
-            },
+            {"one": True, "two": False, "three": "true string", "four": "false string"},
         )
