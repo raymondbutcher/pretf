@@ -5,13 +5,11 @@ from pretf import test, workflow
 
 class TestAWS(test.SimpleTest):
     def test_init(self):
-        workflow.delete_files()
-        workflow.create_files()
-        self.tf.init()
+        self.pretf.init()
 
     def test_outputs(self):
 
-        outputs = self.tf.apply()
+        outputs = self.pretf.apply()
 
         assert outputs == {
             "private_sg_id": ANY,
@@ -23,4 +21,4 @@ class TestAWS(test.SimpleTest):
         }
 
     def test_destroy(self):
-        self.tf.destroy()
+        self.pretf.destroy()
