@@ -127,7 +127,7 @@ And then Terraform would manage those resources.
 
 Configuration is completely optional. By default, Pretf will delete `*.tf.json` and `*.tfvars.json` files, create `*.tf.json` and `*.tfvars.json` files from `*.tf.py` and `*.tfvars.py` files, and then execute Terraform.
 
-To make something else to happen when Pretf runs, simply create a `pretf.py` file containing a `pretf_workflow()` function. This could include:
+To make something else to happen when Pretf runs, simply create a `pretf.workflow.py` file containing a `pretf_workflow()` function. This could include:
 
 * Using files from outside of the current directory.
 * Not running `terraform` after generating files.

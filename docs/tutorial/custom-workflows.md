@@ -1,9 +1,9 @@
-When Pretf runs, it looks for a `pretf.py` file in the current directory or parent directories. If found, Pretf will call the `pretf_workflow()` function from that file.
+When Pretf runs, it looks for a `pretf.workflow.py` file in the current directory or parent directories. If found, Pretf will call the `pretf_workflow()` function from that file.
 
-The following `pretf.py` file implements the default behaviour of Pretf. This is only useful as an example to use for getting started with your own custom workflow.
+The following `pretf.workflow.py` file implements the default behaviour of Pretf. This is only useful as an example to use for getting started with your own custom workflow.
 
 ```python
-# pretf.py
+# pretf.workflow.py
 
 from pretf import workflow
 
