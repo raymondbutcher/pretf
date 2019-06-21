@@ -24,24 +24,21 @@ class TestSimpleTest(test.SimpleTest):
 
     """
 
-    # Use a class level variable to store values because each test
-    # method runs with a different instance of this class, so you
-    # can't set new attributes on "self" in one test and access
-    # it from another.
+    # Add a class level variable to store values, because each
+    # test method runs with a different instance of this class,
+    # so you can't set new attributes on "self" in one test
+    # and access it from another.
     state = {}
 
     def test_init(self):
         """
-        Prepare the working directory by initialising and then
-        destroying any resources from previous fail test runs.
-        It uses the v1 configuration to initialize the working
+        Use the v1 configuration to initialize the working
         directory and install the required provider plugins,
-        but it doesn't apply the configuration yet.
+        but don't apply the configuration yet.
 
         """
 
         self.tf.init("v1")
-        self.tf.destroy("v1")
 
     def test_v1(self):
         """
@@ -93,6 +90,7 @@ class TestSimpleTest(test.SimpleTest):
 
         assert "additional" not in outputs
 
+    @test.always
     def test_destroy(self):
         """
         Clean up the resources.
