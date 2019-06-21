@@ -13,7 +13,18 @@ from pathlib import Path, PurePath
 from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen
 from threading import Lock, Thread
 from types import ModuleType
-from typing import Any, BinaryIO, Callable, Generator, Optional, Sequence, TextIO, Union
+from typing import (
+    Any,
+    BinaryIO,
+    Callable,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    TextIO,
+    Tuple,
+    Union,
+)
 
 from . import log
 
@@ -216,3 +227,50 @@ def once(func: Callable) -> Callable:
             return func(*args, **kwargs)
 
     return wrapped
+
+
+def parse_args() -> Tuple[Optional[str], List[str], List[str], str]:
+
+    cmd = ""
+    args = []
+    flags = []
+
+    help_flags = set(("-h", "-help", "--help"))
+    version_flags = set(("-v", "-version", "--version"))
+
+    for arg in sys.argv[1:]:
+        if arg.startswith("-"):
+            if not cmd and arg in help_flags:
+                cmd = "help"
+            elif not cmd and arg in version_flags:
+                cmd = "version"
+            else:
+                flags.append(arg)
+        elif not cmd:
+            cmd = arg
+        else:
+            args.append(arg)
+
+    config_dir = ""
+    if cmd == "apply":
+        if args:
+            dir_or_plan = args[0]
+            if os.path.isdir(dir_or_plan):
+                config_dir = dir_or_plan
+    elif cmd == "force-unlock":
+        if len(args) == 2:
+            config_dir = args[1]
+    elif cmd in {
+        "console",
+        "destroy",
+        "get",
+        "graph",
+        "init",
+        "plan",
+        "refresh",
+        "validate",
+    }:
+        if args:
+            config_dir = args[1]
+
+    return (cmd, args, flags, config_dir)

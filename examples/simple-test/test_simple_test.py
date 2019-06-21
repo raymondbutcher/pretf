@@ -1,4 +1,4 @@
-from pretf import test, workflow
+from pretf import test
 
 
 class TestSimpleTest(test.SimpleTest):
@@ -65,12 +65,12 @@ class TestSimpleTest(test.SimpleTest):
 
         """
 
-        # It is possible to generate dynamic configuration here,
-        # if the test needs to be more complicated.
-        workflow.delete_files("v2/*.json")
-        workflow.create_files("v2")
+        # The second configuration has a Pretf file "additional.tf.py" which
+        # is used to create "additional.tf.json". Use "self.pretf.apply()"
+        # instead of "self.tf.apply()" so the Pretf workflow will run and
+        # create the file before running Terraform.
 
-        outputs = self.tf.apply("v2")
+        outputs = self.pretf.apply("v2")
 
         assert "original" in outputs
         assert outputs["original"] == self.state["original"]

@@ -21,8 +21,9 @@ def create_files(
     Creates *.tf.json and *.tfvars.json files in target_dir
     from *.tf.py and *.tfvars.py in source_dirs.
 
-    target_dir defaults to the current working directory and
-    source_dirs defaults to a list containing target_dir.
+    Both target_dir and source_dirs will default to the directory
+    specified in the CLI arguments, if specified, otherwise the current
+    working directory.
 
     If multiple source_dirs are specified, and there are duplicate
     file names, the files in the latter directories take precedence.
@@ -35,6 +36,10 @@ def create_files(
     resulting in different variables each time.
 
     """
+
+    if not target_dir:
+        _, _, _, config_dir = util.parse_args()
+        target_dir = config_dir
 
     if isinstance(target_dir, str):
         target_dir = Path(target_dir)
