@@ -1,17 +1,16 @@
-import unittest
-
 from pretf.api import block
 
 
-class TestAPI(unittest.TestCase):
-    def test_provider_alias(self):
-        default = block("provider", "aws", {"alias": "nonprod"})
-        self.assertEqual(str(default.alias), "aws.nonprod")
+def test_provider_alias():
+    default = block("provider", "aws", {"alias": "nonprod"})
+    assert str(default.alias) == "aws.nonprod"
 
-    def test_provider_alias_default(self):
-        default = block("provider", "aws", {})
-        self.assertEqual(str(default.alias), "aws.default")
 
-    def test_variable(self):
-        one = block("variable", "one", {})
-        self.assertEqual(str(one), "${var.one}")
+def test_provider_alias_default():
+    default = block("provider", "aws", {})
+    assert str(default.alias) == "aws.default"
+
+
+def test_variable():
+    one = block("variable", "one", {})
+    assert str(one) == "${var.one}"

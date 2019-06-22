@@ -1,4 +1,4 @@
-import unittest
+import pytest
 
 from pretf.api import block
 from pretf.collections import collect
@@ -79,71 +79,69 @@ def aws_iam_user_group_membership(var):
         )
 
 
-class TestCollections(unittest.TestCase):
-    def test_collect(self):
+def test_collect():
 
-        # Create collection with bad inputs.
-        with self.assertRaises(VariableNotPopulatedError):
-            iam_user()
+    # Create collection with bad inputs.
+    with pytest.raises(VariableNotPopulatedError):
+        iam_user()
 
-        # Call collection with valid inputs.
-        peanut = iam_user(name="peanut")
+    # Call collection with valid inputs.
+    peanut = iam_user(name="peanut")
 
-        # The collection is iterable and contains yielded blocks,
-        # excluding variables and outputs.
-        expected = [
-            {"resource": {"aws_iam_user": {"peanut": {"name": "peanut", "path": "/"}}}}
-        ]
-        self.assertEqual(expected, list(peanut))
+    # The collection is iterable and contains yielded blocks,
+    # excluding variables and outputs.
+    expected = [
+        {"resource": {"aws_iam_user": {"peanut": {"name": "peanut", "path": "/"}}}}
+    ]
+    assert list(peanut) == expected
 
-        # Yielded outputs can be accessed as attributes.
-        # This one is a simple string..
-        self.assertEqual("peanut", peanut.name)
+    # Yielded outputs can be accessed as attributes.
+    # This one is a simple string..
+    assert peanut.name == "peanut"
 
-        # This one is a Block.
-        user = peanut.resource
-        self.assertTrue(isinstance(user, Block))
-        self.assertEqual(user.arn, "${aws_iam_user.peanut.arn}")
+    # This one is a Block.
+    user = peanut.resource
+    assert isinstance(user, Block)
+    assert user.arn == "${aws_iam_user.peanut.arn}"
 
-        # This one doesn't exist
-        with self.assertRaises(AttributeError):
-            peanut.nope
+    # This one doesn't exist
+    with pytest.raises(AttributeError):
+        peanut.nope
 
-    def test_nested_collections(self):
 
-        # Create a collection that has nested collections.
-        result = iam_group_with_users(
-            group_name="dogs", user_names=["peanut", "cornelius"]
-        )
+def test_nested_collections():
 
-        # Check it created the resources from the nested collections.
-        expected = [
-            {"resource": {"aws_iam_group": {"dogs": {"name": "dogs"}}}},
-            {"resource": {"aws_iam_user": {"peanut": {"name": "peanut", "path": "/"}}}},
-            {
-                "resource": {
-                    "aws_iam_user": {"cornelius": {"name": "cornelius", "path": "/"}}
-                }
-            },
-            {
-                "resource": {
-                    "aws_iam_user_group_membership": {
-                        "cornelius_in_dogs": {
-                            "groups": ["${aws_iam_group.dogs.name}"],
-                            "user": "${aws_iam_user.cornelius.name}",
-                        }
+    # Create a collection that has nested collections.
+    result = iam_group_with_users(group_name="dogs", user_names=["peanut", "cornelius"])
+
+    # Check it created the resources from the nested collections.
+    expected = [
+        {"resource": {"aws_iam_group": {"dogs": {"name": "dogs"}}}},
+        {"resource": {"aws_iam_user": {"peanut": {"name": "peanut", "path": "/"}}}},
+        {
+            "resource": {
+                "aws_iam_user": {"cornelius": {"name": "cornelius", "path": "/"}}
+            }
+        },
+        {
+            "resource": {
+                "aws_iam_user_group_membership": {
+                    "cornelius_in_dogs": {
+                        "groups": ["${aws_iam_group.dogs.name}"],
+                        "user": "${aws_iam_user.cornelius.name}",
                     }
                 }
-            },
-            {
-                "resource": {
-                    "aws_iam_user_group_membership": {
-                        "peanut_in_dogs": {
-                            "groups": ["${aws_iam_group.dogs.name}"],
-                            "user": "${aws_iam_user.peanut.name}",
-                        }
+            }
+        },
+        {
+            "resource": {
+                "aws_iam_user_group_membership": {
+                    "peanut_in_dogs": {
+                        "groups": ["${aws_iam_group.dogs.name}"],
+                        "user": "${aws_iam_user.peanut.name}",
                     }
                 }
-            },
-        ]
-        self.assertEqual(expected, list(result))
+            }
+        },
+    ]
+    assert list(result) == expected

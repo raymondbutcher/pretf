@@ -1,30 +1,29 @@
 import json
-import unittest
 from pathlib import Path
 
-from pretf.api import log
+import pytest
+
 from pretf.variables import get_variables_from_file
 
 
-class TestVariables(unittest.TestCase):
-    def find_test_files(self):
-        test_files_path = Path(__file__).parent / "test_variables_files"
-        test_files = set(test_files_path.iterdir())
-        for test_file_path in sorted(test_files):
-            if not test_file_path.name.endswith(".expected.json"):
-                expected_file_path = test_file_path.with_name(
-                    test_file_path.name + ".expected.json"
-                )
-                if expected_file_path in test_files:
-                    yield (test_file_path, expected_file_path)
+def find_test_files():
+    test_files_path = Path(__file__).parent / "test_variables_files"
+    test_files = set(test_files_path.iterdir())
+    for test_file_path in sorted(test_files):
+        if not test_file_path.name.endswith(".expected.json"):
+            expected_file_path = test_file_path.with_name(
+                test_file_path.name + ".expected.json"
+            )
+            if expected_file_path in test_files:
+                yield (test_file_path, expected_file_path)
 
-    def test_get_variables_from_file(self):
-        for test_file_path, expected_file_path in self.find_test_files():
-            with self.subTest(test_file_path.name):
-                with expected_file_path.open() as open_file:
-                    expected = json.load(open_file)
-                result = []
-                for var in get_variables_from_file(test_file_path):
-                    result.append(dict(var))
-                self.assertEqual(expected, result)
-                log.ok(f"success: {test_file_path.name}")
+
+@pytest.mark.parametrize("test_file_path,expected_file_path", find_test_files())
+def test_get_variables_from_file(test_file_path, expected_file_path):
+    print("test", test_file_path, expected_file_path)
+    with expected_file_path.open() as open_file:
+        expected = json.load(open_file)
+    result = []
+    for var in get_variables_from_file(test_file_path):
+        result.append(dict(var))
+    assert expected == result
