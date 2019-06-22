@@ -6,13 +6,13 @@ from pretf import test
 
 
 class TestFlatten(test.SimpleTest):
-    @pytest.mark.parameterize(
+    @pytest.mark.parametrize(
         "stack,env", [("iam", "dev"), ("iam", "prod"), ("vpc", "dev"), ("vpc", "prod")]
     )
     def test_init(self, stack, env):
         self.pretf(f"stacks/{stack}/{env}").init()
 
-    @pytest.mark.parameterize(
+    @pytest.mark.parametrize(
         "stack,env,expected",
         [
             ("iam", "dev", {"user_name": "pretf-flatten-dev"}),
@@ -26,7 +26,7 @@ class TestFlatten(test.SimpleTest):
         assert outputs == expected
 
     @test.always
-    @pytest.mark.parameterize(
+    @pytest.mark.parametrize(
         "stack,env", [("iam", "dev"), ("iam", "prod"), ("vpc", "dev"), ("vpc", "prod")]
     )
     def test_destroy(self, stack, env):
