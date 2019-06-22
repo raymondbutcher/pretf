@@ -1,9 +1,8 @@
+from pretf import test, workflow
 from pretf.api import block
-from pretf.test import SimpleTest
-from pretf.workflow import delete_files
 
 
-class TestExample(SimpleTest):
+class TestExample(test.SimpleTest):
     """
     Each test_* method runs in the order they are defined here.
     If any of them fail then subsequent tests do not run.
@@ -12,7 +11,7 @@ class TestExample(SimpleTest):
 
     def test_create(self):
 
-        delete_files("*.json")
+        workflow.delete_files("*.json")
 
         with self.create("one.tf.json"):
             one = yield block("variable", "one", {"default": True})
@@ -36,5 +35,6 @@ class TestExample(SimpleTest):
         outputs = self.tf.apply()
         assert outputs == {"one": False, "two": {"x": [1, 2, 3], "y": 4}}
 
+    @test.always
     def test_destroy(self):
         self.tf.destroy()
