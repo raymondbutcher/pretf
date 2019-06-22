@@ -16,10 +16,14 @@ docs:
 test:
 	mypy $(shell python -c 'import pathlib; print(" ".join(sorted(f"-m pretf.{p.stem}" for p in pathlib.Path().glob("pretf*/pretf/*.py"))))')
 	flake8 --ignore E501 $(SOURCES)
-	python -m unittest discover tests
+	pytest -v tests
 
 .PHONY: tidy
 tidy:
 	isort --recursive $(SOURCES)
 	black $(SOURCES)
 	cd examples; terraform fmt -recursive
+
+.PHONY: testall
+testall: tidy test
+	pytest -v examples

@@ -1,5 +1,3 @@
-import unittest
-
 from pretf import parser
 
 apply_stdout_strings = """
@@ -35,22 +33,21 @@ four = false string
 """
 
 
-class TestParser(unittest.TestCase):
-    def test_apply_outputs_parser(self):
+def test_apply_outputs_parser():
 
-        outputs = parser.parse_apply_outputs(apply_stdout_strings)
+    outputs = parser.parse_apply_outputs(apply_stdout_strings)
 
-        self.assertEqual(outputs, {"one": "one", "two": "", "three": "three"})
+    assert outputs == {"one": "one", "two": "", "three": "three"}
 
-        outputs = parser.parse_apply_outputs(apply_stdout_numbers)
+    outputs = parser.parse_apply_outputs(apply_stdout_numbers)
 
-        self.assertEqual(
-            outputs, {"one": 1, "two": 22, "three": 3.3, "four": "4 string"}
-        )
+    assert outputs == {"one": 1, "two": 22, "three": 3.3, "four": "4 string"}
 
-        outputs = parser.parse_apply_outputs(apply_stdout_bools)
+    outputs = parser.parse_apply_outputs(apply_stdout_bools)
 
-        self.assertEqual(
-            outputs,
-            {"one": True, "two": False, "three": "true string", "four": "false string"},
-        )
+    assert outputs == {
+        "one": True,
+        "two": False,
+        "three": "true string",
+        "four": "false string",
+    }
