@@ -1,4 +1,4 @@
-from pretf import workflow
+from pretf import log, workflow
 
 
 def pretf_workflow(path):
@@ -6,20 +6,18 @@ def pretf_workflow(path):
     # tfvars file. It will show an error when running in the wrong directory.
     workflow.require_files("*.*.auto.tfvars")
 
-    # Flatten the directory structure by creating symlinks from the 2 parent
-    # directories into the current directory. Note that the current directory
-    # will be one of the stack-environment directories and not the directory
-    # containing this pretf.workflow.py file.
-    workflow.mirror_files("../../*", "../*", include_directories=False)
-
-    # Create a symlink to the modules directory
-    # to make module source paths simpler.
-    modules_dir = path.top / "modules"
-    modules_link = path.root / "modules"
-    if modules_link.exists():
-        modules_link.unlink()
-    modules_link.symlink_to(modules_dir)
+    # Flatten the directory structure by creating symlinks from the modules
+    # directory and files in the 2 parent directories into the current
+    # directory. Note that the paths passed in will be relative to the
+    # stack-environment directories and not the directory containing
+    # this pretf.workflow.py file.
+    created = workflow.mirror_files("../../../modules", "../../*.*", "../*.*")
 
     # Now run the standard Pretf workflow which generates files
     # and then executes Terraform.
-    return workflow.default()
+    result = workflow.default()
+
+    # Clean up symlinks before returning the result.
+    workflow.clean_files(created)
+
+    return result
