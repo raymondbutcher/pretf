@@ -259,20 +259,35 @@ def mirror_files(
 
     # Delete old symlinks.
     for path in cwd.iterdir():
-        if not include_directories and path.is_dir():
-            continue
         if path.is_symlink():
+            if not include_directories and path.is_dir():
+                continue
             path.unlink()
 
     # Create new symlinks.
     created = []
     for real_path in paths:
+
+        try:
+            cwd.relative_to(os.path.normpath(real_path))
+        except ValueError:
+            is_parent_directory = False
+        else:
+            is_parent_directory = True
+
+        if is_parent_directory:
+            continue
+
         if not include_directories and real_path.is_dir():
             continue
+
         link_path = cwd / real_path.name
+
         if link_path.exists():
             continue
-        link_path.symlink_to(real_path)
+
+        relative_path = os.path.relpath(real_path, cwd)
+        link_path.symlink_to(relative_path)
         created.append(link_path)
 
     return created
