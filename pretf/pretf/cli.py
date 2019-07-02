@@ -59,10 +59,10 @@ def run() -> Union[CompletedProcess, int]:
 
     except RequiredFilesNotFoundError as error:
 
-        log.bad(f"required: {' '.join(error.name_patterns)}")
+        log.bad(f"required files not found: {' '.join(error.name_patterns)}")
         candidates = error.get_candidates()
         if candidates:
-            log.bad("found in:")
+            log.bad("try changing directory to:")
             for path in candidates:
                 log.bad(f"* {path}")
 

@@ -19,8 +19,9 @@ def clean_files(paths: Sequence[Path], verbose: bool = True) -> None:
 
     """
 
-    if verbose:
-        log.ok(f"delete: {' '.join(path.name for path in paths)}")
+    if paths and verbose:
+        names = [path.name for path in paths]
+        log.ok(f"clean: {' '.join(sorted(names))}")
 
     for path in paths:
         try:
@@ -81,15 +82,16 @@ def create_files(
     else:
         file_contents = {}
 
+    if file_contents and verbose:
+        names = [path.name for path in file_contents.keys()]
+        log.ok(f"create: {' '.join(sorted(names))}")
+
     # Write JSON files.
     created = []
     for output_path, contents in sorted(file_contents.items()):
         with output_path.open("w") as open_file:
             json.dump(contents, open_file, indent=2, default=json_default)
         created.append(output_path)
-
-    if verbose:
-        log.ok(f"create: {' '.join(path.name for path in created)}")
 
     return created
 
@@ -120,7 +122,9 @@ def custom(path: Union[PurePath, str]) -> CompletedProcess:
     return result
 
 
-def default(clean: bool = True, verbose: bool = True) -> CompletedProcess:
+def default(
+    clean: bool = True, created: list = [], verbose: bool = True
+) -> CompletedProcess:
     """
     This is the default Pretf workflow. This is automatically used when there
     is no pretf.workflow.py file in the current directory, or it can be called
@@ -134,20 +138,14 @@ def default(clean: bool = True, verbose: bool = True) -> CompletedProcess:
 
     # Create *.tf.json and *.tfvars.json files
     # from *.tf.py and *.tfvars.py files.
-    created = create_files(verbose=verbose)
+    created = created + create_files(verbose=verbose)
 
     # Execute Terraform, raising an exception if it fails.
     proc = execute_terraform(verbose=verbose)
 
     # Clean up created files.
-    if clean and created:
-        if verbose:
-            log.ok(f"delete: {' '.join(path.name for path in created)}")
-        for path in created:
-            try:
-                path.unlink()
-            except FileNotFoundError:
-                pass
+    if clean:
+        clean_files(paths=created, verbose=verbose)
 
     return proc
 
@@ -173,22 +171,26 @@ def delete_files(
     elif isinstance(cwd, str):
         cwd = Path(cwd)
 
-    if verbose:
-        log.ok(f"remove: {' '.join(path_patterns)}")
-
     # Find files to delete.
+    delete = []
     paths = util.find_paths(
         path_patterns=path_patterns,
         exclude_name_patterns=exclude_name_patterns,
         cwd=cwd,
     )
+    for path in paths:
+        if not path.is_dir():
+            delete.append(path)
+
+    if delete and verbose:
+        names = [path.name for path in delete]
+        log.ok(f"delete: {' '.join(sorted(names))}")
 
     # Delete files.
     deleted = []
-    for path in paths:
-        if not path.is_dir():
-            path.unlink()
-            deleted.append(path)
+    for path in delete:
+        path.unlink()
+        deleted.append(path)
 
     return deleted
 
@@ -247,16 +249,6 @@ def mirror_files(
     elif isinstance(cwd, str):
         cwd = Path(cwd)
 
-    if verbose:
-        log.ok(f"mirror: {' '.join(path_patterns)}")
-
-    # Find files to mirror.
-    paths = util.find_paths(
-        path_patterns=path_patterns,
-        exclude_name_patterns=exclude_name_patterns,
-        cwd=cwd,
-    )
-
     # Delete old symlinks.
     for path in cwd.iterdir():
         if path.is_symlink():
@@ -264,8 +256,13 @@ def mirror_files(
                 continue
             path.unlink()
 
-    # Create new symlinks.
-    created = []
+    # Find files to mirror.
+    create = {}
+    paths = util.find_paths(
+        path_patterns=path_patterns,
+        exclude_name_patterns=exclude_name_patterns,
+        cwd=cwd,
+    )
     for real_path in paths:
 
         try:
@@ -287,6 +284,16 @@ def mirror_files(
             continue
 
         relative_path = os.path.relpath(real_path, cwd)
+
+        create[link_path] = relative_path
+
+    if create and verbose:
+        names = [path.name for path in create.keys()]
+        log.ok(f"mirror: {' '.join(sorted(names))}")
+
+    # Create new symlinks.
+    created = []
+    for link_path, relative_path in create.items():
         link_path.symlink_to(relative_path)
         created.append(link_path)
 
