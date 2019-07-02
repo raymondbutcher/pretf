@@ -1,4 +1,4 @@
-from pretf import log, workflow
+from pretf import workflow
 
 
 def pretf_workflow(path):
@@ -14,10 +14,6 @@ def pretf_workflow(path):
     created = workflow.mirror_files("../../../modules", "../../*.*", "../*.*")
 
     # Now run the standard Pretf workflow which generates files
-    # and then executes Terraform.
-    result = workflow.default()
-
-    # Clean up symlinks before returning the result.
-    workflow.clean_files(created)
-
-    return result
+    # and then executes Terraform. Pass in the mirrored files
+    # so they can be cleaned up.
+    return workflow.default(created=created)

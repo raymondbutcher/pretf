@@ -22,10 +22,10 @@ def pretf_workflow(path, terraform):
     # Also get the tfvars file for the current workspace.
     stack = path.cwd.name
     workspace = terraform.workspace
-    workflow.mirror_files(
+    created = workflow.mirror_files(
         "../stack.tf.py", f"../../params/{stack}.{workspace}.auto.tfvars"
     )
 
     # Now run the standard Pretf workflow which generates files
     # and then executes Terraform.
-    return workflow.default()
+    return workflow.default(created=created)

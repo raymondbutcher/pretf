@@ -91,7 +91,17 @@ This is the default Pretf workflow. This is automatically used when there is no 
 Signature:
 
 ```python
-def default(verbose: bool = True) -> int:
+def default(
+    clean: bool = True,
+    created: list = [],
+    verbose: bool = True,
+) -> CompletedProcess:
+
+clean:
+    whether to delete created files afterwards
+
+created:
+    extra files to delete afterwards
 
 verbose:
     whether to print information
