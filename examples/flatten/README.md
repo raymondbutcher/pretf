@@ -12,6 +12,7 @@ Pros:
     * each environment could use a separate backend
     * all environments within an account could share a backend
     * all environments in all accounts could share a backend
+
 Cons:
 
 * has more symlinks
