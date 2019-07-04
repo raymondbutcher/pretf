@@ -11,6 +11,7 @@ from .exceptions import (
     VariableNotPopulatedError,
 )
 from .parser import (
+    parse_environment_variable_for_variables,
     parse_json_file_for_blocks,
     parse_tf_file_for_variables,
     parse_tfvars_file_for_variables,
@@ -172,8 +173,10 @@ class TerraformVariableStore(VariableStore):
         # 1. Environment variables.
         for key, value in os.environ.items():
             if key.startswith("TF_VAR_"):
-                var = VariableValue(name=key[7:], value=value, source=key)
-                self.add(var)
+                parsed = parse_environment_variable_for_variables(key, value)
+                for name, value in parsed.items():
+                    var = VariableValue(name=name, value=value, source=key)
+                    self.add(var)
 
         # 2. The terraform.tfvars file, if present.
         # 3. The terraform.tfvars.json file, if present.
