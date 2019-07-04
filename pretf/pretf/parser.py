@@ -97,6 +97,20 @@ def parse_apply_outputs(stdout: str) -> dict:
         raise
 
 
+def parse_environment_variable_for_variables(name: str, value: str) -> dict:
+
+    cleaned = clean_block_string(f"{name[7:]} = {value}")
+
+    try:
+        return hcl.loads(cleaned)
+    except ValueError as error:
+        print(file=sys.stderr)
+        log.bad("Error parsing:")
+        print(value, file=sys.stderr)
+        log.bad(f"Raising: {error.__class__.__name__}")
+        raise
+
+
 def parse_tf_file_for_block_strings(path: Path) -> Generator[str, None, None]:
 
     states = [State.ROOT]
