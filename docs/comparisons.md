@@ -1,4 +1,4 @@
-These comparisons are mostly based on impressions of these projects, not necessarily based on experience from using them.
+These comparisons are mostly based on impressions of other projects, not necessarily based on experience from using them.
 
 ## Terraform
 
@@ -15,7 +15,7 @@ Pretf avoids working within the confines of `*.tf` files or supplied functions, 
 
 Pretf has fewer conventions and should be easier for newcomers to understand. The extra `*.tf.py` files in projects using Pretf should be fairly self-explanatory to anyone that can read Python code.
 
-The most complicated part of Pretf projects will be when a `pretf.workflow.py` file is added to customise the workflow. However, this file is completely optional and contains the logic of the customised workflow, so it should again be fairly self-explanatory.
+The most complicated part of Pretf projects will be when a `pretf.workflow.py` file is added to customise the workflow. However, this file is completely optional and written by you (or a team member) specifically for your project. It contains the logic of your customised workflow, so it should again be fairly self-explanatory.
 
 Pretf is more flexible and more obvious than Terragrunt, as long as you are familiar with Python.
 
@@ -41,11 +41,12 @@ Wrappers written in Bash or Make seem to have some or all of these problems:
     * Which environment and which account? How many possible places can this code be deployed to? Do I need to read the documentation or source code to figure this out?
     * The user can make a mistake.
 2. Restricted subset of Terraform CLI commands, making it hard to run unsupported commands.
-    * E.g. `terraform state mv` not supported, so the user has to figure out how to run that command without losing things that the wrapper was doing such as configuring the backend and passing parameters.
+    * E.g. `terraform apply -target=` not supported, so the user has to figure out how to run that command without losing things that the wrapper was doing such as configuring the backend and passing parameters.
     * The user can make a mistake.
 3. Use the same directory for multiple remote backends, so it runs the slow `terraform init` command every time.
 4. Require setting AWS credentials before running.
     * Often requires running a separate command, and knowing which credentials to use.
+    * Making it difficult or impossible to work with multiple AWS accounts in the same stack.
     * The user can make a mistake.
 
 Pretf is a transparent wrapper, meaning it performs its functionality and then executes Terraform, passing along any command line arguments. Transparent wrappers avoid issues 1 and 2.

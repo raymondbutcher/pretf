@@ -63,8 +63,8 @@ users = ["ray", "violet"]
 from pretf.api import block
 
 
-def pretf_blocks(var): # added to the function signature
-    for name in var.animals: # accessing its values
+def pretf_blocks(var): # var added to the function signature
+    for name in var.animals: # accessing a variable
         animal = yield block("resource", "random_integer", name, {
             "min": 1,
             "max": 10,
@@ -80,8 +80,8 @@ def pretf_blocks(var): # added to the function signature
 from pretf.api import block
 
 
-def pretf_blocks(var): # added to the function signature
-    for name in var.users: # accessing its values
+def pretf_blocks(var): # var added to the function signature
+    for name in var.users: # accessing a variable
         yield block("resource", "aws_iam_user", name, {
             "name": name
         })

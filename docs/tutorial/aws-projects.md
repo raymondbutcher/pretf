@@ -51,7 +51,7 @@ def pretf_blocks(var):
     yield terraform_backend_s3(
         bucket=f"pretf-tfstate-{var.envtype}",
         dynamodb_table=f"pretf-tfstate-{var.envtype}",
-        key="custom-dev.tfstate",
+        key="terraform.tfstate",
         profile=var.aws_profile,
         region=var.aws_region,
     )

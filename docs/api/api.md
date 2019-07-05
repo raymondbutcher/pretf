@@ -30,9 +30,9 @@ def pretf_blocks():
 
     # The group resource is defined in another file,
     # but we want to reference it here, so we can
-    # create a block without a body. We don't yield
-    # it so it won't be included in the JSON.
-    group = block("resource", "aws_iam_group", "example")
+    # create a block with an empty body. It is not
+    # yielded so it won't be included in the JSON.
+    group = block("resource", "aws_iam_group", "example", {})
 
     # Create and yield a block to include it in the JSON.
     user = yield block("resource", "aws_iam_user", "example", {

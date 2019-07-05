@@ -15,7 +15,7 @@ def pretf_blocks():
         })
 ```
 
-Now run `pretf validate` and the resulting JSON file will contain those 5 resources.
+Now run `pretf plan` and you will see those 5 resources.
 
 ## Why not use 'count'?
 
@@ -29,4 +29,4 @@ resource "random_integer" "animals" {
 }
 ```
 
-But at the time of this writing, Terraform 0.12.0 is the latest version, and it still [recreates resources when you change the list](https://github.com/hashicorp/terraform/issues/17179).
+But at the time of this writing, Terraform 0.12.3 is the latest version, and it still [recreates resources when you change the list](https://github.com/hashicorp/terraform/issues/17179).
