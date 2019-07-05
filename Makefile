@@ -1,4 +1,5 @@
-SOURCES = pretf/pretf pretf.aws/pretf examples tests
+FORMAT_SOURCES = pretf/pretf pretf.aws/pretf tests
+ALL_SOURCES = $(FORMAT_SOURCES) examples
 
 .PHONY: all
 all: tidy test
@@ -15,13 +16,13 @@ docs:
 .PHONY: test
 test:
 	mypy $(shell python -c 'import pathlib; print(" ".join(sorted(f"-m pretf.{p.stem}" for p in pathlib.Path().glob("pretf*/pretf/*.py"))))')
-	flake8 --ignore E501 $(SOURCES)
+	flake8 --ignore E501 $(ALL_SOURCES)
 	pytest -v tests
 
 .PHONY: tidy
 tidy:
-	isort --recursive $(SOURCES)
-	black $(SOURCES)
+	isort --recursive $(ALL_SOURCES)
+	black $(FORMAT_SOURCES)
 	cd examples; terraform fmt -recursive
 
 .PHONY: testall
