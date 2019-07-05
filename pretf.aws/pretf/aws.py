@@ -130,6 +130,20 @@ def _get_s3_backend_status(
     }
 
 
+def _profile_creds_definitely_supported_by_terraform(creds: Any) -> bool:
+    if creds.method in ("config-file", "shared-credentials-file"):
+        # The credentials were in the config file, so Terraform
+        # will have no trouble finding them using the profile.
+        return True
+    else:
+        # The credentials were more complicated, using the assume-role
+        # provider, custom-process provider, or something else. Terraform
+        # does not support as many credential types as Boto (e.g. Terraform
+        # can't do MFA prompts) so we should remove the "profile" from the
+        # configuration and expose the actual credentials to Terraform.
+        return False
+
+
 def export_environment_variables(
     session: Optional[Session] = None, region_name: Optional[str] = None, **kwargs: dict
 ) -> None:
@@ -183,42 +197,35 @@ def get_session(**kwargs: dict) -> Session:
 def provider_aws(**body: dict) -> Block:
     """
     Returns an AWS provider block. If provided, the `profile` option
-    will be replaced with static credentials.
+    may be replaced with temporary credentials for that profile.
 
     """
 
-    if "profile" in body:
-
+    if body.get("profile"):
         session = get_session(profile_name=body["profile"])
-
         creds = session.get_credentials()
+        if not _profile_creds_definitely_supported_by_terraform(creds):
 
-        if creds.method in ("config-file", "shared-credentials-file"):
-            # The credentials were in the config file, so Terraform will
-            # have no trouble finding these credentials using the profile.
-            # Do nothing to the configuration body.
-            pass
-        else:
-            # The credentials were more complicated, probably using the
-            # assume-role provider, custom-process provider, or anything
-            # else. In case Terraform is unable to handle these credentials
-            # (e.g. it can't do MFA prompts), replace the "profile" in the
-            # the configuration body with actual credentials.
+            # This profile is using credentials that Terraform may not
+            # support, so get the credentials and inject them into the
+            # configuration.
+
+            del body["profile"]
+
             frozen_creds = creds.get_frozen_credentials()
             body["access_key"] = frozen_creds.access_key
             body["secret_key"] = frozen_creds.secret_key
             if creds.token:
                 body["token"] = frozen_creds.token
-            del body["profile"]
 
     return block("provider", "aws", body)
 
 
 def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Block:
     """
-    This ensures that the S3 backend exists, prompting to create it
-    if necessary, sets the credentials as environment variables,
-    then returns a Terraform configuration block for it.
+    This ensures that the S3 backend exists, prompting to create it if
+    necessary, sets the credentials as environment variables in some
+    cases, and returns a Terraform configuration block for it.
 
     """
 
@@ -233,11 +240,30 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
     }
     for config_key, session_key in session_kwargs_map.items():
         if config_key in config:
-            session_kwargs[session_key] = config.pop(config_key)
+            session_kwargs[session_key] = config[config_key]
 
     session = get_session(**session_kwargs)
 
     region = config.get("region") or session.region_name
+
+    # Replace the profile argument with environment variables.
+
+    if config.get("profile"):
+        creds = session.get_credentials()
+        if not _profile_creds_definitely_supported_by_terraform(creds):
+
+            # This profile is using credentials that Terraform may not
+            # support, so export the credentials as environment variables.
+
+            # Use environment variables for credentials rather than
+            # injecting them into the backend configuration because
+            # Terraform gets confused when the backend configuration
+            # changes, which happens with certain AWS credential types
+            # such as assuming roles.
+
+            del config["profile"]
+
+            export_environment_variables(session=session, region_name=region)
 
     # Check if the backend resources have been created.
 
@@ -275,13 +301,6 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
         _create_s3_backend(
             session=session, bucket=bucket, table=dynamodb_table, region_name=region
         )
-
-    # Use environment variables for credentials, rather than adding
-    # them to the backend configuration, because Terraform gets
-    # confused when backend configuration changes, which happens
-    # with certain AWS credential types such as assuming roles.
-
-    export_environment_variables(session=session, region_name=region)
 
     # Return the configuration to use the backend.
 
