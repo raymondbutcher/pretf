@@ -1,6 +1,6 @@
 The previous page has 5 dynamic resources but nothing is done with them. To access an attribute of a resource, just... access it.
 
-This does not return the actual dynamic value of the resource managed by Terraform. Instead, it returns an interpolation reference string for Terraform to use when it runs.
+Accessing an attribute in Pretf will not return the actual dynamic value of the resource managed by Terraform. Instead, it returns an interpolation reference string for Terraform to use when it runs.
 
 ```python
 # animals.tf.py
@@ -20,7 +20,7 @@ def pretf_blocks():
         })
 ```
 
-Now run `pretf validate` and the resulting JSON file will contain the additional outputs. Inspecting the generated JSON file shows that `animal.result` was translated into `"${resource.random_integer.dog.result}"` for the `dog` iteration of the loop.
+Now run `pretf plan/apply` and state will contain the additional outputs. `animal.result` was translated into `"${resource.random_integer.dog.result}"` for the `dog` iteration of the loop, and Terraform used that to output the actual value.
 
 Accessing any attribute of a block object will return a string containing a Terraform reference to that attribute. This lets you take advantage of Terraform's [implicit resource dependencies](https://learn.hashicorp.com/terraform/getting-started/dependencies.html).
 

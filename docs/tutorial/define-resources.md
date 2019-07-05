@@ -27,7 +27,7 @@ def pretf_blocks():
 
 The function must be named `pretf_blocks()` for Pretf to find it.
 
-Now run `pretf validate`, which will generate a JSON file and run `terraform validate`:
+Now run `pretf validate`, which will generate a JSON file, run `terraform validate`, and clean it up afterwards:
 
 ```shell
 $ pretf validate
@@ -56,7 +56,7 @@ If you are not familiar with the `yield` keyword in the above code, then read ab
 
 Translating HCL code into Python block objects is very simple. They are constructed in the same way as the original HCL, only requiring slight adjustments to be valid Python syntax.
 
-The following HCL resource:
+The following HCL resource consists of a block type `resource`, labels `random_integer` and `dog`, and the body `{ min = 1, max = 10 }`.
 
 ```terraform
 resource "random_integer" "dog" {
@@ -65,9 +65,7 @@ resource "random_integer" "dog" {
 }
 ```
 
-Consists of a block type, labels, and the body. Simply take each part of the above and convert them into valid Python types (str and dict) ensure they are quoted appropriately.
-
-Then just pass them into the `block()` function:
+Simply translate each part into a valid Python type and pass it into the `block()` function:
 
 ```python
 block("resource", "random_integer", "dog", {

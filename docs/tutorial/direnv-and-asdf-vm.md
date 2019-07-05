@@ -15,8 +15,7 @@ layout python3
 
 # Install Python packages.
 python_packages="
-pretf
-pretf.aws
+pretf[aws]
 "
 for package in $python_packages; do
   pip install $package | grep -v "Requirement already satisfied:" || true
@@ -24,7 +23,7 @@ done
 
 # Install asdf-vm plugins and tools.
 asdf_tools="
-terraform 0.12.1
+terraform 0.12.3
 "
 if command -v asdf > /dev/null; then
   echo "${asdf_tools}" > .tool-versions

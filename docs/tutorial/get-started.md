@@ -2,7 +2,7 @@ Pretf provides a way to generate Terraform configuration with Python code. It sh
 
 * If you are not familiar with Terraform:
     * Start with Terraform, not Pretf
-* If you are familiar with Terraform:
+* Otherwise:
     * If it works well for your project:
         * Continue using Terraform without Pretf
     * If you're using "workarounds", "escape hatches", or "hacks":
@@ -14,8 +14,7 @@ Before starting, run `pretf version` to check that Pretf and Terraform are insta
 
 ```shell
 $ pretf version
-Pretf v0.3.0
-Terraform v0.12.1
-+ provider.aws v2.12.0
-+ provider.random v2.1.2
+Pretf v0.5.0
+Terraform v0.12.3
++ provider.aws v2.17.
 ```
