@@ -144,6 +144,10 @@ def parse_tf_file_for_block_strings(path: Path) -> Generator[str, None, None]:
             elif char == '"':
                 states.pop()
 
+        elif state is State.ESCAPE:
+
+            states.pop()
+
         elif state is State.BLOCK:
 
             if char == '"':

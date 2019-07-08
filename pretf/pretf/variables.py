@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Generator, Set, Union
 
+from . import log
 from .exceptions import (
     VariableAlreadyDefinedError,
     VariableNotConsistentError,
@@ -286,16 +287,20 @@ def get_variable_values_from_block(
 def get_variables_from_file(
     path: Path
 ) -> Generator[Union[VariableDefinition, VariableValue], None, None]:
-    if path.name.endswith(".tf"):
-        yield from get_variables_from_tf_file(path)
-    elif path.name.endswith(".tfvars"):
-        yield from get_variables_from_tfvars_file(path)
-    elif path.name.endswith(".tf.json"):
-        yield from get_variables_from_tf_json_file(path)
-    elif path.name.endswith(".tfvars.json"):
-        yield from get_variables_from_tfvars_json_file(path)
-    else:
-        raise ValueError(path.name)
+    try:
+        if path.name.endswith(".tf"):
+            yield from get_variables_from_tf_file(path)
+        elif path.name.endswith(".tfvars"):
+            yield from get_variables_from_tfvars_file(path)
+        elif path.name.endswith(".tf.json"):
+            yield from get_variables_from_tf_json_file(path)
+        elif path.name.endswith(".tfvars.json"):
+            yield from get_variables_from_tfvars_json_file(path)
+        else:
+            raise ValueError(f"Unexpected file extension: {path.name}")
+    except Exception as error:
+        log.bad(f"Error loading variables from {path}")
+        raise
 
 
 def get_variables_from_tf_file(path: Path) -> Generator[VariableDefinition, None, None]:
