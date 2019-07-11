@@ -3,7 +3,9 @@ from pretf.aws import provider_aws, terraform_backend_s3
 
 
 def pretf_blocks(var):
+
     # Create variables needed by this file.
+
     yield block("variable", "aws_profile", {"type": "string"})
     yield block("variable", "aws_region", {"type": "string"})
     yield block("variable", "environment", {"type": "string"})
@@ -12,7 +14,10 @@ def pretf_blocks(var):
 
     # Create an AWS provider using details from the current directory's tfvars file.
 
-    yield provider_aws(profile=var.aws_profile)
+    yield provider_aws(
+        profile=var.aws_profile,
+        region=var.aws_region,
+    )
 
     # Create a backend configuration using the environment details.
     # Stacks in the same account share backend resources.

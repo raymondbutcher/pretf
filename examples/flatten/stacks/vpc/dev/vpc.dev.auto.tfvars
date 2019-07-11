@@ -6,6 +6,6 @@ environment = "dev"
 
 stack = "vpc-dev"
 
-terraform_required_version = "0.12.1"
+terraform_required_version = "0.12.3"
 
 vpc_cidr_block = "10.85.0.0/24"
