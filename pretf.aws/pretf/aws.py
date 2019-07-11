@@ -13,6 +13,23 @@ except ImportError:
     from boto3 import Session  # type: ignore
 
 
+def _assume_role(session: Session, **kwargs: str) -> Session:
+
+    for key, value in list(kwargs.items()):
+        if not value:
+            del kwargs[key]
+
+    sts_client = session.client("sts")
+    response = sts_client.assume_role(**kwargs)
+    creds = response["Credentials"]
+
+    return Session(
+        aws_access_key_id=creds["AccessKeyId"],
+        aws_secret_access_key=creds["SecretAccessKey"],
+        aws_session_token=creds["SessionToken"],
+    )
+
+
 def _create_s3_backend(
     session: Session, bucket: str, table: str, region_name: str
 ) -> None:
@@ -264,6 +281,21 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
             del config["profile"]
 
             export_environment_variables(session=session, region_name=region)
+
+    # Assume role before interacting with backend resources. This not the same
+    # as profiles that assume roles. This is when Terraform has specifically
+    # been configured to assume a role. This is more likely to happen when
+    # running Terraform on an EC2 instance using instance profile credentials,
+    # or using environment variables to set credentials, and then assuming
+    # different roles using those credentials.
+
+    if config.get("role_arn"):
+        session = _assume_role(
+            session,
+            RoleArn=config["role_arn"],
+            RoleSessionName=config.get("session_name", ""),
+            ExternalId=config.get("external_id", ""),
+        )
 
     # Check if the backend resources have been created.
 
