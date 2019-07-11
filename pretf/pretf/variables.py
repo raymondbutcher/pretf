@@ -298,7 +298,7 @@ def get_variables_from_file(
             yield from get_variables_from_tfvars_json_file(path)
         else:
             raise ValueError(f"Unexpected file extension: {path.name}")
-    except Exception as error:
+    except Exception:
         log.bad(f"Error loading variables from {path}")
         raise
 
