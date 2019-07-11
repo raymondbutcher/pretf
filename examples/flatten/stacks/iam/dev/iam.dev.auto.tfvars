@@ -6,4 +6,4 @@ environment = "dev"
 
 stack = "iam-dev"
 
-terraform_required_version = "0.12.1"
+terraform_required_version = "0.12.3"
