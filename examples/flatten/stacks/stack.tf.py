@@ -12,22 +12,25 @@ def pretf_blocks(var):
     yield block("variable", "stack", {"type": "string"})
     yield block("variable", "terraform_required_version", {"type": "string"})
 
-    # Create an AWS provider using details from the current directory's tfvars file.
-
-    yield provider_aws(
-        profile=var.aws_profile,
-        region=var.aws_region,
-    )
-
     # Create a backend configuration using the environment details.
     # Stacks in the same account share backend resources.
 
-    backend = f"pretf-tfstate-{'prod' if var.environment == 'prod' else 'nonprod'}"
+    if var.environment == 'prod':
+        backend = "pretf-tfstate-prod"
+    else:
+        backend = "pretf-tfstate-nonprod"
 
     yield terraform_backend_s3(
         bucket=backend,
         dynamodb_table=backend,
         key=f"flatten/{var.stack}/terraform.tfstate",
+        profile=var.aws_profile,
+        region=var.aws_region,
+    )
+
+    # Create a default AWS provider for this environment.
+
+    yield provider_aws(
         profile=var.aws_profile,
         region=var.aws_region,
     )
