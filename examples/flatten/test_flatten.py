@@ -7,18 +7,24 @@ from pretf import test
 
 class TestFlatten(test.SimpleTest):
     @pytest.mark.parametrize(
-        "stack,env", [("iam", "dev"), ("iam", "prod"), ("vpc", "dev"), ("vpc", "prod")]
+        "stack,env", [
+            ("iam", "dev"),
+            ("iam", "prod"),
+            ("vpc", "dev"),
+            ("vpc", "prod"),
+            ("vpc-peering", "prod"),
+        ],
     )
     def test_init(self, stack, env):
         self.pretf(f"stacks/{stack}/{env}").init()
 
     @pytest.mark.parametrize(
-        "stack,env,expected",
-        [
+        "stack,env,expected", [
             ("iam", "dev", {"user_name": "pretf-flatten-dev"}),
             ("iam", "prod", {"user_name": "pretf-flatten-prod"}),
             ("vpc", "dev", {"vpc_id": ANY}),
             ("vpc", "prod", {"vpc_id": ANY}),
+            ("vpc-peering", "prod", {"status": "active"}),
         ],
     )
     def test_apply(self, stack, env, expected):
@@ -27,7 +33,13 @@ class TestFlatten(test.SimpleTest):
 
     @test.always
     @pytest.mark.parametrize(
-        "stack,env", [("iam", "dev"), ("iam", "prod"), ("vpc", "dev"), ("vpc", "prod")]
+        "stack,env", [
+            ("vpc-peering", "prod"),
+            ("vpc", "prod"),
+            ("vpc", "dev"),
+            ("iam", "prod"),
+            ("iam", "dev"),
+        ],
     )
     def test_destroy(self, stack, env):
         self.pretf(f"stacks/{stack}/{env}").destroy()
