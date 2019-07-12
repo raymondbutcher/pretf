@@ -256,7 +256,8 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
         "token": "aws_session_token",
     }
     for config_key, session_key in session_kwargs_map.items():
-        if config_key in config:
+        config_value = config.get(config_key)
+        if config_value:
             session_kwargs[session_key] = config[config_key]
 
     session = get_session(**session_kwargs)
