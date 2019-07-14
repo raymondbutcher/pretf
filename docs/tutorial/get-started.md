@@ -15,6 +15,6 @@ Before starting, run `pretf version` to check that Pretf and Terraform are insta
 ```shell
 $ pretf version
 Pretf v0.5.0
-Terraform v0.12.3
-+ provider.aws v2.17.
+Terraform v0.12.4
++ provider.aws v2.19.0
 ```
