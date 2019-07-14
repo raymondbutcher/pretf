@@ -2,39 +2,50 @@ from pretf.api import block
 from pretf.aws import provider_aws, terraform_backend_s3
 
 
-def pretf_blocks(var):
+def pretf_blocks(terraform, var):
 
     # Create variables needed by this file.
 
-    yield block("variable", "aws_profile", {"type": "string"})
-    yield block("variable", "aws_region", {"type": "string"})
-    yield block("variable", "stack", {"type": "string"})
-    yield block("variable", "terraform_required_version", {"type": "string"})
+    yield block("variable", "aws_credentials", {
+        "default": {
+            "nonprod": {
+                "profile": "pretf-nonprod",
+            },
+            "prod": {
+                "profile": "pretf-prod",
+            },
+        },
+    })
+    yield block("variable", "aws_region", {
+        "default": "eu-west-1",
+    })
+    yield block("variable", "environment", {
+        "type": "string",
+    })
+    yield block("variable", "stack", {
+        "type": "string",
+    })
 
-    # Create a backend configuration using hardcoded details,
-    # because all stacks and workspaces use the same backend.
-
-    backend_aws_profile = "pretf"
-    backend_aws_region = "eu-west-1"
-
-    backend_name = "pretf-tfstate-example-workspaces"
+    # Create a backend configuration in the prod account,
+    # because all workspaces must use the same backend.
 
     yield terraform_backend_s3(
-        bucket=backend_name,
-        dynamodb_table=backend_name,
-        key=f"{var.stack}.tfstate",
-        profile=backend_aws_profile,
-        region=backend_aws_region,
+        bucket="pretf-examples-workspaces",
+        dynamodb_table="pretf-examples-workspaces",
+        key=f"{var.stack}/terraform.tfstate",
+        region="eu-west-1",
         workspace_key_prefix="",
+        **var.aws_credentials["prod"],
     )
 
-    # Create a default AWS provider for this environment.
+    # Create a default AWS provider for this workspace.
+
+    if terraform.workspace == "prod":
+        account = "prod"
+    else:
+        account = "nonprod"
 
     yield provider_aws(
-        profile=var.aws_profile,
         region=var.aws_region,
+        **var.aws_credentials[account],
     )
-
-    # Also set the required Terraform version.
-
-    yield block("terraform", {"required_version": var.terraform_required_version})

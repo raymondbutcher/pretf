@@ -5,10 +5,10 @@ def pretf_blocks(var):
     yield provider_aws(
         alias="dev",
         region=var.aws_region,
-        **var.aws_credentials_dev,
+        **var.aws_credentials["nonprod"],
     )
     yield provider_aws(
         alias="prod",
         region=var.aws_region,
-        **var.aws_credentials_prod,
+        **var.aws_credentials["prod"],
     )

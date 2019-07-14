@@ -1,5 +1,9 @@
-variable "aws_profile" {
-  default = "pretf"
+variable "aws_credentials" {
+  default = {
+    nonprod = {
+      profile = "pretf-nonprod"
+    }
+  }
 }
 
 variable "aws_region" {

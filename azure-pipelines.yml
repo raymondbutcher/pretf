@@ -8,12 +8,16 @@ trigger:
 
 pool:
   vmImage: 'ubuntu-latest'
+
 strategy:
   matrix:
     Python36:
       python.version: '3.6'
     Python37:
       python.version: '3.7'
+
+variables:
+- group: aws-credentials
 
 steps:
 - task: UsePythonVersion@0
@@ -24,9 +28,23 @@ steps:
 - script: |
     python -m pip install --upgrade pip
     pip install -e pretf -e pretf.aws
+    pip install pytest pytest-azurepipelines
   displayName: 'Install dependencies'
 
 - script: |
-    pip install pytest pytest-azurepipelines
-    pytest tests
-  displayName: 'pytest'
+    pytest -v tests
+  displayName: 'Unit tests'
+
+- script: |
+    wget -q -O terraform.zip https://releases.hashicorp.com/terraform/0.12.4/terraform_0.12.4_linux_amd64.zip
+    unzip -q terraform.zip
+    sudo mv terraform /usr/local/bin
+  condition: eq(variables['python.version'], '3.6')
+  displayName: 'Install Terraform'
+
+- script: |
+    pytest -v examples
+  env:
+    TF_VAR_aws_credentials: '{ nonprod = { access_key = "$(AWS_ACCESS_KEY_ID_NONPROD)", secret_key="$(AWS_SECRET_ACCESS_KEY_NONPROD)" }, prod = { access_key = "$(AWS_ACCESS_KEY_ID_PROD)", secret_key="$(AWS_SECRET_ACCESS_KEY_PROD)" } }'
+  condition: eq(variables['python.version'], '3.6')
+  displayName: 'Integration tests'
