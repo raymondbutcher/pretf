@@ -1,2 +1,3 @@
-aws_profile = "pretf"
-aws_region  = "eu-west-1"
+environment = "all"
+
+stack = "vpc-peering"
