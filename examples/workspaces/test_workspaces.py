@@ -16,7 +16,7 @@ class TestWorkspaces(test.SimpleTest):
             tf.init()
 
     @pytest.mark.parametrize("stack,workspace,expected", [
-        ("iam", "default", {"user_name": "pretf-workspaces-default"}),
+        ("iam", "default", {"user_name": "pretf-workspaces-dev"}),
         ("iam", "prod", {"user_name": "pretf-workspaces-prod"}),
         ("vpc", "default", {"vpc_id": ANY}),
         ("vpc", "prod", {"vpc_id": ANY}),
