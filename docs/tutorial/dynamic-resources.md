@@ -29,4 +29,4 @@ resource "random_integer" "animals" {
 }
 ```
 
-But at the time of this writing, Terraform 0.12.3 is the latest version, and it still [recreates resources when you change the list](https://github.com/hashicorp/terraform/issues/17179).
+But at the time of this writing, Terraform 0.12.4 is the latest version, and it still [recreates resources when you change the list](https://github.com/hashicorp/terraform/issues/17179).
