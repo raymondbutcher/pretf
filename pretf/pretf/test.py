@@ -4,7 +4,6 @@ import functools
 import inspect
 import os
 import sys
-import warnings
 from json import dump as json_dump
 from json import loads as json_loads
 from pathlib import Path
@@ -42,11 +41,6 @@ class TerraformProxy:
     # Terraform command.
 
     def execute(self, *args: str) -> CompletedProcess:
-
-        # Ignore "Boto3 ResourceWarning: unclosed <ssl.SSLSocket ...>"
-        # because it is just HTTP connections that get reused or closed
-        # as necessary.
-        warnings.simplefilter("ignore", ResourceWarning)
 
         # Make Terraform output more suitable for tests.
         os.environ["TF_IN_AUTOMATION"] = "1"
