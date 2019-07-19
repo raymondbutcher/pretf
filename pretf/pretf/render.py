@@ -83,6 +83,9 @@ class Interpolated:
     def __getattr__(self, attr: str) -> "Interpolated":
         return type(self)(self.__value + "." + attr)
 
+    def __getitem__(self, index: int) -> "Interpolated":
+        return type(self)(f"{self.__value}[{index}]")
+
     def __repr__(self) -> str:
         return f"Interpolated({repr(self.__value)})"
 
