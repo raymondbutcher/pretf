@@ -14,3 +14,7 @@ def test_provider_alias_default():
 def test_variable():
     one = block("variable", "one", {})
     assert str(one) == "${var.one}"
+
+def test_resource():
+    resource = block("resource", "one", "two", {})
+    assert str(resource) == "${one.two}"
