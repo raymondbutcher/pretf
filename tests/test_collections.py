@@ -68,7 +68,9 @@ def aws_iam_user_group_membership(var):
     yield block("variable", "users", {})
 
     # Resources.
-    group_label = str(var.group).split(".")[-1]
+    # Get the group name from the interpolated string
+    # Another way to get it is var.group._labels[-1]
+    group_label = str(var.group).strip('${}').split(".")[-1]
     for user_label, user in sorted(var.users.items()):
         label = f"{user_label}_in_{group_label}"
         yield block(
