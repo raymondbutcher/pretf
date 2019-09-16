@@ -1,6 +1,6 @@
 import pytest
 
-from pretf.api import block
+from pretf.api import block, labels
 from pretf.collections import collect
 from pretf.exceptions import VariableNotPopulatedError
 from pretf.render import Block
@@ -68,7 +68,7 @@ def aws_iam_user_group_membership(var):
     yield block("variable", "users", {})
 
     # Resources.
-    group_label = str(var.group).split(".")[-1]
+    group_label = labels.get(var.group)
     for user_label, user in sorted(var.users.items()):
         label = f"{user_label}_in_{group_label}"
         yield block(

@@ -34,7 +34,7 @@ class Block(Iterable):
             result = self._body
         yield (self._block_type, result)
 
-    def __getattr__(self, name: str) -> Union["Interpolated", str]:
+    def _get_expression(self, name: Optional[str] = None) -> Union["Interpolated", str]:
         if self._block_type == "resource":
             parts = list(self._labels)
         elif self._block_type == "variable":
@@ -53,8 +53,14 @@ class Block(Iterable):
             parts = ["local"]
         else:
             parts = [self._block_type] + list(self._labels)
-        parts.append(name)
+
+        if name:
+            parts.append(name)
+
         return Interpolated(".".join(parts))
+
+    def __getattr__(self, name: str) -> Union["Interpolated", str]:
+        return self._get_expression(name)
 
     __getitem__ = __getattr__
 
@@ -66,11 +72,7 @@ class Block(Iterable):
         return f"block({', '.join(repr(part) for part in parts)})"
 
     def __str__(self) -> str:
-        if self._block_type == "variable":
-            parts = ["var"] + self._labels
-            return str(Interpolated(".".join(parts)))
-        else:
-            return ".".join([self._block_type] + self._labels)
+        return str(self._get_expression())
 
 
 class Interpolated:

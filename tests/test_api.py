@@ -16,6 +16,11 @@ def test_variable():
     assert str(one) == "${var.one}"
 
 
+def test_resource():
+    resource = block("resource", "one", "two", {})
+    assert str(resource) == "${one.two}"
+
+
 def test_index_interpolation():
     instance = block("resource", "aws_instance", "www", {}).ipv6_addresses[0]
     assert str(instance) == "${aws_instance.www.ipv6_addresses[0]}"
