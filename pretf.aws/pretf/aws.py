@@ -31,7 +31,7 @@ def _assume_role(session: Session, **kwargs: str) -> Session:
 
 
 def _create_s3_backend(
-    session: Session, bucket: str, table: str, region_name: str
+    session: Session, bucket: str, table: str, region_name: str, approved: bool
 ) -> None:
 
     # Prompt before creating anything.
@@ -40,9 +40,10 @@ def _create_s3_backend(
     table_arn = _get_dynamodb_table_arn(region_name, account_id, table)
     log.ok(f"backend: {bucket_arn}")
     log.ok(f"backend: {table_arn}")
-    if not log.accept(f"backend: create backend resources"):
-        log.bad("backend: not created")
-        raise SystemExit(1)
+    if not approved:
+        if not log.accept(f"backend: create backend resources"):
+            log.bad("backend: not created")
+            raise SystemExit(1)
 
     # Use the S3 bucket and DynamoDB table name for the CloudFormation stack.
     if bucket == table:
@@ -264,6 +265,9 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
 
     region = config.get("region") or session.region_name
 
+    auto_approve = config.get("auto_approve") or False
+    config.pop('auto_approve', None)
+
     # Replace the profile argument with environment variables.
 
     if config.get("profile"):
@@ -332,7 +336,7 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
             raise SystemExit(1)
 
         _create_s3_backend(
-            session=session, bucket=bucket, table=dynamodb_table, region_name=region
+            session=session, bucket=bucket, table=dynamodb_table, region_name=region, approved=auto_approve
         )
 
     # Return the configuration to use the backend.
