@@ -212,7 +212,7 @@ class TerraformVariableStore(VariableStore):
                         self.tfvars_wait_for(target_path)
                         break
                 else:
-                    for var in get_variables_from_file(path):
+                    for var in get_variables_from_file(var_file):
                         self.add(var)
 
 
