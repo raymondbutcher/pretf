@@ -271,6 +271,6 @@ def parse_args() -> Tuple[Optional[str], List[str], List[str], str]:
         "validate",
     }:
         if args:
-            config_dir = args[1]
+            config_dir = args[-1]
 
     return (cmd, args, flags, config_dir)
