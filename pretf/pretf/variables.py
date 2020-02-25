@@ -285,7 +285,7 @@ def get_variable_values_from_block(
 
 
 def get_variables_from_file(
-    path: Path
+    path: Path,
 ) -> Generator[Union[VariableDefinition, VariableValue], None, None]:
     try:
         if path.name.endswith(".tf"):
@@ -316,7 +316,7 @@ def get_variables_from_tfvars_file(path: Path) -> Generator[VariableValue, None,
 
 
 def get_variables_from_tf_json_file(
-    path: Path
+    path: Path,
 ) -> Generator[VariableDefinition, None, None]:
     blocks = parse_json_file_for_blocks(path)
     for block in blocks:
@@ -324,7 +324,7 @@ def get_variables_from_tf_json_file(
 
 
 def get_variables_from_tfvars_json_file(
-    path: Path
+    path: Path,
 ) -> Generator[VariableValue, None, None]:
     blocks = parse_json_file_for_blocks(path)
     for block in blocks:

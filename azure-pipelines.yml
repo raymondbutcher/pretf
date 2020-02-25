@@ -36,7 +36,7 @@ steps:
   displayName: 'Unit tests'
 
 - script: |
-    wget -q -O terraform.zip https://releases.hashicorp.com/terraform/0.12.4/terraform_0.12.4_linux_amd64.zip
+    wget -q -O terraform.zip https://releases.hashicorp.com/terraform/0.12.21/terraform_0.12.21_linux_amd64.zip
     unzip -q terraform.zip
     sudo mv terraform /usr/local/bin
   condition: eq(variables['python.version'], '3.6')
