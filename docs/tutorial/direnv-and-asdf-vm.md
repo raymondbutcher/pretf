@@ -23,7 +23,7 @@ done
 
 # Install asdf-vm plugins and tools.
 asdf_tools="
-terraform 0.12.4
+terraform 0.12.21
 "
 if command -v asdf > /dev/null; then
   echo "${asdf_tools}" > .tool-versions
