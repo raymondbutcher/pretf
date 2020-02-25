@@ -8,7 +8,7 @@ from json import dump as json_dump
 from json import loads as json_loads
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Callable, Dict, Generator, List, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import pytest
 
@@ -19,10 +19,11 @@ class TerraformProxy:
 
     __execute__ = staticmethod(workflow.execute_terraform)
 
-    def __init__(self, cwd: Union[Path, str] = ""):
+    def __init__(self, cwd: Union[Path, str] = "", verbose: Optional[bool] = None):
         if not isinstance(cwd, Path):
             cwd = Path(cwd)
         self.cwd = cwd
+        self.verbose = verbose
 
     # Calling the object just returns another object with the specified path.
 
@@ -53,7 +54,10 @@ class TerraformProxy:
         os.chdir(self.cwd)
 
         try:
-            proc = self.__execute__()
+            if self.verbose is None:
+                proc = self.__execute__()
+            else:
+                proc = self.__execute__(verbose=self.verbose)
         finally:
             sys.argv = argv_before
             os.chdir(cwd_before)
@@ -86,6 +90,18 @@ class TerraformProxy:
             if arg not in destroy_args:
                 destroy_args.append(arg)
         return self.execute(*destroy_args).stdout
+
+    def get(self, *args: str) -> str:
+        """
+        Runs terraform get and returns the stdout.
+
+        """
+
+        get_args = ["get"]
+        for arg in args:
+            if arg not in get_args:
+                get_args.append(arg)
+        return self.execute(*get_args).stdout
 
     def init(self, *args: str) -> str:
         """

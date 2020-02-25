@@ -188,7 +188,7 @@ def pretf_workflow():
 
 ## mirror_files
 
-Creates symlinks from all files and directories matching the source patterns into the current directory. Deletes all pre-existing symlinks in the current directory.
+Creates symlinks from all files and directories matching the source patterns into the current directory. Can also create symlinks from a module source location, including remote modules. Deletes all pre-existing symlinks in the current directory.
 
 Signature:
 
@@ -197,6 +197,9 @@ def mirror_files(
     *path_patterns: str,
     exclude_name_patterns: Sequence[str] = [".*", "_*"],
     include_directories: bool = True,
+    from_module: Optional[str] = None,
+    update_module: bool = False,
+    module_cache_dir: Optional[Union[Path, str]] = None,
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
 ) -> List[Path]:
@@ -205,6 +208,12 @@ path_patterns:
     path glob patterns to mirror into the current directory
 exclude_name_patterns:
     name glob patterns to exclude
+from_module:
+    location of module to mirror into the current directory
+update_module:
+    whether to fetch the module every time, or use a cached copy
+module_cache_dir:
+    location to use for caching modules
 cwd:
     current directory
 verbose:

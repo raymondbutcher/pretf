@@ -1,10 +1,11 @@
 import inspect
 import json
 import os
+import re
 import sys
 from pathlib import Path, PurePath
 from subprocess import CompletedProcess
-from typing import List, Optional, Sequence, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 from . import log, util
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError
@@ -237,6 +238,9 @@ def mirror_files(
     *path_patterns: str,
     exclude_name_patterns: Sequence[str] = [".*", "_*"],
     include_directories: bool = True,
+    from_module: Optional[str] = None,
+    update_module: bool = False,
+    module_cache_dir: Optional[Union[Path, str]] = None,
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
 ) -> List[Path]:
@@ -259,13 +263,62 @@ def mirror_files(
                 continue
             path.unlink()
 
-    # Find files to mirror.
-    create = {}
-    paths = util.find_paths(
-        path_patterns=path_patterns,
-        exclude_name_patterns=exclude_name_patterns,
-        cwd=cwd,
+    # Find files to mirror from a source module if specifed.
+    paths: List[Path] = []
+    if from_module:
+
+        if verbose:
+            log.ok(f"module: {from_module}")
+
+        module_name = "mirror-files-from-module"
+
+        # Ensure the module cache directory exists.
+        if module_cache_dir is None:
+            module_cache_dir = cwd / ".terraform" / "pretf" / module_name
+        elif isinstance(module_cache_dir, str):
+            module_cache_dir = Path(module_cache_dir)
+        module_cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create a Terraform root module in the cache directory
+        # that just references the specified module.
+        module_config_path = module_cache_dir / "main.tf.json"
+        module_json = json.dumps(
+            [{"module": {module_name: {"source": from_module}}}], indent=2
+        )
+        module_config_path.write_text(module_json)
+
+        # Run "terraform get" to download the module using Terraform.
+        from .test import TerraformProxy
+
+        terraform_get_args = ["-update"] if update_module else []
+        TerraformProxy(cwd=module_cache_dir, verbose=False).get(*terraform_get_args)
+
+        # Get the path to the module or the subdirectory if specified.
+        # https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories
+        module_dir = module_cache_dir / ".terraform" / "modules" / module_name
+        subdir_match = re.search(r"(?<=(?<!:)\/\/)[^?\n]+", from_module)
+        if subdir_match:
+            module_dir = module_dir / subdir_match.group()
+
+        paths.extend(
+            util.find_paths(
+                path_patterns=["*"],
+                exclude_name_patterns=exclude_name_patterns,
+                cwd=module_dir,
+            )
+        )
+
+    # Find files to mirror from the path pattens.
+    paths.extend(
+        util.find_paths(
+            path_patterns=path_patterns,
+            exclude_name_patterns=exclude_name_patterns,
+            cwd=cwd,
+        )
     )
+
+    # Create a map of symlink paths to original paths.
+    create = {}
     for real_path in paths:
 
         try:
@@ -303,7 +356,7 @@ def mirror_files(
     return created
 
 
-def require_files(*name_patterns: str, verbose: bool = True) -> None:
+def require_files(*name_patterns: str, verbose: bool = True) -> Dict[str, List[Path]]:
     """
     Raises an exception if the specified files are not found in the current
     directory. Pretf will catch this exception, display an error message,
@@ -319,13 +372,15 @@ def require_files(*name_patterns: str, verbose: bool = True) -> None:
 
     cwd = Path.cwd()
 
-    matches = 0
-    for pattern in name_patterns:
-        if list(cwd.glob(pattern)):
-            matches += 1
+    found: Dict[str, List[Path]] = {}
 
-    if matches == len(name_patterns):
-        return
+    for pattern in name_patterns:
+        paths = list(cwd.glob(pattern))
+        if paths:
+            found[pattern] = paths
+
+    if len(found) == len(name_patterns):
+        return found
 
     caller_frame = inspect.currentframe().f_back  # type: ignore
     caller_info = inspect.getframeinfo(caller_frame)
