@@ -52,8 +52,9 @@ def execute(
 
     if verbose:
         log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
-
-    if env.get("PRETF_CAPTURE_OUTPUT"):
+               
+    # fork is not supported on Windows platform
+    if sys.platform == "win32" or env.get("PRETF_CAPTURE_OUTPUT"):
         return _execute_subprocess(file, args, env)
     else:
         return _execute_fork(file, args, env)
