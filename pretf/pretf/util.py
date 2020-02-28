@@ -1,4 +1,3 @@
-import errno
 import os
 import shlex
 import sys
@@ -52,50 +51,28 @@ def execute(
 
     if verbose:
         log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
-               
-    # fork is not supported on Windows platform
-    if sys.platform == "win32" or env.get("PRETF_CAPTURE_OUTPUT"):
-        return _execute_subprocess(file, args, env)
+
+    if env.get("PRETF_CAPTURE_OUTPUT"):
+        return _execute_and_capture(file, args, env)
     else:
-        return _execute_fork(file, args, env)
+        return _execute(file, args, env)
 
 
-def _execute_fork(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
-    returncode = 1
-    child_pid = os.fork()
-    if child_pid == 0:
-        os.execvpe(file, list(args), env)
-    else:
-        while True:
-            try:
-                _, exit_status = os.waitpid(child_pid, 0)
-            except KeyboardInterrupt:
-                pass
-            except OSError as error:
-                if error.errno == errno.ECHILD:
-                    # No child processes.
-                    # It has exited already.
-                    break
-                elif error.errno == errno.EINTR:
-                    # Interrupted system call.
-                    # This happens when resizing the terminal.
-                    pass
-                else:
-                    # An actual error occurred.
-                    raise
-            else:
-                returncode = exit_status >> 8
-                break
+def _execute(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
+
+    proc = Popen(args, executable=file, env=env)
+
+    returncode = proc.wait()
 
     if returncode != 0:
         raise CalledProcessError(
-            returncode=returncode, cmd=" ".join(shlex.quote(arg) for arg in args)
+            returncode=returncode, cmd=" ".join(shlex.quote(arg) for arg in args),
         )
 
-    return CompletedProcess(args=args, returncode=returncode)
+    return CompletedProcess(args=args, returncode=returncode,)
 
 
-def _execute_subprocess(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
+def _execute_and_capture(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
 
     stdout_buffer = StringIO()
     stderr_buffer = StringIO()

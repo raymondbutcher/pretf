@@ -208,10 +208,10 @@ def execute_terraform(verbose: bool = True) -> CompletedProcess:
     # Find the Terraform executable in the PATH.
     for path in os.environ["PATH"].split(os.pathsep):
 
-        # terraform executable name is different based on the platform
         if sys.platform == "win32":
             terraform_path = os.path.join(path, "terraform.exe")
-        else: terraform_path = os.path.join(path, "terraform")
+        else:
+            terraform_path = os.path.join(path, "terraform")
 
         # Skip if it doesn't exist here.
         if not os.path.exists(terraform_path):
