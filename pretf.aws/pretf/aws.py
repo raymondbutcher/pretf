@@ -5,7 +5,7 @@ from time import sleep
 from typing import Any, Optional
 
 from pretf.api import block, log
-from pretf.render import Block
+from pretf.blocks import Block
 
 try:
     from boto_source_profile_mfa import get_session as Session  # type: ignore

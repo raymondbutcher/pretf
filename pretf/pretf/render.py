@@ -7,6 +7,7 @@ from threading import Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 from . import log
+from .blocks import Block, Interpolated
 from .exceptions import FunctionNotFoundError
 from .util import find_workflow_path, import_file
 from .variables import (
@@ -15,87 +16,6 @@ from .variables import (
     VariableValue,
     get_variable_definitions_from_block,
 )
-
-
-class Block(Iterable):
-    def __init__(self, block_type: str, labels: List[str], body: Dict[str, Any]):
-        self._block_type = block_type
-        self._labels = labels
-        self._body = body
-
-    def __iter__(self) -> Generator[tuple, None, None]:
-        if self._labels:
-            result: dict = {}
-            here = result
-            for label in self._labels[:-1]:
-                here[label] = {}
-                here = here[label]
-            here[self._labels[-1]] = self._body
-        else:
-            result = self._body
-        yield (self._block_type, result)
-
-    def _get_expression(self, name: Optional[str] = None) -> Union["Interpolated", str]:
-        if self._block_type == "resource":
-            parts = list(self._labels)
-        elif self._block_type == "variable":
-            parts = ["var"] + self._labels
-        elif self._block_type == "provider":
-            parts = list(self._labels)
-            if name == "alias" or not name:
-                if self._body:
-                    alias = self._body.get("alias") or "default"
-                    if alias != "default":
-                        parts.append(alias)
-                return ".".join(parts)
-        elif self._block_type == "locals":
-            parts = ["local"]
-        else:
-            parts = [self._block_type] + list(self._labels)
-
-        if name:
-            parts.append(name)
-
-        return Interpolated(".".join(parts))
-
-    def __getattr__(self, name: str) -> Union["Interpolated", str]:
-
-        if name.startswith("__"):
-            raise AttributeError(name)
-
-        return self._get_expression(name)
-
-    __getitem__ = __getattr__
-
-    def __repr__(self) -> str:
-        parts: List[Any] = [self._block_type]
-        parts.extend(self._labels)
-        if self._body is not None:
-            parts.append(self._body)
-        return f"block({', '.join(repr(part) for part in parts)})"
-
-    def __str__(self) -> str:
-        return str(self._get_expression())
-
-
-class Interpolated:
-    def __init__(self, value: str):
-        self.__value = value
-
-    def __eq__(self, other: Any) -> bool:
-        return str(self) == other
-
-    def __getattr__(self, attr: str) -> "Interpolated":
-        return type(self)(self.__value + "." + attr)
-
-    def __getitem__(self, index: int) -> "Interpolated":
-        return type(self)(f"{self.__value}[{index}]")
-
-    def __repr__(self) -> str:
-        return f"Interpolated({repr(self.__value)})"
-
-    def __str__(self) -> str:
-        return "${" + self.__value + "}"
 
 
 class PathProxy:
