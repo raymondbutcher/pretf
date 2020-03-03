@@ -7,14 +7,12 @@ that it works.
 
 """
 
-from pretf.api import block
+from pretf.blocks import output, resource
 
 
 def pretf_blocks(var):
-    additional = yield block(
-        "resource",
-        "random_id",
-        "additional",
-        {"byte_length": 2, "prefix": var.additional_prefix},
+    additional = yield resource.random_id.additional(
+        byte_length=2,
+        prefix=var.additional_prefix,
     )
-    yield block("output", "additional", {"value": additional.hex})
+    yield output.additional(value=additional.hex)

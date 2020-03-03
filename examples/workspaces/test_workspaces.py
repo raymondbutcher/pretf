@@ -10,7 +10,7 @@ class TestWorkspaces(test.SimpleTest):
         "iam",
         "vpc",
         "vpc-peering",
-    ],)
+    ])
     def test_init(self, stack):
         with self.pretf(f"stacks/{stack}") as tf:
             tf.init()

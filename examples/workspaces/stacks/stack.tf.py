@@ -1,13 +1,13 @@
-from pretf.api import block
 from pretf.aws import provider_aws, terraform_backend_s3
+from pretf.blocks import variable
 
 
 def pretf_blocks(terraform, var):
 
     # Create variables needed by this file.
 
-    yield block("variable", "aws_credentials", {
-        "default": {
+    yield variable.aws_credentials(
+        default={
             "nonprod": {
                 "profile": "pretf-nonprod",
             },
@@ -15,16 +15,16 @@ def pretf_blocks(terraform, var):
                 "profile": "pretf-prod",
             },
         },
-    })
-    yield block("variable", "aws_region", {
-        "default": "eu-west-1",
-    })
-    yield block("variable", "environment", {
-        "type": "string",
-    })
-    yield block("variable", "stack", {
-        "type": "string",
-    })
+    )
+    yield variable.aws_region(
+        default="eu-west-1",
+    )
+    yield variable.environment(
+        type="string",
+    )
+    yield variable.stack(
+        type="string",
+    )
 
     # Create a backend configuration in the prod account,
     # because all workspaces must use the same backend.
