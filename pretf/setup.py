@@ -20,7 +20,7 @@ setup(
     author_email="ray.butcher@claranet.uk",
     license="MIT License",
     packages=["pretf"],
-    entry_points={"console_scripts": ("pretf=pretf.cli:main",)},
+    entry_points={"console_scripts": ("pretf=pretf.cli:main")},
     install_requires=["colorama", "pyhcl"],
     extras_require={"aws": ["pretf.aws=={}".format(version)]},
     zip_safe=False,

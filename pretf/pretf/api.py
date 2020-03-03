@@ -1,7 +1,7 @@
 from typing import Any
 
 from . import labels, log
-from .render import Block
+from .blocks import Block
 
 
 def block(block_type: str, *args: Any) -> Block:
