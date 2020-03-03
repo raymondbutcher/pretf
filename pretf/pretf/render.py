@@ -17,7 +17,7 @@ from .variables import (
 
 
 class Block(Iterable):
-    def __init__(self, block_type: str, labels: List[str], body: Any):
+    def __init__(self, block_type: str, labels: List[str], body: Dict[str, Any]):
         self._block_type = block_type
         self._labels = labels
         self._body = body
@@ -41,13 +41,11 @@ class Block(Iterable):
             parts = ["var"] + self._labels
         elif self._block_type == "provider":
             parts = list(self._labels)
-            if name == "alias":
+            if name == "alias" or not name:
                 if self._body:
-                    alias = self._body.get("alias")
-                    if alias:
+                    alias = self._body.get("alias") or "default"
+                    if alias != "default":
                         parts.append(alias)
-                else:
-                    parts.append("default")
                 return ".".join(parts)
         elif self._block_type == "locals":
             parts = ["local"]
@@ -60,12 +58,16 @@ class Block(Iterable):
         return Interpolated(".".join(parts))
 
     def __getattr__(self, name: str) -> Union["Interpolated", str]:
+
+        if name.startswith("__"):
+            raise AttributeError(name)
+
         return self._get_expression(name)
 
     __getitem__ = __getattr__
 
     def __repr__(self) -> str:
-        parts = [self._block_type]
+        parts: List[Any] = [self._block_type]
         parts.extend(self._labels)
         if self._body is not None:
             parts.append(self._body)
