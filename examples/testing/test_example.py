@@ -1,5 +1,5 @@
 from pretf import test, workflow
-from pretf.api import block
+from pretf.blocks import output, variable
 
 
 class TestExample(test.SimpleTest):
@@ -14,8 +14,8 @@ class TestExample(test.SimpleTest):
         workflow.delete_files("*.json")
 
         with self.create("one.tf.json"):
-            one = yield block("variable", "one", {"default": True})
-            yield block("output", "one", {"value": one})
+            one = yield variable.one(default=True)
+            yield output.one(value=one)
 
         self.tf.init()
 
@@ -25,12 +25,12 @@ class TestExample(test.SimpleTest):
     def test_change(self):
 
         with self.create("one.tf.json"):
-            one = yield block("variable", "one", {"default": False})
-            yield block("output", "one", {"value": one})
+            one = yield variable.one(default=False)
+            yield output.one(value=one)
 
         with self.create("two.tf.json"):
-            two = yield block("variable", "two", {"default": {"x": [1, 2, 3], "y": 4}})
-            yield block("output", "two", {"value": two})
+            two = yield variable.two(default={"x": [1, 2, 3], "y": 4})
+            yield output.two(value=two)
 
         outputs = self.tf.apply()
         assert outputs == {"one": False, "two": {"x": [1, 2, 3], "y": 4}}
