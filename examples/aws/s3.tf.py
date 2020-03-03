@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 
-from pretf.api import block, labels
+from pretf.api import labels
+from pretf.blocks import output, resource, variable
 from pretf.collections import collect
 
 
@@ -12,24 +13,25 @@ def pretf_blocks():
     """
 
     # Create an S3 bucket.
-    bucket = yield block(
-        "resource",
-        "aws_s3_bucket",
-        "test",
-        {"bucket": "pretf-example-aws-files", "acl": "private"},
+    bucket = yield resource.aws_s3_bucket.test(
+        bucket="pretf-example-aws-files",
+        acl="private",
     )
 
     # Upload all files from the "files" and "more-files" directories.
     total_files = 0
     total_bytes = 0
     for source in ("files", "more-files"):
-        objects = yield aws_s3_bucket_objects(bucket=bucket, source=source)
+        objects = yield aws_s3_bucket_objects(
+            bucket=bucket,
+            source=source,
+        )
         total_files += objects.total_files
         total_bytes += objects.total_bytes
 
     # Output some stats.
-    yield block("output", "total_files", {"value": total_files})
-    yield block("output", "total_bytes", {"value": total_bytes})
+    yield output.total_files(value=total_files)
+    yield output.total_bytes(value=total_bytes)
 
 
 @collect
@@ -42,9 +44,9 @@ def aws_s3_bucket_objects(var):
     """
 
     # Inputs.
-    yield block("variable", "bucket", {})
-    yield block("variable", "prefix", {"default": ""})
-    yield block("variable", "source", {})
+    yield variable.bucket()
+    yield variable.prefix(default="")
+    yield variable.source()
 
     # Get the resource name of the bucket,
     # to be used in object resource names.
@@ -58,15 +60,14 @@ def aws_s3_bucket_objects(var):
         if path.is_file():
             key = f"{var.prefix}{path.relative_to(var.source)}"
             object_label = labels.clean(f"{bucket_label}/{key}")
-            yield block(
-                "resource",
-                "aws_s3_bucket_object",
-                object_label,
-                {"bucket": var.bucket.id, "key": key, "source": path},
+            yield resource.aws_s3_bucket_object[object_label](
+                bucket=var.bucket.id,
+                key=key,
+                source=path,
             )
             total_files += 1
             total_bytes += os.path.getsize(path)
 
     # Outputs.
-    yield block("output", "total_files", {"value": total_files})
-    yield block("output", "total_bytes", {"value": total_bytes})
+    yield output.total_files(value=total_files)
+    yield output.total_bytes(value=total_bytes)

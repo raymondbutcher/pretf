@@ -1,9 +1,7 @@
-from pretf.api import block
+from pretf.blocks import output, variable
 
 
 def pretf_blocks(var):
-    yield block("variable", "one", {"default": 1})
-
-    yield block("output", "one", {"value": var.one})
-
-    yield block("variable", "two", {"default": 2})
+    yield variable.one(default=1)
+    yield output.one(value=var.one)
+    yield variable.two(default=2)
