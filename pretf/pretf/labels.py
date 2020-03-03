@@ -1,6 +1,6 @@
 import re
 
-from .render import Block
+from .blocks import Block
 
 
 def clean(label: str) -> str:

@@ -1,9 +1,9 @@
 import pytest
 
 from pretf.api import block, labels
+from pretf.blocks import Block
 from pretf.collections import collect
 from pretf.exceptions import VariableNotPopulatedError
-from pretf.render import Block
 
 
 @collect
