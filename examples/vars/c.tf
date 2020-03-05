@@ -1,5 +1,5 @@
 variable "five" {
-  type = "string"
+  type = string
 }
 
 variable "six" {

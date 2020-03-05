@@ -8,7 +8,7 @@ from typing import List, Optional, Sequence, Union
 
 from . import log, util
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError
-from .render import Renderer, call_pretf_function, json_default
+from .render import call_pretf_function, json_default, render_files
 from .util import import_file
 
 
@@ -78,7 +78,7 @@ def create_files(
 
     # Render the JSON data from *.tf.py and *.tfvars.py files.
     if files_to_create:
-        file_contents = Renderer(files_to_create).render()
+        file_contents = render_files(files_to_create)
     else:
         file_contents = {}
 
