@@ -1,29 +1,16 @@
 import os
 import shlex
 import sys
-from collections import defaultdict
 from contextlib import contextmanager
 from fnmatch import fnmatch
-from functools import lru_cache, wraps
 from importlib.abc import Loader
 from importlib.util import module_from_spec, spec_from_file_location
 from io import StringIO
 from pathlib import Path, PurePath
 from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen
-from threading import Lock, Thread
+from threading import Thread
 from types import ModuleType
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Generator,
-    List,
-    Optional,
-    Sequence,
-    TextIO,
-    Tuple,
-    Union,
-)
+from typing import BinaryIO, Generator, List, Optional, Sequence, TextIO, Tuple, Union
 
 from . import log
 
@@ -188,23 +175,6 @@ def import_file(path: Union[PurePath, str]) -> Generator[ModuleType, None, None]
     finally:
         if added_to_sys_path:
             sys.path.remove(pathdir)
-
-
-def once(func: Callable) -> Callable:
-
-    locks: defaultdict = defaultdict(Lock)
-
-    @lru_cache(maxsize=None)
-    def get_key(*args: Any, **kwargs: dict) -> object:
-        return object()
-
-    @wraps(func)
-    def wrapped(*args: Any, **kwargs: dict) -> Any:
-        key = get_key(*args, **kwargs)
-        if locks[key].acquire(blocking=False):
-            return func(*args, **kwargs)
-
-    return wrapped
 
 
 def parse_args() -> Tuple[Optional[str], List[str], List[str], str]:

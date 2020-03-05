@@ -3,6 +3,7 @@ import os
 from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path, PurePath
+from threading import Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 from . import log
@@ -119,65 +120,45 @@ class PathProxy:
             return self.cwd
 
 
-class Renderer:
-    def __init__(self, files_to_create: Dict[Path, Path]):
-        # These are all of the files that will be created.
-        self.files_to_create = files_to_create
+def render_files(
+    files_to_create: Dict[Path, Path]
+) -> Dict[Path, Union[dict, List[dict]]]:
 
-        # Variables will be populated from environment variables,
-        # command line arguments, and files, as per standard Terraform
-        # behaviour. They will also be populated as files get created.
-        self.variables = TerraformVariableStore(
-            files_to_create=files_to_create, process_jobs=self.process_jobs
+    variables = TerraformVariableStore(files_to_create=files_to_create)
+    variables.load()
+
+    threads = []
+    for target_path, source_path in files_to_create.items():
+        thread = RenderThread(
+            source_path=source_path, target_path=target_path, variables=variables
         )
+        thread.start()
+        threads.append(thread)
 
-        # These are all of the jobs to create files.
-        self.jobs: List[RenderJob] = []
-        for target_path, source_path in self.files_to_create.items():
-            job = RenderJob(
-                source_path=source_path,
-                target_path=target_path,
-                variables=self.variables,
-            )
-            self.jobs.append(job)
+    for thread in threads:
+        thread.join()
 
-        # This will be populated with blocks from each file being created.
-        self.done: List[RenderJob] = []
-
-    def process_jobs(self, until: Optional[str] = None) -> None:
-        while self.jobs:
-            if until and until in self.variables:
-                break
-            job = self.jobs.pop()
-            try:
-                done = job.run()
-            except Exception:
-                log.bad(f"create: {job.target_name} could not be processed")
-                raise
-            if done:
-                self.done.append(job)
-            else:
-                self.jobs.append(job)
-
-    def render(self) -> Dict[Path, Union[dict, List[dict]]]:
-        self.process_jobs()
-        results = {}
-        for job in self.done:
-            results[job.target_path] = job.contents()
-        return results
+    results = {}
+    for thread in threads:
+        if thread.error:
+            raise thread.error
+        results[thread.target_path] = thread.contents()
+    return results
 
 
-class RenderJob:
+class RenderThread(Thread):
     def __init__(
         self, source_path: Path, target_path: Path, variables: TerraformVariableStore
     ):
+
+        super().__init__()
 
         self.source_path = source_path
         self.target_path = target_path
         self.target_name = target_path.name
         self.variables = variables
 
-        self.done = False
+        self.error: Optional[Exception] = None
         self.is_tfvars = self.target_name.endswith(".tfvars.json")
         self.return_value = None
 
@@ -228,27 +209,42 @@ class RenderJob:
                 var = VariableValue(name=name, value=value, source=self.source_path)
                 self.variables.add(var)
 
-    def run(self) -> bool:
+    def run(self) -> None:
         try:
-            yielded = self.gen.send(self.return_value)
-        except StopIteration:
-            self.variables.file_created(self.target_path)
-            return True
 
-        self.return_value = yielded
+            while True:
 
-        if self.is_tfvars:
-            if not isinstance(yielded, dict):
-                raise TypeError(f"expected dict to be yielded but got {repr(yielded)}")
-            self.process_tfvars_dict(yielded)
-            self.blocks.append(yielded)
-        else:
-            for block in unwrap_yielded(yielded):
+                try:
+                    yielded = self.gen.send(self.return_value)
+                except StopIteration:
+                    break
 
-                self.process_tf_block(block)
-                self.blocks.append(block)
+                self.return_value = yielded
 
-        return False
+                if self.is_tfvars:
+                    if not isinstance(yielded, dict):
+                        raise TypeError(
+                            f"expected dict to be yielded but got {repr(yielded)}"
+                        )
+                    self.process_tfvars_dict(yielded)
+                    self.blocks.append(yielded)
+                else:
+                    for block in unwrap_yielded(yielded):
+
+                        self.process_tf_block(block)
+                        self.blocks.append(block)
+
+        except Exception as error:
+
+            log.bad(f"create: {self.target_name} could not be processed")
+            self.error = error
+
+        finally:
+
+            # Tell the variable store that the file is done,
+            # whether it was successful or not, so it can
+            # unblock other threads if necessary.
+            self.variables.file_done(self.target_path)
 
 
 class TerraformProxy:

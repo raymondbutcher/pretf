@@ -1,8 +1,10 @@
 import os
 import shlex
 import sys
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Callable, Generator, Set, Union
+from threading import Event, Lock
+from typing import Any, Dict, Generator, List, Set, Union
 
 from . import log
 from .exceptions import (
@@ -17,7 +19,6 @@ from .parser import (
     parse_tf_file_for_variables,
     parse_tfvars_file_for_variables,
 )
-from .util import once
 
 
 class VariableProxy:
@@ -36,6 +37,7 @@ class VariableProxy:
 
 class VariableStore:
     def __init__(self) -> None:
+        self._allow_changes = True
         self._allow_defaults = True
         self._definitions: dict = {}
         self._values: dict = {}
@@ -56,12 +58,22 @@ class VariableStore:
                 raise VariableAlreadyDefinedError(old_var=old_var, new_var=var)
             self._definitions[var.name] = var
         elif isinstance(var, VariableValue):
+            if not self._allow_changes and var.name in self._values:
+                old_var = self._values[var.name]
+                if var.value != old_var.value:
+                    raise VariableNotConsistentError(old_var=old_var, new_var=var)
             self._values[var.name] = var
         else:
             raise TypeError(var)
 
+    def enable_changes(self) -> None:
+        self._allow_changes = True
+
     def enable_defaults(self) -> None:
         self._allow_defaults = True
+
+    def disable_changes(self) -> None:
+        self._allow_changes = False
 
     def disable_defaults(self) -> None:
         self._allow_defaults = False
@@ -81,54 +93,99 @@ class VariableStore:
 
 
 class TerraformVariableStore(VariableStore):
-    def __init__(self, files_to_create: dict, process_jobs: Callable) -> None:
+    def __init__(self, files_to_create: dict) -> None:
         super().__init__()  # type: ignore
         self._files_to_create = files_to_create
-        self._files_created: Set[Path] = set()
+        self._files_done: Set[Path] = set()
         self._tfvars_waiting: Set[Path] = set()
-        self._process_jobs = process_jobs
+        self._events: Dict[str, List[Event]] = defaultdict(list)
+        self._lock = Lock()
 
-    def add(
-        self,
-        var: Union["VariableDefinition", "VariableValue"],
-        allow_change: bool = True,
-    ) -> None:
-        # Ensure Terraform variables are loaded before anything from Pretf,
-        # because there is a loading order that needs to be followed,
-        # and Pretf values come afterwards.
-        self.load()
+    def _blocked_threads(self) -> int:
+        count = 0
+        for events in self._events.values():
+            for event in events:
+                if not event.is_set():
+                    count += 1
+        return count
 
-        # This check is used to prevent changing variables values in Pretf,
-        # to ensure that Pretf and Terraform always have consistent values.
-        if isinstance(var, VariableValue):
-            if not allow_change and var.name in self._values:
-                old_var = self._values[var.name]
-                if var.value != old_var.value:
-                    raise VariableNotConsistentError(old_var=old_var, new_var=var)
+    def _threads(self) -> int:
+        return len(self._files_to_create) - len(self._files_done)
 
-        super().add(var)
+    def _unblock(self, name: str) -> None:
+        events = self._events[name]
+        while events:
+            event = events.pop()
+            event.set()
 
-    def file_created(self, path: Path) -> None:
-        self._files_created.add(path)
-        self._tfvars_waiting.discard(path)
-        if not self._tfvars_waiting:
-            self.enable_defaults()
+    def add(self, var: Union["VariableDefinition", "VariableValue"]) -> None:
+        with self._lock:
+
+            super().add(var)
+
+            # If this variable is ready,
+            # unblock any threads waiting for it.
+            if var.name in self:
+                self._unblock(var.name)
+
+    def file_done(self, path: Path) -> None:
+        with self._lock:
+
+            self._files_done.add(path)
+            self._tfvars_waiting.discard(path)
+
+            # If there are no tfvars files left to be rendered,
+            # then allow the default values to be used.
+            if not self._tfvars_waiting:
+                self.enable_defaults()
+
+                # Unblock other threads waiting for variables with default values.
+                for var in self._definitions.copy().values():
+                    if var.has_default:
+                        self._unblock(var.name)
+
+            # If all other threads are blocked waiting for variables then
+            # there is a deadlock. In that case unblock every variable so
+            # threads can continue and fail.
+            blocked_threads = self._blocked_threads()
+            if blocked_threads and blocked_threads >= self._threads():
+                for name in self._events:
+                    self._unblock(name)
+
+    def get(self, name: str, consumer: Any) -> Any:
+        with self._lock:
+
+            # Return the value if the variable is ready.
+            if name in self:
+                return super().get(name, consumer)
+
+            # If all other threads are blocked and waiting for variables,
+            # then having this thread wait for a variable would cause a deadlock.
+            # In that case just try to return the value and let it fail.
+            if self._blocked_threads() >= self._threads():
+                return super().get(name, consumer)
+
+            # Create an event that can be used to block this thread
+            # until the variable is ready.
+            event = Event()
+            self._events[name].append(event)
+
+        # Block this thread until another thread makes the variable ready
+        # or another thread detects a deadlock and unblocks all threads.
+        event.wait()
+
+        # Try to return the value.
+        # If there was a deadlock then this will fail.
+        return super().get(name, consumer)
 
     def tfvars_wait_for(self, path: Path) -> None:
-        if path not in self._files_created:
+        if path not in self._files_done:
             self._tfvars_waiting.add(path)
             self.disable_defaults()
 
     def tfvars_waiting_for(self, path: Path) -> bool:
-        self.load()
         return path in self._tfvars_waiting
 
-    def get(self, name: str, consumer: str) -> Any:
-        self.load()
-        self._process_jobs(until=name)
-        return super().get(name, consumer)
-
-    @once
     def load(self) -> None:
         """
         Load Terraform variables from various sources.
@@ -145,6 +202,9 @@ class TerraformVariableStore(VariableStore):
         * Any -var and -var-file options on the command line, in the order they are provided.
 
         """
+
+        self.disable_defaults()
+        self.enable_changes()
 
         auto_tfvars_files = set()
         default_tfvars_files = set()
@@ -214,6 +274,10 @@ class TerraformVariableStore(VariableStore):
                 else:
                     for var in get_variables_from_file(var_file):
                         self.add(var)
+
+        self.disable_changes()
+        if not self._tfvars_waiting:
+            self.enable_defaults()
 
 
 class VariableDefinition:
