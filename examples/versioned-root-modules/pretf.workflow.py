@@ -10,13 +10,12 @@ def pretf_workflow(path):
 
     # Parse the tfvars file to find the root module source.
     tfvars = found["*.auto.tfvars"][0].read_text()
-    match = re.search('# pretf: root_module_source = "(.+?)"', tfvars)
-    root_module_source = match.group(1)
+    source = re.search('# pretf: source = "(.+?)"', tfvars).group(1)
 
     # Fetch the root module into a hidden cache directory and create symlinks
     # to the module contents in the current working directory.
     created = workflow.mirror_files(
-        from_module=root_module_source,
+        from_module=source,
         verbose=True,
     )
 

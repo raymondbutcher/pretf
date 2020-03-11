@@ -24,6 +24,6 @@ To test local changes in the root module, you can temporarily update the `.tfvar
 > Note: You are not limited to defining the root module source in this way; this is just how it has been implemented in this example. Suggestions are welcome!
 
 ```tf
-# pretf: root_module_source = "/home/ray/github/pretf-example-modules/pass/"
-# pretf: root_module_source = "github.com/raymondbutcher/pretf-example-modules//pass?ref=v1.1.0"
+# pretf: source = "/home/ray/github/pretf-example-modules/pass/"
+# pretf: source = "github.com/raymondbutcher/pretf-example-modules//pass?ref=v1.1.0"
 ```
