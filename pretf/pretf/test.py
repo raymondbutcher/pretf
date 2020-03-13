@@ -44,8 +44,11 @@ class TerraformProxy:
     def execute(self, *args: str) -> CompletedProcess:
 
         # Make Terraform output more suitable for tests.
-        os.environ["TF_IN_AUTOMATION"] = "1"
-        os.environ["PRETF_CAPTURE_OUTPUT"] = "1"
+        environ_before = {
+            "TF_IN_AUTOMATION": os.environ.get("TF_IN_AUTOMATION"),
+            "PRETF_CAPTURE_OUTPUT": os.environ.get("PRETF_CAPTURE_OUTPUT"),
+        }
+        os.environ.update({"TF_IN_AUTOMATION": "1", "PRETF_CAPTURE_OUTPUT": "1"})
 
         argv_before = sys.argv
         sys.argv = ["terraform", *args]
@@ -59,8 +62,13 @@ class TerraformProxy:
             else:
                 proc = self.__execute__(verbose=self.verbose)
         finally:
-            sys.argv = argv_before
             os.chdir(cwd_before)
+            sys.argv = argv_before
+            for key, value in environ_before.items():
+                if value is None:
+                    del os.environ[key]
+                else:
+                    os.environ[key] = value
 
         return proc
 

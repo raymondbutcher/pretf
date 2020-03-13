@@ -198,6 +198,7 @@ def mirror_files(
     exclude_name_patterns: Sequence[str] = [".*", "_*"],
     include_directories: bool = True,
     from_module: Optional[str] = None,
+    from_module_version: Optional[str] = None,
     update_module: bool = False,
     module_cache_dir: Optional[Union[Path, str]] = None,
     cwd: Optional[Union[Path, str]] = None,
@@ -210,6 +211,8 @@ exclude_name_patterns:
     name glob patterns to exclude
 from_module:
     location of module to mirror into the current directory
+from_module_version:
+    the module version (if using registry)
 update_module:
     whether to fetch the module every time, or use a cached copy
 module_cache_dir:

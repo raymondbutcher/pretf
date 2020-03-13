@@ -1,7 +1,6 @@
 import inspect
 import json
 import os
-import re
 import sys
 from pathlib import Path, PurePath
 from subprocess import CompletedProcess
@@ -239,6 +238,7 @@ def mirror_files(
     exclude_name_patterns: Sequence[str] = [".*", "_*"],
     include_directories: bool = True,
     from_module: Optional[str] = None,
+    from_module_version: Optional[str] = None,
     update_module: bool = False,
     module_cache_dir: Optional[Union[Path, str]] = None,
     cwd: Optional[Union[Path, str]] = None,
@@ -268,7 +268,10 @@ def mirror_files(
     if from_module:
 
         if verbose:
-            log.ok(f"module: {from_module}")
+            if from_module_version:
+                log.ok(f"module: {from_module} version: {from_module_version}")
+            else:
+                log.ok(f"module: {from_module}")
 
         module_name = "mirror-files-from-module"
 
@@ -282,9 +285,14 @@ def mirror_files(
         # Create a Terraform root module in the cache directory
         # that just references the specified module.
         module_config_path = module_cache_dir / "main.tf.json"
-        module_json = json.dumps(
-            [{"module": {module_name: {"source": from_module}}}], indent=2
-        )
+        module_body = {}
+        if from_module.startswith("."):
+            module_body["source"] = os.path.realpath(from_module)
+        else:
+            module_body["source"] = from_module
+        if from_module_version:
+            module_body["version"] = from_module_version
+        module_json = json.dumps([{"module": {module_name: module_body}}], indent=2)
         module_config_path.write_text(module_json)
 
         # Run "terraform get" to download the module using Terraform.
@@ -293,20 +301,21 @@ def mirror_files(
         terraform_get_args = ["-update"] if update_module else []
         TerraformProxy(cwd=module_cache_dir, verbose=False).get(*terraform_get_args)
 
-        # Get the path to the module or the subdirectory if specified.
-        # https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories
-        module_dir = module_cache_dir / ".terraform" / "modules" / module_name
-        subdir_match = re.search(r"(?<=(?<!:)\/\/)[^?\n]+", from_module)
-        if subdir_match:
-            module_dir = module_dir / subdir_match.group()
-
-        paths.extend(
-            util.find_paths(
-                path_patterns=["*"],
-                exclude_name_patterns=exclude_name_patterns,
-                cwd=module_dir,
-            )
+        # Get the path to the module.
+        modules_manifest_path = (
+            module_cache_dir / ".terraform" / "modules" / "modules.json"
         )
+        modules_manifest = json.loads(modules_manifest_path.read_text())
+        for module in modules_manifest["Modules"]:
+            if module["Key"] == module_name:
+                module_dir = module_cache_dir / module["Dir"]
+                paths.extend(
+                    util.find_paths(
+                        path_patterns=["*"],
+                        exclude_name_patterns=exclude_name_patterns,
+                        cwd=module_dir,
+                    )
+                )
 
     # Find files to mirror from the path pattens.
     paths.extend(
