@@ -49,7 +49,13 @@ def _execute(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
 
     proc = Popen(args, executable=file, env=env)
 
-    returncode = proc.wait()
+    while True:
+        try:
+            returncode = proc.wait()
+        except KeyboardInterrupt:
+            pass
+        else:
+            break
 
     if returncode != 0:
         raise CalledProcessError(
@@ -76,7 +82,13 @@ def _execute_and_capture(file: str, args: Sequence[str], env: dict) -> Completed
     )
     stderr_thread.start()
 
-    returncode = proc.wait()
+    while True:
+        try:
+            returncode = proc.wait()
+        except KeyboardInterrupt:
+            pass
+        else:
+            break
 
     stdout_thread.join()
     stderr_thread.join()
