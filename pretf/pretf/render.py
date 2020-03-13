@@ -136,7 +136,11 @@ def render_files(
         threads.append(thread)
 
     for thread in threads:
-        thread.join()
+        try:
+            thread.join()
+        except KeyboardInterrupt:
+            variables.abort()
+            thread.join()
 
     results = {}
     for thread in threads:

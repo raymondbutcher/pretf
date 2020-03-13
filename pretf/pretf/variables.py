@@ -118,6 +118,11 @@ class TerraformVariableStore(VariableStore):
             event = events.pop()
             event.set()
 
+    def abort(self) -> None:
+        with self._lock:
+            for name in self._events:
+                self._unblock(name)
+
     def add(self, var: Union["VariableDefinition", "VariableValue"]) -> None:
         with self._lock:
 
@@ -162,7 +167,7 @@ class TerraformVariableStore(VariableStore):
             # If all other threads are blocked and waiting for variables,
             # then having this thread wait for a variable would cause a deadlock.
             # In that case just try to return the value and let it fail.
-            if self._blocked_threads() >= self._threads():
+            if self._blocked_threads() + 1 >= self._threads():
                 return super().get(name, consumer)
 
             # Create an event that can be used to block this thread
