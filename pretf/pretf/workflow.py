@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Sequence, Union
 
 from . import log, util
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError
-from .render import call_pretf_function, json_default, render_files
+from .render import call_pretf_function, json_default, render_files, unwrap_yielded
 from .util import import_file
 
 
@@ -65,6 +65,8 @@ def create_files(
     if not source_dirs:
         source_dirs = [target_dir]
 
+    pretf_files = create_pretf_files(verbose=verbose)
+
     # Find all files in the specified source directories.
     files_to_create = {}
     for source_dir in source_dirs or ["."]:
@@ -93,7 +95,7 @@ def create_files(
             json.dump(contents, open_file, indent=2, default=json_default)
         created.append(output_path)
 
-    return created
+    return pretf_files + created
 
 
 def custom(path: Union[PurePath, str]) -> CompletedProcess:
@@ -231,6 +233,109 @@ def execute_terraform(verbose: bool = True) -> CompletedProcess:
 
     log.bad("terraform: command not found")
     return CompletedProcess(args=args, returncode=1)
+
+
+from contextlib import contextmanager
+from .render import Block
+from typing import Iterable, Any, Generator
+
+
+def find_pretf_files_paths():
+    cwd = Path.cwd()
+    paths = [cwd] + list(cwd.parents)
+    for path in paths:
+        files_path = path / "pretf.files.py"
+        if files_path.exists():
+            yield files_path
+        workflow_path = path / "pretf.workflow.py"
+        if workflow_path.exists():
+            break
+
+
+def unwrap_files(
+    yielded: Union[str, Block, dict], **kwargs: Any
+) -> Generator[dict, None, None]:
+    if isinstance(yielded, str):
+        yield yielded
+    elif isinstance(yielded, Block):
+        yield dict(iter(yielded))
+    elif isinstance(yielded, dict):
+        yield yielded
+    else:
+        raise TypeError(
+            f"expected str/dict/Block to be yielded but got {repr(yielded)}"
+        )
+
+
+def create_pretf_files(verbose: bool = True):
+
+    cwd = Path.cwd()
+
+    files = []
+    modules = []
+
+    for path in find_pretf_files_paths():
+
+        with import_file(path) as module:
+
+            if not hasattr(module, "pretf_files"):
+                raise FunctionNotFoundError(
+                    f"workflow: {path} does not have a 'pretf_files' function"
+                )
+
+            # Call the pretf_workflow() function,
+            # passing in "path" and "terraform" if required.
+            gen = call_pretf_function(func=module.pretf_files)  # type: ignore
+
+            for yielded in gen:
+                for item in unwrap_files(yielded):
+                    if isinstance(item, str):
+                        here = cwd.parent
+                        while len(here.parts) >= len(path.parent.parts):
+                            files.extend(util.find_paths([item], cwd=here))
+                            here = here.parent
+                    else:
+                        modules.append(item)
+
+    for item in modules:
+        print("MODULE", item)
+
+    # Create a map of symlink paths to original paths.
+    create = {}
+    for real_path in files:
+
+        try:
+            cwd.relative_to(os.path.normpath(real_path))
+        except ValueError:
+            is_parent_directory = False
+        else:
+            is_parent_directory = True
+
+        if is_parent_directory:
+            continue
+
+        link_path = cwd / real_path.name
+
+        if link_path.exists():
+            continue
+
+        relative_path = os.path.relpath(real_path, cwd)
+
+        create[link_path] = relative_path
+
+    if create and verbose:
+        names = [path.name for path in create.keys()]
+        log.ok(f"mirror: {' '.join(sorted(names))}")
+
+    # Create new symlinks.
+    created = []
+    for link_path, relative_path in create.items():
+        link_path.symlink_to(relative_path)
+        created.append(link_path)
+
+    return created
+
+
 
 
 def mirror_files(
