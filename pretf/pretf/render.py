@@ -185,7 +185,9 @@ class TerraformProxy:
         return workspace
 
 
-def call_pretf_function(func: Callable, var: Optional[VariableProxy] = None) -> Any:
+def call_pretf_function(
+    func: Callable, var: Optional[VariableProxy] = None, context: Optional[dict] = None
+) -> Any:
     kwargs: Dict[str, Any] = {}
     sig = inspect.signature(func)
     if "path" in sig.parameters:
@@ -195,6 +197,8 @@ def call_pretf_function(func: Callable, var: Optional[VariableProxy] = None) -> 
         kwargs["terraform"] = TerraformProxy()
     if "var" in sig.parameters and var is not None:
         kwargs["var"] = var
+    if "context" in sig.parameters:
+        kwargs["context"] = context or {}
     return func(**kwargs)
 
 
