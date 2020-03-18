@@ -1,3 +1,0 @@
-environment = "dev"
-
-stack = "iam"
