@@ -262,8 +262,8 @@ def load_parent(context: Optional[dict] = None) -> CompletedProcess:
 
 
 def mirror_files(
-    *path_patterns: str,
-    exclude_name_patterns: Sequence[str] = [".*", "_*"],
+    *path_patterns: Union[Path, str],
+    exclude_name_patterns: Sequence[str] = [".*", "_*", "pretf.workflow.py"],
     include_directories: bool = True,
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
@@ -289,10 +289,21 @@ def mirror_files(
 
     # Find files to mirror.
     create = {}
-    paths = util.find_paths(
-        path_patterns=path_patterns,
-        exclude_name_patterns=exclude_name_patterns,
-        cwd=cwd,
+    paths = []
+    patterns: List[str] = []
+    for value in path_patterns:
+        if isinstance(value, Path):
+            paths.append(value)
+        elif isinstance(value, str):
+            patterns.append(value)
+        else:
+            raise TypeError(value)
+    paths.extend(
+        util.find_paths(
+            path_patterns=patterns,
+            exclude_name_patterns=exclude_name_patterns,
+            cwd=cwd,
+        )
     )
     for real_path in paths:
 
