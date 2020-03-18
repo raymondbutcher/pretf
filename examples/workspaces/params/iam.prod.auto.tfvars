@@ -1,3 +1,0 @@
-environment = "prod"
-
-stack = "iam"
