@@ -223,15 +223,15 @@ Signature:
 
 ```python
 def mirror_files(
-    *path_patterns: str,
-    exclude_name_patterns: Sequence[str] = [".*", "_*"],
+    *path_patterns: Union[Path, str],
+    exclude_name_patterns: Sequence[str] = [".*", "_*", "pretf.workflow.py"],
     include_directories: bool = True,
     cwd: Optional[Union[Path, str]] = None,
     verbose: bool = True,
 ) -> List[Path]:
 
 path_patterns:
-    path glob patterns to mirror into the current directory
+    paths or path glob patterns to mirror into the current directory
 exclude_name_patterns:
     name glob patterns to exclude
 cwd:
