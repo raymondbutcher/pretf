@@ -96,7 +96,9 @@ def create_files(
     return created
 
 
-def custom(path: Union[PurePath, str]) -> CompletedProcess:
+def custom(
+    path: Union[PurePath, str], context: Optional[dict] = None
+) -> CompletedProcess:
     """
     Calls the pretf_workflow() function from the specified Python file.
     This is useful for having a custom workflow that is used by multiple
@@ -113,7 +115,7 @@ def custom(path: Union[PurePath, str]) -> CompletedProcess:
 
         # Call the pretf_workflow() function,
         # passing in "path" and "terraform" if required.
-        result = call_pretf_function(func=module.pretf_workflow)  # type: ignore
+        result = call_pretf_function(func=module.pretf_workflow, context=context)  # type: ignore
 
     if not isinstance(result, CompletedProcess):
 
@@ -231,6 +233,32 @@ def execute_terraform(verbose: bool = True) -> CompletedProcess:
 
     log.bad("terraform: command not found")
     return CompletedProcess(args=args, returncode=1)
+
+
+def load_parent(context: Optional[dict] = None) -> CompletedProcess:
+    """
+    Looks for the closest pretf.workflow.py file in parent directories
+    and calls the pretf_workflow() function. Errors if there are no
+    pretf.workflow.py files in any parent directories.
+
+    """
+
+    # Find directory of caller file.
+    caller_frame = inspect.currentframe().f_back  # type: ignore
+    caller_info = inspect.getframeinfo(caller_frame)
+    caller_file = caller_info.filename
+    caller_directory = Path(caller_file).parent
+
+    # Look for pretf.workflow.py in parent directories.
+    parent_directory = caller_directory.parent
+    path = util.find_workflow_path(cwd=parent_directory)
+
+    if not path:
+        raise FunctionNotFoundError(
+            f"workflow: load_parent() called in {caller_file} but pretf.workflow.py not found in parent directories"
+        )
+
+    return custom(path, context=context)
 
 
 def mirror_files(

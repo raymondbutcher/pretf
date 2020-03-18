@@ -65,10 +65,12 @@ Calls the `pretf_workflow()` function from the specified Python file. This is us
 Signature:
 
 ```python
-def custom(module_path: Union[PurePath, str]) -> int:
+def custom(module_path: Union[PurePath, str], context: Optional[dict] = None) -> int:
 
 module_path:
     file path for the Python module
+context:
+    dictionary to pass into the pretf_workflow() function
 
 returns:
     exit code for when pretf finishes
@@ -184,6 +186,33 @@ from pretf import workflow
 
 def pretf_workflow():
     return workflow.execute_terraform()
+```
+
+## load_parent
+
+Looks for the closest `pretf.workflow.py` file in parent directories and calls the `pretf_workflow()` function. Errors if there are no `pretf.workflow.py` files in any parent directories.
+
+Signature:
+
+```python
+def load_parent(context: Optional[dict] = None) -> CompletedProcess:
+
+context:
+    dictionary to pass into the pretf_workflow() function
+
+returns:
+    exit code for when pretf finishes
+```
+
+Example:
+
+```python
+from pretf import workflow
+
+
+def pretf_workflow():
+    workflow.require_files("terraform.tfvars")
+    return workflow.load_parent()
 ```
 
 ## mirror_files

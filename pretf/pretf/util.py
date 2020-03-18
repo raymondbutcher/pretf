@@ -142,10 +142,16 @@ def find_paths(
                 yield path
 
 
-def find_workflow_path() -> Optional[Path]:
+def find_workflow_path(cwd: Optional[Union[Path, str]] = None) -> Optional[Path]:
+
+    if cwd is None:
+        cwd = Path.cwd()
+    elif isinstance(cwd, str):
+        cwd = Path(cwd)
+
     for name in ("pretf.workflow.py", "pretf.py"):
 
-        path = Path.cwd() / name
+        path = cwd / name
         if path.exists():
             return path
 
