@@ -162,6 +162,39 @@ def pretf_workflow():
     return workflow.execute_terraform()
 ```
 
+## delete_links
+
+Deletes symlinks from the current directory.
+
+Signature:
+
+```python
+def delete_files(
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: bool = True,
+) -> List[Path]:
+
+cwd:
+    current directory
+verbose:
+    whether to print information
+
+returns:
+    removed files
+```
+
+Example:
+
+```python
+from pretf import workflow
+
+
+def pretf_workflow():
+    workflow.delete_links()
+    workflow.link_files("*.tf.py")
+    return workflow.execute_terraform()
+```
+
 ## execute_terraform
 
 Executes Terraform and waits for it to finish. Command line arguments are passed through to Terraform. Returns the exit code from Terraform.
@@ -215,7 +248,48 @@ def pretf_workflow():
     return workflow.load_parent()
 ```
 
+## link_files
+
+Creates symlinks from all files and directories matching the source patterns into the current directory.
+
+Signature:
+
+```python
+def mirror_files(
+    *path_patterns: Union[Path, str],
+    exclude_name_patterns: Sequence[str] = [".*", "_*", "pretf.workflow.py"],
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: bool = True,
+) -> List[Path]:
+
+path_patterns:
+    paths or path glob patterns to mirror into the current directory
+exclude_name_patterns:
+    name glob patterns to exclude
+cwd:
+    current directory
+verbose:
+    whether to print information
+
+returns:
+    created symlinks
+```
+
+Example:
+
+```python
+from pretf import workflow
+
+
+def pretf_workflow():
+    workflow.delete_links()
+    workflow.link_files("*.tf.py")
+    return workflow.execute_terraform()
+```
+
 ## mirror_files
+
+> This function will be removed in a future version. Use [delete_links](#delete_links) and [link_files](#link_files) instead.
 
 Creates symlinks from all files and directories matching the source patterns into the current directory. Deletes all pre-existing symlinks in the current directory.
 
