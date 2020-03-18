@@ -20,12 +20,14 @@ def pretf_workflow(path, terraform):
                 log.bad(f"* {relpath(stack_dir)}")
         return 1
 
+    stack = path.cwd.name
+    workspace = terraform.workspace
+
     # Symlink stack.tf.py into the current directory,
     # which handles the AWS provider and S3 backend.
     # Also get the tfvars file for the current workspace.
-    stack = path.cwd.name
-    workspace = terraform.workspace
-    created = workflow.mirror_files(
+    workflow.delete_links()
+    created = workflow.link_files(
         STACKS_PATH / "stack.tf.py",
         PARAMS_PATH / f"{stack}.{workspace}.auto.tfvars",
     )
