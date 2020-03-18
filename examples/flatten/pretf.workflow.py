@@ -11,7 +11,7 @@ def pretf_workflow(path):
     # directory. Note that the paths passed in will be relative to the
     # stack-environment directories and not the directory containing
     # this pretf.workflow.py file.
-    created = workflow.mirror_files("../../../modules", "../../*.*", "../*.*")
+    created = workflow.mirror_files("*.tf", "*.tf.py", "modules")
 
     # Now run the standard Pretf workflow which generates files
     # and then executes Terraform. Pass in the mirrored files
