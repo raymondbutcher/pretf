@@ -1,9 +1,10 @@
 import inspect
 import json
 import os
+import shlex
 import sys
 from pathlib import Path, PurePath
-from subprocess import CompletedProcess
+from subprocess import CalledProcessError, CompletedProcess
 from typing import Dict, List, Optional, Sequence, Union
 
 from . import log, util
@@ -232,7 +233,9 @@ def execute_terraform(verbose: bool = True) -> CompletedProcess:
         return util.execute(file=terraform_path, args=args, verbose=verbose)
 
     log.bad("terraform: command not found")
-    return CompletedProcess(args=args, returncode=1)
+    raise CalledProcessError(
+        returncode=1, cmd=" ".join(shlex.quote(arg) for arg in args),
+    )
 
 
 def load_parent(context: Optional[dict] = None) -> CompletedProcess:
