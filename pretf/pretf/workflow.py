@@ -10,17 +10,17 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from . import log, util
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError
 from .render import call_pretf_function, json_default, render_files
-from .util import import_file
+from .util import import_file, is_verbose
 
 
-def clean_files(paths: Sequence[Path], verbose: bool = True) -> None:
+def clean_files(paths: Sequence[Path], verbose: Optional[bool] = None) -> None:
     """
     Deletes the specified files. Intended for use after `create_files()`.
     Use `delete_files()` if wildcards are required.
 
     """
 
-    if paths and verbose:
+    if paths and is_verbose(verbose):
         names = [path.name for path in paths]
         log.ok(f"clean: {' '.join(sorted(names))}")
 
@@ -34,7 +34,7 @@ def clean_files(paths: Sequence[Path], verbose: bool = True) -> None:
 def create_files(
     target_dir: Union[Path, str] = "",
     source_dirs: Sequence[Union[Path, str]] = [],
-    verbose: bool = True,
+    verbose: Optional[bool] = None,
 ) -> List[Path]:
     """
     Creates *.tf.json and *.tfvars.json files in target_dir
@@ -83,7 +83,7 @@ def create_files(
     else:
         file_contents = {}
 
-    if file_contents and verbose:
+    if file_contents and is_verbose(verbose):
         names = [path.name for path in file_contents.keys()]
         log.ok(f"create: {' '.join(sorted(names))}")
 
@@ -126,7 +126,7 @@ def custom(
 
 
 def default(
-    clean: bool = True, created: list = [], verbose: bool = True
+    clean: bool = True, created: list = [], verbose: Optional[bool] = None
 ) -> CompletedProcess:
     """
     This is the default Pretf workflow. This is automatically used when there
@@ -157,7 +157,7 @@ def delete_files(
     *path_patterns: str,
     exclude_name_patterns: Sequence[str] = [],
     cwd: Optional[Union[Path, str]] = None,
-    verbose: bool = True,
+    verbose: Optional[bool] = None,
 ) -> List[Path]:
     """
     Deletes matching files from the current directory.
@@ -185,7 +185,7 @@ def delete_files(
         if not path.is_dir():
             delete.append(path)
 
-    if delete and verbose:
+    if delete and is_verbose(verbose):
         names = [path.name for path in delete]
         log.ok(f"delete: {' '.join(sorted(names))}")
 
@@ -199,7 +199,7 @@ def delete_files(
 
 
 def delete_links(
-    cwd: Optional[Union[Path, str]] = None, verbose: bool = True,
+    cwd: Optional[Union[Path, str]] = None, verbose: Optional[bool] = None
 ) -> List[Path]:
     """
     Deletes symlinks from the current directory.
@@ -217,7 +217,7 @@ def delete_links(
         if path.is_symlink():
             delete.append(path)
 
-    if delete and verbose:
+    if delete and is_verbose(verbose):
         names = [path.name for path in delete]
         log.ok(f"delete: {' '.join(sorted(names))}")
 
@@ -230,7 +230,7 @@ def delete_links(
     return deleted
 
 
-def execute_terraform(verbose: bool = True) -> CompletedProcess:
+def execute_terraform(verbose: Optional[bool] = None) -> CompletedProcess:
     """
     Executes Terraform and waits for it to finish.
     Command line arguments are passed through to Terraform.
@@ -300,7 +300,7 @@ def link_files(
     *path_patterns: Union[Path, str],
     exclude_name_patterns: Sequence[str] = [".*", "_*", "pretf.workflow.py"],
     cwd: Optional[Union[Path, str]] = None,
-    verbose: bool = True,
+    verbose: Optional[bool] = None,
 ) -> List[Path]:
     """
     Creates symlinks from all files and directories matching
@@ -394,7 +394,7 @@ def link_files(
 
         create[link_path] = relative_path
 
-    if create and verbose:
+    if create and is_verbose(verbose):
         names = [path.name for path in create.keys()]
         log.ok(f"mirror: {' '.join(sorted(names))}")
 
@@ -412,7 +412,7 @@ def mirror_files(
     exclude_name_patterns: Sequence[str] = [".*", "_*", "pretf.workflow.py"],
     include_directories: bool = True,
     cwd: Optional[Union[Path, str]] = None,
-    verbose: bool = True,
+    verbose: Optional[bool] = None,
 ) -> List[Path]:
     """
     Creates symlinks from all files and directories matching
@@ -519,7 +519,7 @@ def mirror_files(
 
         create[link_path] = relative_path
 
-    if create and verbose:
+    if create and is_verbose(verbose):
         names = [path.name for path in create.keys()]
         log.ok(f"mirror: {' '.join(sorted(names))}")
 
@@ -532,7 +532,7 @@ def mirror_files(
     return created
 
 
-def require_files(*name_patterns: str, verbose: bool = True) -> None:
+def require_files(*name_patterns: str) -> None:
     """
     Raises an exception if the specified files are not found in the current
     directory. Pretf will catch this exception, display an error message,

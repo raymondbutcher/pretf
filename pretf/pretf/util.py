@@ -16,7 +16,10 @@ from . import log
 
 
 def execute(
-    file: str, args: Sequence[str], env: Optional[dict] = None, verbose: bool = True
+    file: str,
+    args: Sequence[str],
+    env: Optional[dict] = None,
+    verbose: Optional[bool] = None,
 ) -> CompletedProcess:
     """
     Executes a command and waits for it to finish.
@@ -36,11 +39,11 @@ def execute(
     if env is None:
         env = os.environ.copy()
 
-    if verbose:
+    if is_verbose(verbose):
         log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
 
     if env.get("PRETF_CAPTURE_OUTPUT"):
-        return _execute_and_capture(file, args, env)
+        return _execute_and_capture(file, args, env, verbose)
     else:
         return _execute(file, args, env)
 
@@ -65,21 +68,23 @@ def _execute(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
     return CompletedProcess(args=args, returncode=returncode,)
 
 
-def _execute_and_capture(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
+def _execute_and_capture(
+    file: str, args: Sequence[str], env: dict, verbose: Optional[bool]
+) -> CompletedProcess:
 
     stdout_buffer = StringIO()
     stderr_buffer = StringIO()
 
     proc = Popen(args, executable=file, stdout=PIPE, stderr=PIPE, env=env)
 
-    stdout_thread = Thread(
-        target=_fan_out, args=(proc.stdout, sys.stdout, stdout_buffer)
-    )
+    stdout_args = [proc.stdout, stdout_buffer]
+    if is_verbose(verbose):
+        stdout_args.append(sys.stdout)
+    stdout_thread = Thread(target=_fan_out, args=stdout_args)
     stdout_thread.start()
 
-    stderr_thread = Thread(
-        target=_fan_out, args=(proc.stderr, sys.stderr, stderr_buffer)
-    )
+    stderr_args = [proc.stderr, stderr_buffer, sys.stderr]
+    stderr_thread = Thread(target=_fan_out, args=stderr_args)
     stderr_thread.start()
 
     while True:
@@ -193,6 +198,18 @@ def import_file(path: Union[PurePath, str]) -> Generator[ModuleType, None, None]
     finally:
         if added_to_sys_path:
             sys.path.remove(pathdir)
+
+
+def is_verbose(verbose: Optional[bool], default: bool = True) -> bool:
+    if verbose is not None:
+        return verbose
+    env_verbose = os.environ.get("PRETF_VERBOSE")
+    if env_verbose == "1":
+        return True
+    elif env_verbose == "0":
+        return False
+    else:
+        return default
 
 
 def parse_args() -> Tuple[Optional[str], List[str], List[str], str]:
