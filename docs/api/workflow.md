@@ -228,10 +228,10 @@ Looks for the closest `pretf.workflow.py` file in parent directories and calls t
 Signature:
 
 ```python
-def load_parent(context: Optional[dict] = None) -> CompletedProcess:
+def load_parent(**kwargs: Any) -> CompletedProcess:
 
-context:
-    dictionary to pass into the pretf_workflow() function
+kwargs:
+    keyword arguments to pass into the pretf_workflow() function
 
 returns:
     exit code for when pretf finishes

@@ -5,7 +5,7 @@ import shlex
 import sys
 from pathlib import Path, PurePath
 from subprocess import CalledProcessError, CompletedProcess
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from . import log, util
 from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError
@@ -270,7 +270,7 @@ def execute_terraform(verbose: bool = True) -> CompletedProcess:
     )
 
 
-def load_parent(context: Optional[dict] = None) -> CompletedProcess:
+def load_parent(**kwargs: Any) -> CompletedProcess:
     """
     Looks for the closest pretf.workflow.py file in parent directories
     and calls the pretf_workflow() function. Errors if there are no
@@ -293,7 +293,7 @@ def load_parent(context: Optional[dict] = None) -> CompletedProcess:
             f"workflow: load_parent() called in {caller_file} but pretf.workflow.py not found in parent directories"
         )
 
-    return custom(path, context=context)
+    return custom(path, context=kwargs)
 
 
 def link_files(
