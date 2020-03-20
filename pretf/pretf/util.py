@@ -18,7 +18,9 @@ from . import log
 def execute(
     file: str,
     args: Sequence[str],
+    cwd: Optional[Union[Path, str]] = None,
     env: Optional[dict] = None,
+    capture: bool = False,
     verbose: Optional[bool] = None,
 ) -> CompletedProcess:
     """
@@ -42,15 +44,17 @@ def execute(
     if is_verbose(verbose):
         log.ok(f"run: {' '.join(shlex.quote(arg) for arg in args)}")
 
-    if env.get("PRETF_CAPTURE_OUTPUT"):
-        return _execute_and_capture(file, args, env, verbose)
+    if capture:
+        return _execute_and_capture(file, args, cwd, env, verbose)
     else:
-        return _execute(file, args, env)
+        return _execute(file, args, cwd, env)
 
 
-def _execute(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
+def _execute(
+    file: str, args: Sequence[str], cwd: Optional[Union[Path, str]], env: dict
+) -> CompletedProcess:
 
-    proc = Popen(args, executable=file, env=env)
+    proc = Popen(args, executable=file, cwd=cwd, env=env)
 
     while True:
         try:
@@ -69,13 +73,17 @@ def _execute(file: str, args: Sequence[str], env: dict) -> CompletedProcess:
 
 
 def _execute_and_capture(
-    file: str, args: Sequence[str], env: dict, verbose: Optional[bool]
+    file: str,
+    args: Sequence[str],
+    cwd: Optional[Union[Path, str]],
+    env: dict,
+    verbose: Optional[bool],
 ) -> CompletedProcess:
 
     stdout_buffer = StringIO()
     stderr_buffer = StringIO()
 
-    proc = Popen(args, executable=file, stdout=PIPE, stderr=PIPE, env=env)
+    proc = Popen(args, executable=file, stdout=PIPE, stderr=PIPE, cwd=cwd, env=env)
 
     stdout_args = [proc.stdout, stdout_buffer]
     if is_verbose(verbose):

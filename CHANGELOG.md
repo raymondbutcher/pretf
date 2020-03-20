@@ -4,6 +4,7 @@
 
 ### Added
 
+* `api.get_outputs()` function added.
 * `pretf.blocks` module added.
     * More human-friendly way to define Terraform blocks in Python.
 * `workflow.delete_links()` function added.

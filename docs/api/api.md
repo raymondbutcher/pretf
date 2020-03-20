@@ -50,6 +50,38 @@ def pretf_blocks():
     })
 ```
 
+## get_outputs
+
+Runs `pretf output` in the specified directory and returns the values.
+
+Signature:
+
+```python
+def get_outputs(cwd: Union[Path, str], verbose: Optional[bool] = None) -> dict:
+
+cwd:
+    directory where Pretf/Terraform will run
+verbose:
+    whether to print information
+
+returns:
+    output values
+```
+
+Example:
+
+```python
+from pretf import workflow
+
+
+def pretf_variables():
+    vpc_outputs = workflow.get_outputs("../vpc")
+    yield {
+        "vpc_id": vpc_outputs["vpc_id"],
+        "vpc_cidr_block": vpc_outputs["vpc_cidr_block"],
+    }
+```
+
 ## log
 
 <h3>log.accept</h3>
