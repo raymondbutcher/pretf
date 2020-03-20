@@ -8,7 +8,7 @@ def pretf_workflow(path):
 
     # Flatten the directory structure into the working directory.
     workflow.delete_links()
-    created = workflow.link_files("*.tf", "*.tf.py", "modules")
+    created = workflow.link_files("*.tf", "*.tf.py", "*.tfvars.py", "modules")
 
     # Now run the standard Pretf workflow which generates files
     # and then executes Terraform. Pass in the mirrored files
