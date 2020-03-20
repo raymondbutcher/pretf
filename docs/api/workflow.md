@@ -287,6 +287,51 @@ def pretf_workflow():
     return workflow.execute_terraform()
 ```
 
+## link_module
+
+Creates symlinks from all files and directories in a module into the current directory. Remote modules are first downloaded into a cache directory.
+
+Signature:
+
+```python
+def link_module(
+    source: Union[Path,str],
+    version: Optional[str] = None,
+    update: bool = False,
+    cache_dir: Optional[Union[Path, str]] = None,
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: bool = True,
+) -> List[Path]:
+
+source:
+    location of module to mirror into the current directory
+version:
+    the module version (if using registry)
+update:
+    whether to fetch the module every time, or use a cached copy
+cache_dir:
+    location to use for caching modules
+cwd:
+    current directory
+verbose:
+    whether to print information
+
+returns:
+    created symlinks
+```
+
+Example:
+
+```python
+from pretf import workflow
+
+
+def pretf_workflow():
+    workflow.delete_links()
+    workflow.link_module("claranet/vpc-modules/aws", version="1.1.0")
+    return workflow.execute_terraform()
+```
+
 ## mirror_files
 
 > This function will be removed in a future version. Use [delete_links](#delete_links) and [link_files](#link_files) instead.
