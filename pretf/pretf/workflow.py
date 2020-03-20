@@ -230,7 +230,13 @@ def delete_links(
     return deleted
 
 
-def execute_terraform(verbose: Optional[bool] = None) -> CompletedProcess:
+def execute_terraform(
+    args: Optional[Sequence[str]] = None,
+    cwd: Optional[Union[Path, str]] = None,
+    env: Optional[dict] = None,
+    capture: bool = False,
+    verbose: Optional[bool] = None,
+) -> CompletedProcess:
     """
     Executes Terraform and waits for it to finish.
     Command line arguments are passed through to Terraform.
@@ -238,7 +244,10 @@ def execute_terraform(verbose: Optional[bool] = None) -> CompletedProcess:
 
     """
 
-    args = ["terraform"] + sys.argv[1:]
+    if args is None:
+        args = ["terraform"] + sys.argv[1:]
+    else:
+        args = ["teraform"] + list(args)
 
     # Find the Terraform executable in the PATH.
     for path in os.environ["PATH"].split(os.pathsep):
@@ -262,7 +271,9 @@ def execute_terraform(verbose: Optional[bool] = None) -> CompletedProcess:
             continue
 
         # This is a valid executable, run it.
-        return util.execute(file=terraform_path, args=args, verbose=verbose)
+        return util.execute(
+            file=terraform_path, args=args, capture=capture, verbose=verbose
+        )
 
     log.bad("terraform: command not found")
     raise CalledProcessError(

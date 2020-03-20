@@ -3,7 +3,6 @@ import contextlib
 import functools
 import inspect
 import os
-import sys
 from json import dump as json_dump
 from json import loads as json_loads
 from pathlib import Path
@@ -12,17 +11,18 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import pytest
 
-from pretf import cli, parser, render, workflow
+from pretf import parser, render, util, workflow
 
 
 class TerraformProxy:
-
-    __execute__ = staticmethod(workflow.execute_terraform)
-
     def __init__(self, cwd: Union[Path, str] = "", verbose: Optional[bool] = None):
         if not isinstance(cwd, Path):
             cwd = Path(cwd)
         self.cwd = cwd
+        self.env = os.environ.copy()
+        self.env["TF_IN_AUTOMATION"] = "1"
+        if verbose is not None:
+            self.env["PRETF_VERBOSE"] = "1" if verbose else "0"
         self.verbose = verbose
 
     # Calling the object just returns another object with the specified path.
@@ -42,36 +42,9 @@ class TerraformProxy:
     # Terraform command.
 
     def execute(self, *args: str) -> CompletedProcess:
-
-        # Make Terraform output more suitable for tests.
-        environ_before = {
-            "TF_IN_AUTOMATION": os.environ.get("TF_IN_AUTOMATION"),
-            "PRETF_CAPTURE_OUTPUT": os.environ.get("PRETF_CAPTURE_OUTPUT"),
-            "PRETF_VERBOSE": os.environ.get("PRETF_VERBOSE"),
-        }
-        os.environ.update({"TF_IN_AUTOMATION": "1", "PRETF_CAPTURE_OUTPUT": "1"})
-        if self.verbose is not None:
-            os.environ["PRETF_VERBOSE"] = "1" if self.verbose else "0"
-
-        argv_before = sys.argv
-        sys.argv = ["terraform", *args]
-
-        cwd_before = os.getcwd()
-        os.chdir(self.cwd)
-
-        try:
-            proc = self.__execute__()
-        finally:
-            os.chdir(cwd_before)
-            sys.argv = argv_before
-            for key, value in environ_before.items():
-                if value is None:
-                    if key in os.environ:
-                        del os.environ[key]
-                else:
-                    os.environ[key] = value
-
-        return proc
+        return workflow.execute_terraform(
+            args=args, cwd=self.cwd, env=self.env, capture=True, verbose=self.verbose
+        )
 
     # Terraform shortcuts.
 
@@ -138,8 +111,15 @@ class TerraformProxy:
 
 
 class PretfProxy(TerraformProxy):
-
-    __execute__ = staticmethod(cli.run)
+    def execute(self, *args: str) -> CompletedProcess:
+        return util.execute(
+            file="pretf",
+            args=["pretf"] + list(args),
+            cwd=self.cwd,
+            env=self.env,
+            capture=True,
+            verbose=self.verbose,
+        )
 
 
 class SimpleTestMeta(type):
