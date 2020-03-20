@@ -9,6 +9,7 @@
     * More human-friendly way to define Terraform blocks in Python.
 * `workflow.delete_links()` function added.
 * `workflow.link_files()` function added.
+* `workflow.link_module()` function added.
 * `workflow.load_parent()` function added.
     * More composable workflows.
 

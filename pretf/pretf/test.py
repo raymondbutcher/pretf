@@ -15,14 +15,13 @@ from pretf import parser, render, util, workflow
 
 
 class TerraformProxy:
-    def __init__(self, cwd: Union[Path, str] = "", verbose: Optional[bool] = None):
+    def __init__(self, cwd: Union[Path, str] = "", verbose: Optional[bool] = False):
         if not isinstance(cwd, Path):
             cwd = Path(cwd)
         self.cwd = cwd
         self.env = os.environ.copy()
         self.env["TF_IN_AUTOMATION"] = "1"
-        if verbose is not None:
-            self.env["PRETF_VERBOSE"] = "1" if verbose else "0"
+        self.env["PRETF_VERBOSE"] = "1" if verbose else "0"
         self.verbose = verbose
 
     # Calling the object just returns another object with the specified path.
@@ -72,6 +71,18 @@ class TerraformProxy:
             if arg not in destroy_args:
                 destroy_args.append(arg)
         return self.execute(*destroy_args).stdout
+
+    def get(self, *args: str) -> str:
+        """
+        Runs terraform get and returns the stdout.
+
+        """
+
+        get_args = ["get"]
+        for arg in args:
+            if arg not in get_args:
+                get_args.append(arg)
+        return self.execute(*get_args).stdout
 
     def init(self, *args: str) -> str:
         """

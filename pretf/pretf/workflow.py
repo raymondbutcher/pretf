@@ -218,7 +218,7 @@ def delete_links(
 
     if delete and is_verbose(verbose):
         names = [path.name for path in delete]
-        log.ok(f"delete: {' '.join(sorted(names))}")
+        log.ok(f"unlink: {' '.join(sorted(names))}")
 
     # Delete links.
     deleted = []
@@ -271,7 +271,7 @@ def execute_terraform(
 
         # This is a valid executable, run it.
         return util.execute(
-            file=terraform_path, args=args, capture=capture, verbose=verbose
+            file=terraform_path, args=args, cwd=cwd, capture=capture, verbose=verbose
         )
 
     log.bad("terraform: command not found")
@@ -406,7 +406,7 @@ def link_files(
 
     if create and is_verbose(verbose):
         names = [path.name for path in create.keys()]
-        log.ok(f"mirror: {' '.join(sorted(names))}")
+        log.ok(f"link: {' '.join(sorted(names))}")
 
     # Create new symlinks.
     created = []
@@ -415,6 +415,79 @@ def link_files(
         created.append(link_path)
 
     return created
+
+
+def link_module(
+    source: str,
+    version: Optional[str] = None,
+    update: bool = False,
+    cache_dir: Optional[Union[Path, str]] = None,
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: Optional[bool] = None,
+) -> List[Path]:
+    """
+    Creates symlinks from all files and directories in a module into
+    the current directory. Remote modules are first downloaded into a
+    cache directory.
+
+    """
+
+    if is_verbose(verbose):
+        if version:
+            log.ok(f"module: {source} {version}")
+        else:
+            log.ok(f"module: {source}")
+
+    if cwd is None:
+        cwd = Path.cwd()
+    elif isinstance(cwd, str):
+        cwd = Path(cwd)
+
+    paths: List[Path] = []
+
+    if source.startswith(".") or source.startswith("/"):
+
+        # Modules already on the filesystem can be used directly.
+        paths.extend(util.find_paths(path_patterns=["*"], cwd=source,))
+
+    else:
+
+        # Remote modules will be managed by Terraform in a
+        # cache directory and then symlinked from there.
+        module_name = "mirror-module"
+
+        # Ensure the module cache directory exists.
+        if cache_dir is None:
+            cache_dir = cwd / ".terraform" / "pretf" / module_name
+        elif isinstance(cache_dir, str):
+            cache_dir = Path(cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create a Terraform root module in the cache directory
+        # that just references the specified module.
+        module_config_path = cache_dir / "main.tf.json"
+        module_body = {"source": source}
+        if version:
+            module_body["version"] = version
+        module_json = json.dumps([{"module": {module_name: module_body}}], indent=2)
+        module_config_path.write_text(module_json)
+
+        # Run "terraform get" to download the module using Terraform.
+        from .test import TerraformProxy
+
+        terraform_get_args = ["-update"] if update else []
+        TerraformProxy(cwd=cache_dir).get(*terraform_get_args)
+
+        # Get the path to the module.
+        modules_manifest_path = cache_dir / ".terraform" / "modules" / "modules.json"
+        modules_manifest = json.loads(modules_manifest_path.read_text())
+        for module in modules_manifest["Modules"]:
+            if module["Key"] == module_name:
+                module_dir = cache_dir / module["Dir"]
+                # Use files from the downloaded module directory.
+                paths.extend(util.find_paths(path_patterns=["*"], cwd=module_dir))
+
+    return link_files(*paths, cwd=cwd, verbose=verbose)
 
 
 def mirror_files(
