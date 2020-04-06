@@ -118,9 +118,8 @@ def custom(
         # passing in "path" and "terraform" if required.
         result = call_pretf_function(func=module.pretf_workflow, context=context)  # type: ignore
 
-    if not isinstance(result, CompletedProcess):
-
-        result = CompletedProcess(args=[str(path)], returncode=1)
+    if isinstance(result, int):
+        result = CompletedProcess(args=[str(path)], returncode=result)
 
     return result
 
