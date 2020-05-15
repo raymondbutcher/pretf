@@ -288,8 +288,16 @@ def load_parent(**kwargs: Any) -> CompletedProcess:
 
     """
 
-    # Find directory of caller file.
-    caller_frame = inspect.currentframe().f_back  # type: ignore
+    # Find the calling directory of this function, usually the directory
+    # containing the pretf.workflow.py file that has called this function.
+    frame = inspect.currentframe()
+    if not frame:
+        raise FunctionNotFoundError("workflow: load_parent() called from unknown frame")
+    caller_frame = frame.f_back
+    if not caller_frame:
+        raise FunctionNotFoundError(
+            "workflow: load_parent() called from unknown caller"
+        )
     caller_info = inspect.getframeinfo(caller_frame)
     caller_file = caller_info.filename
     caller_directory = Path(caller_file).parent
@@ -318,17 +326,22 @@ def link_files(
 
     """
 
-    # Find the calling directory of this function, usually the directory
-    # containing the pretf.workflow.py file that has called this function.
-    caller_frame = inspect.currentframe().f_back  # type: ignore
-    caller_info = inspect.getframeinfo(caller_frame)
-    caller_file = caller_info.filename
-    caller_directory = Path(caller_file).parent
-
     if cwd is None:
         cwd = Path.cwd()
     elif isinstance(cwd, str):
         cwd = Path(cwd)
+
+    # Find the calling directory of this function, usually the directory
+    # containing the pretf.workflow.py file that has called this function.
+    frame = inspect.currentframe()
+    if not frame:
+        raise FunctionNotFoundError("workflow: link_files() called from unknown frame")
+    caller_frame = frame.f_back
+    if not caller_frame:
+        raise FunctionNotFoundError("workflow: link_files() called from unknown caller")
+    caller_info = inspect.getframeinfo(caller_frame)
+    caller_file = caller_info.filename
+    caller_directory = Path(caller_file).parent
 
     # Start a list of source paths to symlink into the working directory.
     paths: List[Path] = []
@@ -585,7 +598,18 @@ def require_files(*name_patterns: str) -> None:
     if matches == len(name_patterns):
         return
 
-    caller_frame = inspect.currentframe().f_back  # type: ignore
+    # Find the calling directory of this function, usually the directory
+    # containing the pretf.workflow.py file that has called this function.
+    frame = inspect.currentframe()
+    if not frame:
+        raise FunctionNotFoundError(
+            "workflow: require_files() called from unknown frame"
+        )
+    caller_frame = frame.f_back
+    if not caller_frame:
+        raise FunctionNotFoundError(
+            "workflow: require_files() called from unknown caller"
+        )
     caller_info = inspect.getframeinfo(caller_frame)
     caller_file = caller_info.filename
     caller_directory = Path(caller_file).parent

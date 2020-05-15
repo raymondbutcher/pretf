@@ -10,7 +10,17 @@ from pathlib import Path, PurePath
 from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen
 from threading import Thread
 from types import ModuleType
-from typing import BinaryIO, Generator, List, Optional, Sequence, TextIO, Tuple, Union
+from typing import (
+    IO,
+    BinaryIO,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    TextIO,
+    Tuple,
+    Union,
+)
 
 from . import log
 
@@ -69,7 +79,7 @@ def _execute(
             returncode=returncode, cmd=" ".join(shlex.quote(arg) for arg in args),
         )
 
-    return CompletedProcess(args=args, returncode=returncode,)
+    return CompletedProcess(args=args, returncode=returncode)
 
 
 def _execute_and_capture(
@@ -85,7 +95,7 @@ def _execute_and_capture(
 
     proc = Popen(args, executable=file, stdout=PIPE, stderr=PIPE, cwd=cwd, env=env)
 
-    stdout_args = [proc.stdout, stdout_buffer]
+    stdout_args: List[Optional[IO]] = [proc.stdout, stdout_buffer]
     if is_verbose(verbose):
         stdout_args.append(sys.stdout)
     stdout_thread = Thread(target=_fan_out, args=stdout_args)
