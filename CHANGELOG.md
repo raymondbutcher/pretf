@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+...
+
+## 0.7.0
+
 ### Added
 
 * `api.get_outputs()` function added.
