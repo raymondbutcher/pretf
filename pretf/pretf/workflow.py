@@ -491,8 +491,8 @@ def link_module(
 
 
 def mirror_files(
-    *path_patterns: Union[Path, str],
-    exclude_name_patterns: Sequence[str] = [".*", "_*", "pretf.workflow.py"],
+    *path_patterns: str,
+    exclude_name_patterns: Sequence[str] = [".*", "_*"],
     include_directories: bool = True,
     cwd: Optional[Union[Path, str]] = None,
     verbose: Optional[bool] = None,
@@ -501,17 +501,9 @@ def mirror_files(
     Creates symlinks from all files and directories matching
     the source patterns into the current directory. Deletes
     all pre-existing symlinks in the current directory.
-
     """
 
     log.bad("workflow: mirror_files() has been deprecated")
-
-    # Find the calling directory of this function, usually the directory
-    # containing the pretf.workflow.py file that has called this function.
-    caller_frame = inspect.currentframe().f_back  # type: ignore
-    caller_info = inspect.getframeinfo(caller_frame)
-    caller_file = caller_info.filename
-    caller_directory = Path(caller_file).parent
 
     if cwd is None:
         cwd = Path.cwd()
@@ -525,56 +517,13 @@ def mirror_files(
                 continue
             path.unlink()
 
-    # Start a list of source paths to symlink into the working directory.
-    paths: List[Path] = []
-
-    # Separate the path patterns into file name patterns (no slashes)
-    # and ones that represent relative paths (can be absolute too).
-    name_patterns: List[str] = []
-    relative_patterns: List[str] = []
-    for value in path_patterns:
-        if isinstance(value, Path):
-            # Use Path objects directly.
-            paths.append(value)
-        elif isinstance(value, str):
-            if "/" in value:
-                relative_patterns.append(value)
-            else:
-                name_patterns.append(value)
-        else:
-            raise TypeError(value)
-
-    # Find paths relative to the working directory (can be absolute too).
-    if relative_patterns:
-        paths.extend(
-            util.find_paths(
-                path_patterns=relative_patterns,
-                exclude_name_patterns=exclude_name_patterns,
-                cwd=cwd,
-            )
-        )
-
-    # Find files in parent directories of the working directory up to
-    # the directory with the pretf.workflow.py file that called this.
-    if name_patterns:
-        here = cwd.parent
-        while True:
-            try:
-                here.relative_to(caller_directory)
-            except ValueError:
-                break
-            else:
-                paths.extend(
-                    util.find_paths(
-                        path_patterns=name_patterns,
-                        exclude_name_patterns=exclude_name_patterns,
-                        cwd=here,
-                    )
-                )
-                here = here.parent
-
-    # Create a map of symlink paths to original paths.
-    create: Dict[Path, str] = {}
+    # Find files to mirror.
+    create = {}
+    paths = util.find_paths(
+        path_patterns=path_patterns,
+        exclude_name_patterns=exclude_name_patterns,
+        cwd=cwd,
+    )
     for real_path in paths:
 
         try:
@@ -591,9 +540,6 @@ def mirror_files(
             continue
 
         link_path = cwd / real_path.name
-
-        if link_path in create:
-            continue
 
         if link_path.exists():
             continue
