@@ -17,9 +17,7 @@
 
 * Use multiple threads to render files.
     * Should fix rare race conditions with multiple files referring to each others' variables.
-* `path.module` now refers to the directory of the current Python file.
-* `workflow.mirror_files()` function now accepts Path objects along with pattern strings.
-* `workflow.mirror_files()` function now searches for files in parent directories if they don't contain a slash.
+* `log.bad()` and `log.ok()` can now be raised as exceptions to display a message and then exit.
 
 ### Deprecated
 
