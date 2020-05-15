@@ -115,7 +115,7 @@ def pretf_workflow():
 
 <h3>log.bad</h3>
 
-Displays a message prefixed with `[pref]` in red.
+Displays a message prefixed with `[pref]` in red. Can be raised as an exception to display the message and then exit.
 
 Signature:
 
@@ -141,7 +141,7 @@ def pretf_workflow():
 
 <h3>log.ok</h3>
 
-Displays a message prefixed with `[pref]` in cyan.
+Displays a message prefixed with `[pref]` in cyan. Can be raised as an exception to display the message and then exit.
 
 Signature:
 
