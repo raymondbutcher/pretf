@@ -40,7 +40,7 @@ def _create_s3_backend(
     table_arn = _get_dynamodb_table_arn(region_name, account_id, table)
     log.ok(f"backend: {bucket_arn}")
     log.ok(f"backend: {table_arn}")
-    if not log.accept(f"backend: create backend resources"):
+    if not log.accept("backend: create backend resources"):
         log.bad("backend: not created")
         raise SystemExit(1)
 
@@ -87,7 +87,7 @@ def _create_s3_backend(
     )
 
     # Wait for it to complete.
-    log.ok(f"backend: please wait...")
+    log.ok("backend: please wait...")
     while True:
         sleep(10)
         response = cloudformation_client.describe_stacks(StackName=stack_name)
