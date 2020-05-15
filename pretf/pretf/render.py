@@ -19,9 +19,9 @@ from .variables import (
 
 
 class PathProxy:
-    def __init__(self, module: Path) -> None:
+    def __init__(self) -> None:
         self.cwd = Path.cwd()
-        self.module = module
+        self.module = Path(".")
         self.root = Path(".")
 
     @property  # type: ignore
@@ -191,8 +191,7 @@ def call_pretf_function(
     kwargs: Dict[str, Any] = context or {}
     sig = inspect.signature(func)
     if "path" in sig.parameters:
-        func_dir = Path(inspect.getfile(func)).parent
-        kwargs["path"] = PathProxy(module=func_dir)
+        kwargs["path"] = PathProxy()
     if "terraform" in sig.parameters:
         kwargs["terraform"] = TerraformProxy()
     if "var" in sig.parameters and var is not None:
