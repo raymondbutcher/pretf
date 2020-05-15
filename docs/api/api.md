@@ -52,7 +52,7 @@ def pretf_blocks():
 
 ## get_outputs
 
-Runs `pretf output` in the specified directory and returns the values.
+Runs `pretf output` in the specified directory and returns the values. If the path is not anchored (i.e. does not start with `./` or `../` or `/`) then it will check the current directory and all parent directories until found.
 
 Signature:
 
@@ -71,11 +71,11 @@ returns:
 Example:
 
 ```python
-from pretf import workflow
+from pretf.api import get_outputs
 
 
 def pretf_variables():
-    vpc_outputs = workflow.get_outputs("../vpc")
+    vpc_outputs = get_outputs("vpc")
     yield {
         "vpc_id": vpc_outputs["vpc_id"],
         "vpc_cidr_block": vpc_outputs["vpc_cidr_block"],
