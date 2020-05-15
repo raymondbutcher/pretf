@@ -53,6 +53,9 @@ def run() -> Union[CompletedProcess, int]:
         else:
             return workflow.default()
 
+    except (log.bad, log.ok):
+        pass
+
     except FunctionNotFoundError as error:
 
         log.bad(error)

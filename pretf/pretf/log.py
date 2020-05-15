@@ -37,27 +37,30 @@ def accept(message: Any) -> bool:
     return response == "yes"
 
 
-@colorama_init
-def bad(message: Any) -> None:
-    """
-    Displays a message prefixed with [pref] in red.
+class bad(Exception):
+    @colorama_init
+    def __init__(self, message: Any):
+        """
+        Displays a message prefixed with [pref] in red.
+        Can be raised as an exception to display the message and then exit.
 
-    """
+        """
+        print(
+            f"{colorama.Fore.RED}[pretf] {message}{colorama.Style.RESET_ALL}",
+            file=sys.stderr,
+        )
 
-    print(
-        f"{colorama.Fore.RED}[pretf] {message}{colorama.Style.RESET_ALL}",
-        file=sys.stderr,
-    )
 
+class ok(Exception):
+    @colorama_init
+    def __init__(self, message: Any):
+        """
+        Displays a message prefixed with [pref] in cyan.
+        Can be raised as an exception to display the message and then exit.
 
-@colorama_init
-def ok(message: Any) -> None:
-    """
-    Displays a message prefixed with [pref] in cyan.
+        """
 
-    """
-
-    print(
-        f"{colorama.Fore.CYAN}[pretf] {message}{colorama.Style.RESET_ALL}",
-        file=sys.stderr,
-    )
+        print(
+            f"{colorama.Fore.CYAN}[pretf] {message}{colorama.Style.RESET_ALL}",
+            file=sys.stderr,
+        )

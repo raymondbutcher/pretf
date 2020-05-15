@@ -8,7 +8,7 @@ from subprocess import CalledProcessError, CompletedProcess
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from . import log, util
-from .exceptions import FunctionNotFoundError, RequiredFilesNotFoundError
+from .exceptions import RequiredFilesNotFoundError
 from .render import call_pretf_function, json_default, render_files
 from .util import import_file, is_verbose
 
@@ -110,9 +110,7 @@ def custom(
     with import_file(path) as module:
 
         if not hasattr(module, "pretf_workflow"):
-            raise FunctionNotFoundError(
-                f"workflow: {path} does not have a 'pretf_workflow' function"
-            )
+            raise log.bad(f"workflow: {path} does not have a 'pretf_workflow' function")
 
         # Call the pretf_workflow() function,
         # passing in "path" and "terraform" if required.
@@ -292,12 +290,10 @@ def load_parent(**kwargs: Any) -> CompletedProcess:
     # containing the pretf.workflow.py file that has called this function.
     frame = inspect.currentframe()
     if not frame:
-        raise FunctionNotFoundError("workflow: load_parent() called from unknown frame")
+        raise Exception("workflow: load_parent() called from unknown frame")
     caller_frame = frame.f_back
     if not caller_frame:
-        raise FunctionNotFoundError(
-            "workflow: load_parent() called from unknown caller"
-        )
+        raise Exception("workflow: load_parent() called from unknown caller")
     caller_info = inspect.getframeinfo(caller_frame)
     caller_file = caller_info.filename
     caller_directory = Path(caller_file).parent
@@ -307,7 +303,7 @@ def load_parent(**kwargs: Any) -> CompletedProcess:
     path = util.find_workflow_path(cwd=parent_directory)
 
     if not path:
-        raise FunctionNotFoundError(
+        raise log.bad(
             f"workflow: load_parent() called in {caller_file} but pretf.workflow.py not found in parent directories"
         )
 
@@ -335,10 +331,10 @@ def link_files(
     # containing the pretf.workflow.py file that has called this function.
     frame = inspect.currentframe()
     if not frame:
-        raise FunctionNotFoundError("workflow: link_files() called from unknown frame")
+        raise Exception("workflow: link_files() called from unknown frame")
     caller_frame = frame.f_back
     if not caller_frame:
-        raise FunctionNotFoundError("workflow: link_files() called from unknown caller")
+        raise Exception("workflow: link_files() called from unknown caller")
     caller_info = inspect.getframeinfo(caller_frame)
     caller_file = caller_info.filename
     caller_directory = Path(caller_file).parent
@@ -602,14 +598,10 @@ def require_files(*name_patterns: str) -> None:
     # containing the pretf.workflow.py file that has called this function.
     frame = inspect.currentframe()
     if not frame:
-        raise FunctionNotFoundError(
-            "workflow: require_files() called from unknown frame"
-        )
+        raise Exception("workflow: require_files() called from unknown frame")
     caller_frame = frame.f_back
     if not caller_frame:
-        raise FunctionNotFoundError(
-            "workflow: require_files() called from unknown caller"
-        )
+        raise Exception("workflow: require_files() called from unknown caller")
     caller_info = inspect.getframeinfo(caller_frame)
     caller_file = caller_info.filename
     caller_directory = Path(caller_file).parent
