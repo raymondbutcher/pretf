@@ -64,3 +64,18 @@ class ok(Exception):
             f"{colorama.Fore.CYAN}[pretf] {message}{colorama.Style.RESET_ALL}",
             file=sys.stderr,
         )
+
+
+class warn(Exception):
+    @colorama_init
+    def __init__(self, message: Any):
+        """
+        Displays a message prefixed with [pref] in yellow.
+        Can be raised as an exception to display the message and then exit.
+
+        """
+
+        print(
+            f"{colorama.Fore.YELLOW}[pretf] {message}{colorama.Style.RESET_ALL}",
+            file=sys.stderr,
+        )
