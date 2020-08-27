@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+...
+
+## 0.7.1
+
 ### Changed
 
 * Added `pytest` dependency which is required for `api.get_outputs()`.
