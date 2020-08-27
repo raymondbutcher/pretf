@@ -21,7 +21,7 @@ setup(
     license="MIT License",
     packages=["pretf"],
     entry_points={"console_scripts": ("pretf=pretf.cli:main")},
-    install_requires=["colorama", "pyhcl"],
+    install_requires=["colorama", "pyhcl", "pytest"],
     extras_require={"aws": ["pretf.aws=={}".format(version)]},
     zip_safe=False,
 )
