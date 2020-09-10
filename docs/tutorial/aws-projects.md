@@ -57,6 +57,25 @@ def pretf_blocks(var):
     )
 ```
 
+## Terraform S3 remote state
+
+Pretf can generate S3 remote state data source blocks, with full support for MFA prompts.
+
+```python
+# terraform.tf.py
+
+from pretf.aws import terraform_remote_state_s3
+
+
+def pretf_blocks(var):
+    yield terraform_remote_state_s3("ecs_cluster", config={
+        "bucket": var.ecs_cluster_remote_state["bucket"],
+        "key": var.ecs_cluster_remote_state["key"],
+        "profile": var.ecs_cluster_remote_state["profile"],
+        "region": var.ecs_cluster_remote_state["region"],
+    })
+```
+
 ## Multiple AWS accounts
 
 It is easy to work with multiple AWS accounts from the same Terraform stack. This is something that is not possible with Terraform wrappers that rely on environment variables alone, because environment variables can only be used for 1 set of credentials at a time.
