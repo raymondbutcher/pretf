@@ -224,8 +224,8 @@ def provider_aws(**body: dict) -> Block:
         if not _profile_creds_definitely_supported_by_terraform(creds):
 
             # This profile is using credentials that Terraform may not
-            # support, so get the credentials and inject them into the
-            # configuration.
+            # support, so get static/frozen credentials and inject them
+            # into the configuration.
 
             del body["profile"]
 
@@ -271,7 +271,8 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
         if not _profile_creds_definitely_supported_by_terraform(creds):
 
             # This profile is using credentials that Terraform may not
-            # support, so export the credentials as environment variables.
+            # support, so get static/frozen credentials and export them
+            # as environment variables.
 
             # Use environment variables for credentials rather than
             # injecting them into the backend configuration because
@@ -343,3 +344,33 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
     config["region"] = region
 
     return block("terraform", {"backend": {"s3": config}})
+
+
+def terraform_remote_state_s3(name: str, **body: Any) -> Block:
+    """
+    This returns a Terraform configuration block for a "terraform_remote_state"
+    data source, with added support for AWS profiles using MFA prompts.
+
+    """
+
+    body["backend"] = "s3"
+    config = body.get("config", {})
+    if config.get("profile"):
+
+        session = get_session(profile_name=config["profile"])
+        creds = session.get_credentials()
+        if not _profile_creds_definitely_supported_by_terraform(creds):
+
+            # This profile is using credentials that Terraform may not
+            # support, so get static/frozen credentials and inject them
+            # into the configuration.
+
+            del config["profile"]
+
+            frozen_creds = creds.get_frozen_credentials()
+            config["access_key"] = frozen_creds.access_key
+            config["secret_key"] = frozen_creds.secret_key
+            if creds.token:
+                config["token"] = frozen_creds.token
+
+    return block("data", "terraform_remote_state", name, body)

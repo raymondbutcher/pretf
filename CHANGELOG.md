@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-...
+### Added
+
+* `aws.terraform_remote_state_s3()` function added.
 
 ## 0.7.1
 
