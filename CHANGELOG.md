@@ -4,6 +4,12 @@
 
 ...
 
+## 0.7.3
+
+### Fixed
+
+* Prevent simultaneous MFA prompts (#61)
+
 ## 0.7.2
 
 ### Added
