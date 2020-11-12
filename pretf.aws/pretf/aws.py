@@ -1,8 +1,9 @@
 import json
 import os
-from functools import lru_cache
+from functools import lru_cache, wraps
+from threading import RLock
 from time import sleep
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from pretf.api import block, log
 from pretf.blocks import Block
@@ -13,6 +14,23 @@ except ImportError:
     from boto3 import Session  # type: ignore
 
 
+# Use this lock on anything that might trigger an MFA prompt,
+# because otherwise it is possible for multiple threads to
+# prompt the user at the same time, resulting in confusing
+# and broken prompts for the user. This is a flaw in boto3.
+lock = RLock()
+
+
+def locked(func: Callable) -> Callable:
+    @wraps(func)
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        with lock:
+            return func(*args, **kwargs)
+
+    return wrapped
+
+
+@locked
 def _assume_role(session: Session, **kwargs: str) -> Session:
 
     for key, value in list(kwargs.items()):
@@ -30,6 +48,7 @@ def _assume_role(session: Session, **kwargs: str) -> Session:
     )
 
 
+@locked
 def _create_s3_backend(
     session: Session, bucket: str, table: str, region_name: str
 ) -> None:
@@ -116,6 +135,7 @@ def _get_s3_bucket_arn(region_name: str, account_id: str, bucket: str) -> str:
     return f"arn:aws:s3:{region_name}:{account_id}:{bucket}"
 
 
+@locked
 def _get_s3_backend_status(
     session: Session, region_name: str, bucket: str, table: str
 ) -> dict:
@@ -161,6 +181,7 @@ def _profile_creds_definitely_supported_by_terraform(creds: Any) -> bool:
         return False
 
 
+@locked
 def export_environment_variables(
     session: Optional[Session] = None, region_name: Optional[str] = None, **kwargs: dict
 ) -> None:
@@ -192,6 +213,7 @@ def export_environment_variables(
 
 
 @lru_cache()
+@locked
 def get_account_id(session: Optional[Session] = None, **kwargs: dict) -> str:
     if session is None:
         session = get_session(**kwargs)
@@ -200,6 +222,7 @@ def get_account_id(session: Optional[Session] = None, **kwargs: dict) -> str:
     return account_id
 
 
+@locked
 def get_frozen_credentials(session: Optional[Session] = None, **kwargs: dict) -> Any:
     if session is None:
         session = get_session(**kwargs)
@@ -211,6 +234,7 @@ def get_session(**kwargs: dict) -> Session:
     return Session(**kwargs)
 
 
+@locked
 def provider_aws(**body: dict) -> Block:
     """
     Returns an AWS provider block. If provided, the `profile` option
@@ -238,6 +262,7 @@ def provider_aws(**body: dict) -> Block:
     return block("provider", "aws", body)
 
 
+@locked
 def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Block:
     """
     This ensures that the S3 backend exists, prompting to create it if
@@ -346,6 +371,7 @@ def terraform_backend_s3(bucket: str, dynamodb_table: str, **config: Any) -> Blo
     return block("terraform", {"backend": {"s3": config}})
 
 
+@locked
 def terraform_remote_state_s3(name: str, **body: Any) -> Block:
     """
     This returns a Terraform configuration block for a "terraform_remote_state"
