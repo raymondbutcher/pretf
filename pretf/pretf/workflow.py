@@ -13,7 +13,10 @@ from .render import call_pretf_function, json_default, render_files
 from .util import import_file, is_verbose
 
 
-def clean_files(paths: Sequence[Path], verbose: Optional[bool] = None) -> None:
+def clean_files(
+    paths: Sequence[Path],
+    verbose: Optional[bool] = None,
+) -> None:
     """
     Deletes the specified files. Intended for use after `create_files()`.
     Use `delete_files()` if wildcards are required.
@@ -98,7 +101,8 @@ def create_files(
 
 
 def custom(
-    path: Union[PurePath, str], context: Optional[dict] = None
+    path: Union[PurePath, str],
+    context: Optional[dict] = None,
 ) -> CompletedProcess:
     """
     Calls the pretf_workflow() function from the specified Python file.
@@ -123,7 +127,9 @@ def custom(
 
 
 def default(
-    clean: bool = True, created: list = [], verbose: Optional[bool] = None
+    clean: bool = True,
+    created: list = [],
+    verbose: Optional[bool] = None,
 ) -> CompletedProcess:
     """
     This is the default Pretf workflow. This is automatically used when there
@@ -196,7 +202,8 @@ def delete_files(
 
 
 def delete_links(
-    cwd: Optional[Union[Path, str]] = None, verbose: Optional[bool] = None
+    cwd: Optional[Union[Path, str]] = None,
+    verbose: Optional[bool] = None,
 ) -> List[Path]:
     """
     Deletes symlinks from the current directory.
@@ -269,12 +276,18 @@ def execute_terraform(
 
         # This is a valid executable, run it.
         return util.execute(
-            file=terraform_path, args=args, cwd=cwd, capture=capture, verbose=verbose
+            file=terraform_path,
+            args=args,
+            cwd=cwd,
+            env=env,
+            capture=capture,
+            verbose=verbose,
         )
 
     log.bad("terraform: command not found")
     raise CalledProcessError(
-        returncode=1, cmd=" ".join(shlex.quote(arg) for arg in args),
+        returncode=1,
+        cmd=" ".join(shlex.quote(arg) for arg in args),
     )
 
 
@@ -457,7 +470,12 @@ def link_module(
     if source.startswith(".") or source.startswith("/"):
 
         # Modules already on the filesystem can be used directly.
-        paths.extend(util.find_paths(path_patterns=["*"], cwd=source,))
+        paths.extend(
+            util.find_paths(
+                path_patterns=["*"],
+                cwd=source,
+            )
+        )
 
     else:
 

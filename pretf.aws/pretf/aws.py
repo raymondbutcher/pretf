@@ -183,7 +183,9 @@ def _profile_creds_definitely_supported_by_terraform(creds: Any) -> bool:
 
 @locked
 def export_environment_variables(
-    session: Optional[Session] = None, region_name: Optional[str] = None, **kwargs: dict
+    session: Optional[Session] = None,
+    region_name: Optional[str] = None,
+    **kwargs: Any,
 ) -> None:
     """
     Exports AWS credentials as environment variables.
@@ -214,7 +216,10 @@ def export_environment_variables(
 
 @lru_cache()
 @locked
-def get_account_id(session: Optional[Session] = None, **kwargs: dict) -> str:
+def get_account_id(
+    session: Optional[Session] = None,
+    **kwargs: Any,
+) -> str:
     if session is None:
         session = get_session(**kwargs)
     sts_client = session.client("sts")
@@ -223,19 +228,22 @@ def get_account_id(session: Optional[Session] = None, **kwargs: dict) -> str:
 
 
 @locked
-def get_frozen_credentials(session: Optional[Session] = None, **kwargs: dict) -> Any:
+def get_frozen_credentials(
+    session: Optional[Session] = None,
+    **kwargs: Any,
+) -> Any:
     if session is None:
         session = get_session(**kwargs)
     return session.get_credentials().get_frozen_credentials()
 
 
 @lru_cache()
-def get_session(**kwargs: dict) -> Session:
+def get_session(**kwargs: Any) -> Session:
     return Session(**kwargs)
 
 
 @locked
-def provider_aws(**body: dict) -> Block:
+def provider_aws(**body: Any) -> Block:
     """
     Returns an AWS provider block. If provided, the `profile` option
     may be replaced with temporary credentials for that profile.

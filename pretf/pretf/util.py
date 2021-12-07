@@ -4,6 +4,7 @@ import sys
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from importlib.abc import Loader
+from importlib.machinery import ModuleSpec
 from importlib.util import module_from_spec, spec_from_file_location
 from io import StringIO
 from pathlib import Path, PurePath
@@ -76,7 +77,8 @@ def _execute(
 
     if returncode != 0:
         raise CalledProcessError(
-            returncode=returncode, cmd=" ".join(shlex.quote(arg) for arg in args),
+            returncode=returncode,
+            cmd=" ".join(shlex.quote(arg) for arg in args),
         )
 
     return CompletedProcess(args=args, returncode=returncode)
@@ -204,6 +206,7 @@ def import_file(path: Union[PurePath, str]) -> Generator[ModuleType, None, None]
     try:
         name = os.path.basename(path).split(".")[0]
         spec = spec_from_file_location(name, str(path))
+        assert isinstance(spec, ModuleSpec)
         module = module_from_spec(spec)
         assert isinstance(spec.loader, Loader)
         loader: Loader = spec.loader
