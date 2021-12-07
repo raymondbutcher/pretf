@@ -7,10 +7,11 @@ def pretf_workflow(path):
     workflow.require_files("*.*.auto.tfvars")
 
     # Flatten the directory structure into the working directory.
-    workflow.delete_links()
-    created = workflow.link_files("*.tf", "*.tf.py", "*.tfvars.py", "modules")
+    # First delete any leftover files from previous failed runs.
+    workflow.delete_files("tmp-*")
+    created = workflow.copy_files("*.tf", "*.tf.py", "*.tfvars.py", prefix="tmp-")
 
     # Now run the standard Pretf workflow which generates files
-    # and then executes Terraform. Pass in the mirrored files
+    # and then executes Terraform. Pass in the copied files
     # so they can be cleaned up.
     return workflow.default(created=created)

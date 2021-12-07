@@ -2,6 +2,7 @@ import inspect
 import json
 import os
 import shlex
+import shutil
 import sys
 from pathlib import Path, PurePath
 from subprocess import CalledProcessError, CompletedProcess
@@ -18,8 +19,8 @@ def clean_files(
     verbose: Optional[bool] = None,
 ) -> None:
     """
-    Deletes the specified files. Intended for use after `create_files()`.
-    Use `delete_files()` if wildcards are required.
+    Deletes the specified files and directories. Intended for use after
+    `create_files()`. Use `delete_files()` if wildcards are required.
 
     """
 
@@ -29,9 +30,134 @@ def clean_files(
 
     for path in paths:
         try:
-            path.unlink()
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
         except FileNotFoundError:
             pass
+
+
+def copy_files(
+    *path_patterns: Union[Path, str],
+    exclude_name_patterns: Sequence[str] = [".*", "_*", "pretf.workflow.py"],
+    cwd: Optional[Union[Path, str]] = None,
+    prefix: str = "",
+    verbose: Optional[bool] = None,
+) -> List[Path]:
+    """
+    Copies files and directories matching the source patterns
+    into the current directory. A prefix can be specified to
+    ensure that all created files and directories start with
+    a prefix, making it easier to clean them up.
+
+    """
+
+    if cwd is None:
+        cwd = Path.cwd()
+    elif isinstance(cwd, str):
+        cwd = Path(cwd)
+
+    # Find the calling directory of this function, usually the directory
+    # containing the pretf.workflow.py file that has called this function.
+    frame = inspect.currentframe()
+    if not frame:
+        raise Exception("workflow: copy_files() called from unknown frame")
+    caller_frame = frame.f_back
+    if not caller_frame:
+        raise Exception("workflow: copy_files() called from unknown caller")
+    caller_info = inspect.getframeinfo(caller_frame)
+    caller_file = caller_info.filename
+    caller_directory = Path(caller_file).parent
+
+    # Start a list of source paths to copy into the working directory.
+    paths: List[Path] = []
+
+    # Separate the path patterns into file name patterns (no slashes)
+    # and ones that represent relative paths (can be absolute too).
+    name_patterns: List[str] = []
+    relative_patterns: List[str] = []
+    for value in path_patterns:
+        if isinstance(value, Path):
+            # Use Path objects directly.
+            paths.append(value)
+        elif isinstance(value, str):
+            if "/" in value:
+                relative_patterns.append(value)
+            else:
+                name_patterns.append(value)
+        else:
+            raise TypeError(value)
+
+    # Find paths relative to the working directory (can be absolute too).
+    if relative_patterns:
+        paths.extend(
+            util.find_paths(
+                path_patterns=relative_patterns,
+                exclude_name_patterns=exclude_name_patterns,
+                cwd=cwd,
+            )
+        )
+
+    # Find paths in parent directories of the working directory up to
+    # the directory with the pretf.workflow.py file that called this.
+    if name_patterns:
+        here = cwd.parent
+        while True:
+            try:
+                here.relative_to(caller_directory)
+            except ValueError:
+                break
+            else:
+                paths.extend(
+                    util.find_paths(
+                        path_patterns=name_patterns,
+                        exclude_name_patterns=exclude_name_patterns,
+                        cwd=here,
+                    )
+                )
+                here = here.parent
+
+    # Create a map of destination paths to original paths.
+    create: Dict[Path, str] = {}
+    for real_path in paths:
+
+        try:
+            cwd.relative_to(os.path.normpath(real_path))
+        except ValueError:
+            is_parent_directory = False
+        else:
+            is_parent_directory = True
+
+        if is_parent_directory:
+            continue
+
+        dest_path = cwd / (prefix + real_path.name)
+
+        if dest_path in create:
+            continue
+
+        if dest_path.exists():
+            continue
+
+        relative_path = os.path.relpath(real_path, cwd)
+
+        create[dest_path] = relative_path
+
+    if create and is_verbose(verbose):
+        names = [os.path.basename(path) for path in create.values()]
+        log.ok(f"copy: {' '.join(sorted(names))}")
+
+    # Copy paths.
+    created = []
+    for dest_path, relative_path in create.items():
+        if os.path.isdir(relative_path):
+            shutil.copytree(relative_path, dest_path)
+        else:
+            shutil.copy(relative_path, dest_path)
+        created.append(dest_path)
+
+    return created
 
 
 def create_files(
@@ -163,7 +289,7 @@ def delete_files(
     verbose: Optional[bool] = None,
 ) -> List[Path]:
     """
-    Deletes matching files from the current directory.
+    Deletes matching files and directories from the current directory.
     Defaults to deleting files normally created by the create() function.
     Optionally exclude files matching a specified pattern.
 
@@ -177,7 +303,7 @@ def delete_files(
     elif isinstance(cwd, str):
         cwd = Path(cwd)
 
-    # Find files to delete.
+    # Find paths to delete.
     delete = []
     paths = util.find_paths(
         path_patterns=path_patterns,
@@ -185,17 +311,19 @@ def delete_files(
         cwd=cwd,
     )
     for path in paths:
-        if not path.is_dir():
-            delete.append(path)
+        delete.append(path)
 
     if delete and is_verbose(verbose):
         names = [path.name for path in delete]
         log.ok(f"delete: {' '.join(sorted(names))}")
 
-    # Delete files.
+    # Delete paths.
     deleted = []
     for path in delete:
-        path.unlink()
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
         deleted.append(path)
 
     return deleted
@@ -628,6 +756,7 @@ def require_files(*name_patterns: str) -> None:
 
 
 __all__ = [
+    "copy_files",
     "create_files",
     "custom",
     "default",
