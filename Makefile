@@ -21,7 +21,7 @@ test:
 
 .PHONY: tidy
 tidy:
-	isort --recursive $(ALL_SOURCES)
+	isort --float-to-top --profile black $(ALL_SOURCES)
 	black $(FORMAT_SOURCES)
 	cd examples; terraform fmt -recursive
 
