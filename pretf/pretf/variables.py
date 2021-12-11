@@ -15,9 +15,8 @@ from .exceptions import (
 )
 from .parser import (
     parse_environment_variable_for_variables,
+    parse_hcl2,
     parse_json_file_for_blocks,
-    parse_tf_file_for_variables,
-    parse_tfvars_file_for_variables,
 )
 
 
@@ -358,43 +357,21 @@ def get_variables_from_file(
 ) -> Generator[Union[VariableDefinition, VariableValue], None, None]:
     try:
         if path.name.endswith(".tf"):
-            yield from get_variables_from_tf_file(path)
+            block = parse_hcl2(path.read_text())
+            yield from get_variable_definitions_from_block(block, path.name)
         elif path.name.endswith(".tfvars"):
-            yield from get_variables_from_tfvars_file(path)
+            block = parse_hcl2(path.read_text())
+            yield from get_variable_values_from_block(block, path.name)
         elif path.name.endswith(".tf.json"):
-            yield from get_variables_from_tf_json_file(path)
+            blocks = parse_json_file_for_blocks(path)
+            for block in blocks:
+                yield from get_variable_definitions_from_block(block, path.name)
         elif path.name.endswith(".tfvars.json"):
-            yield from get_variables_from_tfvars_json_file(path)
+            blocks = parse_json_file_for_blocks(path)
+            for block in blocks:
+                yield from get_variable_values_from_block(block, path.name)
         else:
             raise ValueError(f"Unexpected file extension: {path.name}")
     except Exception:
         log.bad(f"Error loading variables from {path}")
         raise
-
-
-def get_variables_from_tf_file(path: Path) -> Generator[VariableDefinition, None, None]:
-    blocks = parse_tf_file_for_variables(path)
-    for block in blocks:
-        yield from get_variable_definitions_from_block(block, path.name)
-
-
-def get_variables_from_tfvars_file(path: Path) -> Generator[VariableValue, None, None]:
-    blocks = parse_tfvars_file_for_variables(path)
-    for block in blocks:
-        yield from get_variable_values_from_block(block, path.name)
-
-
-def get_variables_from_tf_json_file(
-    path: Path,
-) -> Generator[VariableDefinition, None, None]:
-    blocks = parse_json_file_for_blocks(path)
-    for block in blocks:
-        yield from get_variable_definitions_from_block(block, path.name)
-
-
-def get_variables_from_tfvars_json_file(
-    path: Path,
-) -> Generator[VariableValue, None, None]:
-    blocks = parse_json_file_for_blocks(path)
-    for block in blocks:
-        yield from get_variable_values_from_block(block, path.name)

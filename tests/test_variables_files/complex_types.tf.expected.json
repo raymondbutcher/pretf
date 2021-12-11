@@ -1,0 +1,14 @@
+[
+    {
+        "name": "aws_credentials",
+        "default": {
+            "nonprod": {
+                "profile": "pretf-nonprod"
+            },
+            "prod": {
+                "profile": "pretf-prod"
+            }
+        },
+        "source": "complex_types.tf"
+    }
+]
