@@ -2,7 +2,13 @@
 
 ## [Unreleased]
 
-...
+### Changed
+
+* Use python-hcl2 for parsing Terraform files (#65)
+
+### Fixed
+
+* Fixed parsing complex types in variable definitions (#29)
 
 ## 0.7.3
 
