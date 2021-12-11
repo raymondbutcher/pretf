@@ -113,12 +113,14 @@ def custom(
 
     with import_file(path) as module:
 
-        if not hasattr(module, "pretf_workflow"):
+        try:
+            func = getattr(module, "pretf_workflow")
+        except AttributeError:
             raise log.bad(f"workflow: {path} does not have a 'pretf_workflow' function")
 
         # Call the pretf_workflow() function,
         # passing in "path" and "terraform" if required.
-        result = call_pretf_function(func=module.pretf_workflow, context=context)  # type: ignore
+        result = call_pretf_function(func=func, context=context)
 
     if isinstance(result, int):
         result = CompletedProcess(args=[str(path)], returncode=result)

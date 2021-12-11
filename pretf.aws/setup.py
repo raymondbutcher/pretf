@@ -18,6 +18,6 @@ setup(
     author_email="randomy@gmail.com",
     license="MIT License",
     packages=["pretf"],
-    install_requires=["boto3", "pretf"],
+    install_requires=["boto3", "boto3-stubs", "pretf"],
     zip_safe=False,
 )

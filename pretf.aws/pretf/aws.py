@@ -5,13 +5,17 @@ from threading import RLock
 from time import sleep
 from typing import Any, Callable, Optional
 
+from boto3 import Session
+
 from pretf.api import block, log
 from pretf.blocks import Block
 
 try:
-    from boto_source_profile_mfa import get_session as Session  # type: ignore
+    import boto_source_profile_mfa
+
+    use_boto_source_profile_mfa = True
 except ImportError:
-    from boto3 import Session  # type: ignore
+    use_boto_source_profile_mfa = False
 
 
 # Use this lock on anything that might trigger an MFA prompt,
@@ -239,7 +243,10 @@ def get_frozen_credentials(
 
 @lru_cache()
 def get_session(**kwargs: Any) -> Session:
-    return Session(**kwargs)
+    if use_boto_source_profile_mfa:
+        return boto_source_profile_mfa.get_session(**kwargs)
+    else:
+        return Session(**kwargs)
 
 
 @locked
