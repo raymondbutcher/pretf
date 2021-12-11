@@ -7,7 +7,8 @@ from json import dump as json_dump
 from json import loads as json_loads
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Callable, Dict, Generator, List, Optional, Union
+from types import TracebackType
+from typing import Any, Callable, Dict, Generator, List, Optional, Type, Union
 
 import pytest
 
@@ -35,7 +36,12 @@ class TerraformProxy:
     def __enter__(self) -> "TerraformProxy":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         return None
 
     # Terraform command.
@@ -134,7 +140,12 @@ class PretfProxy(TerraformProxy):
 
 
 class SimpleTestMeta(type):
-    def __new__(cls, name, bases, dct):  # type: ignore
+    def __new__(
+        cls: Type["SimpleTestMeta"],
+        name: str,
+        bases: tuple,
+        dct: dict,
+    ) -> "SimpleTestMeta":
         """
         Wraps all test methods with the pretf_test_function() decorator.
 
@@ -146,7 +157,7 @@ class SimpleTestMeta(type):
 
         return super().__new__(cls, name, bases, dct)
 
-    def __init__(self, name, bases, dct):  # type: ignore
+    def __init__(self, name: str, bases: tuple, dct: dict) -> None:
         """
         Adds any test method using the @always decorator to cls._always
         so the pretf_test_function() can run it even when previous tests

@@ -94,7 +94,7 @@ class VariableStore:
 
 class TerraformVariableStore(VariableStore):
     def __init__(self, files_to_create: dict) -> None:
-        super().__init__()  # type: ignore
+        super().__init__()
         self._files_to_create = files_to_create
         self._files_done: Set[Path] = set()
         self._tfvars_waiting: Set[Path] = set()
