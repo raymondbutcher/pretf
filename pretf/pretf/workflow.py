@@ -66,10 +66,6 @@ def create_files(
 
     """
 
-    if not target_dir:
-        _, _, _, config_dir = util.parse_args()
-        target_dir = config_dir
-
     if isinstance(target_dir, str):
         target_dir = Path(target_dir)
 

@@ -25,14 +25,14 @@ def run() -> Union[CompletedProcess, int]:
 
     """
 
-    cmd, args, _, _ = util.parse_args()
+    subcommand, options = util.parse_args()
 
-    if cmd == "version":
+    if subcommand == "version":
         print(f"Pretf v{__version__}")
 
-    if cmd in {"", "0.12upgrade", "fmt", "help", "version"}:
+    if subcommand in {"", "0.12upgrade", "fmt", "help", "version"}:
         skip = True
-    elif cmd == "workspace" and args and args[0] == "show":
+    elif subcommand == "workspace" and "show" in options:
         skip = True
     else:
         skip = False

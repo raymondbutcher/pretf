@@ -13,6 +13,11 @@
 ### Fixed
 
 * Fixed parsing complex types in variable definitions (#29)
+* Updated command line argument parsing and variable precedence logic, fixing some issues (#38, #54, #66)
+
+### Removed
+
+* Pretf no longer supports [passing a different configuration directory](https://www.terraform.io/docs/cli/commands/plan.html#passing-a-different-configuration-directory), bringing it in line with Terraform version v0.15 and above. Pretf currently has no specific handling or support for the [-chdir argument](https://www.terraform.io/docs/cli/commands/#switching-working-directory-with-chdir) but it does get passed through to the Terraform command if provided.
 
 ## 0.7.3
 
