@@ -1,12 +1,11 @@
 import os
 import shlex
-import sys
 from collections import defaultdict
 from pathlib import Path
 from threading import Event, Lock
 from typing import Any, Dict, Generator, List, Set, Union
 
-from . import log
+from . import log, util
 from .exceptions import (
     VariableAlreadyDefinedError,
     VariableNotConsistentError,
@@ -99,6 +98,7 @@ class TerraformVariableStore(VariableStore):
         self._tfvars_waiting: Set[Path] = set()
         self._events: Dict[str, List[Event]] = defaultdict(list)
         self._lock = Lock()
+        self._source_priority: List[str] = []
 
     def _blocked_threads(self) -> int:
         count = 0
@@ -125,7 +125,16 @@ class TerraformVariableStore(VariableStore):
     def add(self, var: Union["VariableDefinition", "VariableValue"]) -> None:
         with self._lock:
 
-            super().add(var)
+            if var.name in self:
+                old_var = self._values[var.name]
+                old_priority = self._source_priority.index(old_var.source)
+            else:
+                old_priority = -1
+
+            new_priority = self._source_priority.index(var.source)
+
+            if new_priority > old_priority:
+                super().add(var)
 
             # If this variable is ready,
             # unblock any threads waiting for it.
@@ -230,7 +239,11 @@ class TerraformVariableStore(VariableStore):
 
         # Load variable definitions.
         for path in tf_files:
-            if path not in self._files_to_create:
+            self._source_priority.append(path.name)
+            if path in self._files_to_create:
+                self._source_priority.append(self._files_to_create[path].name)
+            else:
+                self._source_priority.append(path.name)
                 for var in get_variables_from_file(path):
                     self.add(var)
 
@@ -238,6 +251,7 @@ class TerraformVariableStore(VariableStore):
         # 1. Environment variables.
         for key, value in os.environ.items():
             if key.startswith("TF_VAR_"):
+                self._source_priority.append(key)
                 parsed = parse_environment_variable_for_variables(key, value)
                 for name, value in parsed.items():
                     var = VariableValue(name=name, value=value, source=key)
@@ -247,8 +261,10 @@ class TerraformVariableStore(VariableStore):
         # 3. The terraform.tfvars.json file, if present.
         for path in sorted(default_tfvars_files):
             if path in self._files_to_create:
+                self._source_priority.append(self._files_to_create[path].name)
                 self.tfvars_wait_for(path)
             else:
+                self._source_priority.append(path.name)
                 for var in get_variables_from_file(path):
                     self.add(var)
 
@@ -256,26 +272,37 @@ class TerraformVariableStore(VariableStore):
         #    processed in lexical order of their filenames.
         for path in sorted(auto_tfvars_files):
             if path in self._files_to_create:
+                self._source_priority.append(self._files_to_create[path].name)
                 self.tfvars_wait_for(path)
             else:
+                self._source_priority.append(path.name)
                 for var in get_variables_from_file(path):
                     self.add(var)
 
         # 5. Any -var and -var-file options on the command line,
         #    in the order they are provided.
-        for arg in sys.argv[1:]:
-            if arg.startswith("-var="):
-                var_string = shlex.split(arg[5:])[0]
+        _, options = util.parse_args()
+        for option in options:
+            if option.startswith("-var="):
+                self._source_priority.append(option)
+                var_string = shlex.split(option[5:])[0]
                 name, value = var_string.split("=", 1)
-                var = VariableValue(name=name, value=value, source=arg)
+                var = VariableValue(name=name, value=value, source=option)
                 self.add(var)
-            elif arg.startswith("-var-file="):
-                var_file = Path(os.path.abspath(arg[10:])).resolve()
-                for target_path in self._files_to_create.keys():
+            elif option.startswith("-var-file="):
+                var_file = Path(os.path.abspath(option[10:])).resolve()
+                # TODO: could be a minor bug with variable priorities when this specifies a file in another
+                # directory and there is a file with the same name in the current directory. Fixing this will
+                # require updating all of the var.source code to allow for full paths, but only printing
+                # the name if there are errors (except when the source is in another directory,
+                # in which case a full path should be displayed).
+                for target_path, source_path in self._files_to_create.items():
                     if target_path.resolve() == var_file:
+                        self._source_priority.append(source_path.name)
                         self.tfvars_wait_for(target_path)
                         break
                 else:
+                    self._source_priority.append(var_file.name)
                     for var in get_variables_from_file(var_file):
                         self.add(var)
 

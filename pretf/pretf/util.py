@@ -233,48 +233,28 @@ def is_verbose(verbose: Optional[bool], default: bool = True) -> bool:
         return default
 
 
-def parse_args() -> Tuple[Optional[str], List[str], List[str], str]:
+def parse_args() -> Tuple[str, List[str]]:
 
-    cmd = ""
-    args = []
-    flags = []
+    subcommand = ""
+    options = []
 
     help_flags = set(("-h", "-help", "--help"))
     version_flags = set(("-v", "-version", "--version"))
 
-    for arg in sys.argv[1:]:
-        if arg.startswith("-"):
-            if not cmd and arg in help_flags:
-                cmd = "help"
-            elif not cmd and arg in version_flags:
-                cmd = "version"
-            else:
-                flags.append(arg)
-        elif not cmd:
-            cmd = arg
+    tokens = sys.argv[1:]
+    while tokens:
+        token = tokens.pop(0)
+
+        if token in help_flags:
+            subcommand = "help"
+        elif token in version_flags:
+            subcommand = "version"
+        elif token in ("-out", "-var", "-var-file") and tokens:
+            token = token + "=" + tokens.pop(0)
+            options.append(token)
+        elif not subcommand:
+            subcommand = token
         else:
-            args.append(arg)
+            options.append(token)
 
-    config_dir = ""
-    if cmd == "apply":
-        if args:
-            dir_or_plan = args[0]
-            if os.path.isdir(dir_or_plan):
-                config_dir = dir_or_plan
-    elif cmd == "force-unlock":
-        if len(args) == 2:
-            config_dir = args[1]
-    elif cmd in {
-        "console",
-        "destroy",
-        "get",
-        "graph",
-        "init",
-        "plan",
-        "refresh",
-        "validate",
-    }:
-        if args:
-            config_dir = args[-1]
-
-    return (cmd, args, flags, config_dir)
+    return (subcommand, options)
