@@ -1,0 +1,9 @@
+.terraform
+terraform.tfstate*
+
+# Pretf creates temporary JSON files.
+*.json
+
+# The lock file is not needed for this example,
+# but it should be version controlled in real projects.
+.terraform.lock.hcl 

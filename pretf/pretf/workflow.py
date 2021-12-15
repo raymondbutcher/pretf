@@ -40,8 +40,15 @@ def create_files(
     verbose: Optional[bool] = None,
 ) -> List[Path]:
     """
-    Creates *.tf.json and *.tfvars.json files in target_dir
-    from *.tf.py and *.tfvars.py in source_dirs.
+    Creates rendered files in target_dir from source files in source_dirs.
+
+    Handles the following:
+        filename.tf.j2 -> filename.tf
+        filename.tf.py -> filename.tf.json
+        filename.tfvars.j2 -> filename.tfvars
+        filename.tfvars.py -> filename.tfvars.json
+
+    Jinja2 files (*.j2) require the Jinja2 package to be installed.
 
     Both target_dir and source_dirs will default to the directory
     specified in the CLI arguments, if specified, otherwise the current
@@ -76,7 +83,12 @@ def create_files(
             source_dir = Path(source_dir)
         for source_path in source_dir.iterdir():
             file_name = source_path.name
-            if file_name.endswith(".tf.py") or file_name.endswith(".tfvars.py"):
+            if (
+                file_name.endswith(".tf.j2")
+                or file_name.endswith(".tf.py")
+                or file_name.endswith(".tfvars.j2")
+                or file_name.endswith(".tfvars.py")
+            ):
                 target_path = (target_dir / file_name).with_suffix(".json")
                 files_to_create[target_path] = source_path
 

@@ -16,7 +16,7 @@ docs:
 .PHONY: test
 test:
 	mypy $(shell python -c 'import pathlib; print(" ".join(sorted(f"-m pretf.{p.stem}" for p in pathlib.Path().glob("pretf*/pretf/*.py"))))')
-	flake8 --ignore E501 $(ALL_SOURCES)
+	flake8 --ignore E501,W503 $(ALL_SOURCES)
 	pytest -v tests
 
 .PHONY: tidy

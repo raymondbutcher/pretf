@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+# Added
+
+* Add support for rendering Jinja2 templates.
+
 ### Changed
 
 * Use python-hcl2 for parsing Terraform files (#65)
