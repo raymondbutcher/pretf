@@ -6,9 +6,12 @@ from pathlib import Path, PurePath
 from threading import Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
+import jinja2
+
 from . import log
 from .blocks import Block, Interpolated
 from .exceptions import FunctionNotFoundError
+from .parser import parse_hcl2
 from .util import find_workflow_path, import_file
 from .variables import (
     TerraformVariableStore,
@@ -41,7 +44,7 @@ class PathProxy:
 
 
 def render_files(
-    files_to_create: Dict[Path, Path]
+    files_to_create: Dict[Path, Path],
 ) -> Dict[Path, Union[dict, List[dict]]]:
 
     variables = TerraformVariableStore(files_to_create=files_to_create)
@@ -49,9 +52,21 @@ def render_files(
 
     threads = []
     for target_path, source_path in files_to_create.items():
-        thread = RenderThread(
-            source_path=source_path, target_path=target_path, variables=variables
-        )
+        thread: RenderThread
+        if source_path.name.endswith(".j2"):
+            thread = RenderJinjaThread(
+                source_path=source_path,
+                target_path=target_path,
+                variables=variables,
+            )
+        elif source_path.name.endswith(".py"):
+            thread = RenderPythonThread(
+                source_path=source_path,
+                target_path=target_path,
+                variables=variables,
+            )
+        else:
+            raise ValueError(source_path)
         thread.start()
         threads.append(thread)
 
@@ -72,9 +87,11 @@ def render_files(
 
 class RenderThread(Thread):
     def __init__(
-        self, source_path: Path, target_path: Path, variables: TerraformVariableStore
+        self,
+        source_path: Path,
+        target_path: Path,
+        variables: TerraformVariableStore,
     ):
-
         super().__init__()
 
         self.source_path = source_path
@@ -82,30 +99,9 @@ class RenderThread(Thread):
         self.target_name = target_path.name
         self.variables = variables
 
+        self.blocks: List[dict] = []
         self.error: Optional[Exception] = None
         self.is_tfvars = self.target_name.endswith(".tfvars.json")
-        self.return_value = None
-
-        # Load the file and start the generator.
-        with import_file(source_path) as module:
-
-            if self.is_tfvars:
-                func_name = "pretf_variables"
-            else:
-                func_name = "pretf_blocks"
-
-            if not hasattr(module, func_name):
-                raise FunctionNotFoundError(
-                    f"create: {source_path} does not have a {repr(func_name)} function"
-                )
-
-            # Call the pretf_* function, passing in "path", "terraform" and "var" if required.
-            var_proxy = variables.proxy(consumer=self.source_path)
-            self.gen = call_pretf_function(
-                func=getattr(module, func_name), var=var_proxy
-            )
-
-        self.blocks: List[dict] = []
 
     def contents(self) -> Union[dict, List[dict]]:
         if self.is_tfvars:
@@ -133,42 +129,87 @@ class RenderThread(Thread):
                 var = VariableValue(name=name, value=value, source=self.source_path)
                 self.variables.add(var)
 
+    def render(self) -> Generator[dict, None, None]:
+        raise NotImplementedError("subclass should implement this")
+
     def run(self) -> None:
         try:
-
-            while True:
-
-                try:
-                    yielded = self.gen.send(self.return_value)
-                except StopIteration:
-                    break
-
-                self.return_value = yielded
-
-                if self.is_tfvars:
-                    if not isinstance(yielded, dict):
-                        raise TypeError(
-                            f"expected dict to be yielded but got {repr(yielded)}"
-                        )
-                    self.process_tfvars_dict(yielded)
-                    self.blocks.append(yielded)
-                else:
-                    for block in unwrap_yielded(yielded):
-
-                        self.process_tf_block(block)
-                        self.blocks.append(block)
-
+            self.blocks = list(self.render())
         except Exception as error:
-
             log.bad(f"create: {self.target_name} could not be processed")
             self.error = error
-
         finally:
-
             # Tell the variable store that the file is done,
             # whether it was successful or not, so it can
             # unblock other threads if necessary.
             self.variables.file_done(self.target_path)
+
+
+class RenderJinjaThread(RenderThread):
+    def render(self) -> Generator[dict, None, None]:
+
+        template_string = self.source_path.read_text()
+        template = jinja2.Template(template_string)
+        rendered = template.render(
+            path=PathProxy(),
+            terraform=TerraformProxy(),
+            var=self.variables.proxy(consumer=self.source_path),
+        )
+        block = parse_hcl2(rendered)
+
+        if self.is_tfvars:
+            self.process_tfvars_dict(block)
+        else:
+            self.process_tf_block(block)
+
+        yield block
+
+
+class RenderPythonThread(RenderThread):
+    def render(self) -> Generator[dict, None, None]:
+
+        return_value = None
+
+        # Load the file and start the generator.
+        with import_file(self.source_path) as module:
+
+            if self.is_tfvars:
+                func_name = "pretf_variables"
+            else:
+                func_name = "pretf_blocks"
+
+            if not hasattr(module, func_name):
+                raise FunctionNotFoundError(
+                    f"create: {self.source_path} does not have a {repr(func_name)} function"
+                )
+
+            # Call the pretf_* function, passing in "path", "terraform" and "var" if required.
+            var_proxy = self.variables.proxy(consumer=self.source_path)
+            self.gen = call_pretf_function(
+                func=getattr(module, func_name), var=var_proxy
+            )
+
+        # Process each yielded block.
+        while True:
+
+            try:
+                yielded = self.gen.send(return_value)
+            except StopIteration:
+                break
+
+            return_value = yielded
+
+            if self.is_tfvars:
+                if not isinstance(yielded, dict):
+                    raise TypeError(
+                        f"expected dict to be yielded but got {repr(yielded)}"
+                    )
+                self.process_tfvars_dict(yielded)
+                yield yielded
+            else:
+                for block in unwrap_yielded(yielded):
+                    self.process_tf_block(block)
+                    yield block
 
 
 class TerraformProxy:

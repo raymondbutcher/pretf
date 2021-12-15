@@ -1,0 +1,4 @@
+resource "random_id" "from_jinja" {
+  byte_length = {{ var.byte_length }}
+  prefix      = "jinja-"
+}
