@@ -2,13 +2,7 @@ from pretf import test, workflow
 from pretf.blocks import output, variable
 
 
-class TestExample(test.SimpleTest):
-    """
-    Each test_* method runs in the order they are defined here.
-    If any of them fail then subsequent tests do not run.
-
-    """
-
+class TestTestFramework(test.SimpleTest):
     def test_create(self):
 
         workflow.delete_files("*.json")
