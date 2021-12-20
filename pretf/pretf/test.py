@@ -3,6 +3,7 @@ import contextlib
 import functools
 import inspect
 import os
+import sys
 from json import dump as json_dump
 from json import loads as json_loads
 from pathlib import Path
@@ -12,7 +13,12 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Type, Union
 
 import pytest
 
-from pretf import parser, render, util, workflow
+from pretf import render, util, workflow
+
+
+class SensitiveValue:
+    def __init__(self, value: Any):
+        self.value = value
 
 
 class TerraformProxy:
@@ -48,7 +54,11 @@ class TerraformProxy:
 
     def execute(self, *args: str) -> CompletedProcess:
         return workflow.execute_terraform(
-            args=args, cwd=self.cwd, env=self.env, capture=True, verbose=self.verbose
+            args=args,
+            cwd=self.cwd,
+            env=self.env,
+            capture=True,
+            verbose=self.verbose,
         )
 
     # Terraform shortcuts.
@@ -60,11 +70,33 @@ class TerraformProxy:
 
         """
 
-        apply_args = ["apply", "-input=false", "-auto-approve=true", "-no-color"]
+        apply_args = ["apply", "-json", "-auto-approve=true"]
         for arg in args:
             if arg not in apply_args:
                 apply_args.append(arg)
-        return parser.parse_apply_outputs(self.execute(*apply_args).stdout)
+
+        proc = self.execute(*apply_args)
+
+        outputs = None
+        for line in proc.stdout.splitlines():
+            log = json_loads(line)
+            if log["type"] == "outputs":
+                outputs = log["outputs"]
+
+        if outputs is None:
+            if proc.stderr:
+                print(proc.stderr, file=sys.stderr)
+            raise ValueError(f"Could not parse outputs from: {proc.stdout}")
+
+        values = {}
+
+        for name in outputs:
+            value = outputs[name]["value"]
+            if outputs[name]["sensitive"]:
+                value = SensitiveValue(value)
+            values[name] = value
+
+        return values
 
     def destroy(self, *args: str) -> str:
         """
@@ -72,7 +104,7 @@ class TerraformProxy:
 
         """
 
-        destroy_args = ["destroy", "-input=false", "-auto-approve=true"]
+        destroy_args = ["destroy", "-input=false", "-auto-approve=true", "-no-color"]
         for arg in args:
             if arg not in destroy_args:
                 destroy_args.append(arg)
@@ -84,7 +116,7 @@ class TerraformProxy:
 
         """
 
-        get_args = ["get"]
+        get_args = ["get", "-no-color"]
         for arg in args:
             if arg not in get_args:
                 get_args.append(arg)
@@ -96,7 +128,7 @@ class TerraformProxy:
 
         """
 
-        init_args = ["init", "-input=false"]
+        init_args = ["init", "-input=false", "-no-color"]
         for arg in args:
             if arg not in init_args:
                 init_args.append(arg)
@@ -120,7 +152,7 @@ class TerraformProxy:
 
         """
 
-        plan_args = ["plan", "-input=false"]
+        plan_args = ["plan", "-input=false", "-no-color"]
         for arg in args:
             if arg not in plan_args:
                 plan_args.append(arg)
