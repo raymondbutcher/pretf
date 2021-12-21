@@ -510,10 +510,10 @@ def link_module(
         module_config_path.write_text(module_json)
 
         # Run "terraform get" to download the module using Terraform.
-        from .test import TerraformProxy
+        from .command import TerraformCommand
 
         terraform_get_args = ["-update"] if update else []
-        TerraformProxy(cwd=cache_dir).get(*terraform_get_args)
+        TerraformCommand(cwd=cache_dir).get(*terraform_get_args)
 
         # Get the path to the module.
         modules_manifest_path = cache_dir / ".terraform" / "modules" / "modules.json"

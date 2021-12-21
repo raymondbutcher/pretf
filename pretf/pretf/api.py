@@ -26,7 +26,7 @@ def get_outputs(cwd: Union[Path, str], verbose: Optional[bool] = None) -> dict:
 
     """
 
-    from pretf.test import PretfProxy
+    from pretf.command import PretfCommand
 
     if isinstance(cwd, Path):
         # Use path as-is.
@@ -80,7 +80,7 @@ def get_outputs(cwd: Union[Path, str], verbose: Optional[bool] = None) -> dict:
                     f"get_outputs({cwd!r}) in {caller_file}: {path} does not exist"
                 )
 
-    outputs = PretfProxy(cwd=path, verbose=False).output()
+    outputs = PretfCommand(cwd=path, verbose=False).output()
 
     values = {}
     for name, data in outputs.items():

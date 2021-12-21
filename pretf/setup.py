@@ -21,7 +21,7 @@ setup(
     license="MIT License",
     packages=["pretf"],
     entry_points={"console_scripts": ("pretf=pretf.cli:main")},
-    install_requires=["colorama", "Jinja2", "pytest", "python-hcl2>=3.0.0"],
+    install_requires=["colorama", "Jinja2", "python-hcl2>=3.0.0"],
     extras_require={"aws": ["pretf.aws=={}".format(version)]},
     zip_safe=False,
 )
