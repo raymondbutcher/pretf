@@ -84,6 +84,21 @@ def always(func: Callable) -> Callable:
     return func
 
 
+def swap_in_local_path(path):
+    """
+    Mounted volumes inspect.getfile to the path outside the container.
+
+    Swaps in the correct path within the container if the environment variables are correct.
+    """
+
+    external = os.environ.get('EXTERNAL_VOLUME_LOCATION')
+    internal = os.environ.get('INTERNAL_VOLUME_LOCATION')
+    if external and internal:
+        return path.replace(external, internal)
+    else:
+        return path
+
+
 def pretf_test_function(func: Callable) -> Callable:
     @functools.wraps(func)
     def wrapped(self: Any, *args: tuple, **kwargs: dict) -> Any:
@@ -96,7 +111,7 @@ def pretf_test_function(func: Callable) -> Callable:
         cwd_before = os.getcwd()
         func_file = inspect.getfile(func)
         func_dir = os.path.dirname(func_file)
-        os.chdir(func_dir)
+        os.chdir(swap_in_local_path(func_dir))
 
         try:
 

@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 from json import loads as json_loads
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -72,7 +73,14 @@ class TerraformCommand:
 
         outputs = None
         for line in proc.stdout.splitlines():
-            log = json_loads(line)
+            
+            # sometimes even with '-json' terraform creates non-json messages
+            # like the one about acquiring state lock.
+            try:
+                log = json_loads(line)
+            except json.decoder.JSONDecodeError:
+                log = {"non-json-log": str(line)}
+                       
             if log["type"] == "outputs":
                 outputs = log["outputs"]
 
